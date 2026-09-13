@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: legal_user
+          POSTGRES_PASSWORD: legal_pass
+          POSTGRES_DB: legal_filing_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U legal_user -d legal_filing_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ENVIRONMENT: test
+      SECRET_KEY: ci-secret-key-not-for-production
+      DATABASE_URL: postgresql+asyncpg://legal_user:legal_pass@localhost:5432/legal_filing_test
+      REDIS_URL: redis://localhost:6379/0
+      RAZORPAY_KEY_ID: rzp_test_dummy
+      RAZORPAY_KEY_SECRET: dummy_secret
+      RAZORPAY_WEBHOOK_SECRET: dummy_webhook_secret
+      S3_BUCKET_NAME: ci-test-bucket
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run migrations
+        run: python -m alembic upgrade head
+
+      - name: Seed roles
+        run: python -m scripts.seed_roles
+
+      - name: Run tests
+        run: pytest -v
