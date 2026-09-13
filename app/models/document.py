@@ -1,0 +1,31 @@
+import enum
+import uuid
+
+from sqlalchemy import Enum, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
+
+
+class DocumentType(str, enum.Enum):
+    ORIGINAL = "original"
+    DRAFT = "draft"
+    FINAL = "final"
+
+
+class CaseDocument(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "case_documents"
+
+    case_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("cases.id"), nullable=False
+    )
+    case: Mapped["Case"] = relationship(back_populates="documents")
+
+    type: Mapped[DocumentType] = mapped_column(Enum(DocumentType, name="document_type"))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    storage_key: Mapped[str] = mapped_column(String(500), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
