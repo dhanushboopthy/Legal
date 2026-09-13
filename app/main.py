@@ -2,17 +2,18 @@ import structlog
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from sqlalchemy import text
 
 from app.config import settings
 from app.core.exceptions import AppError
+from app.core.rate_limit import limiter
+from app.database import engine
+from app.middleware import RequestContextMiddleware
 from app.routers import auth, cases, documents, payments, users, webhooks
 
 logger = structlog.get_logger()
-
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 app = FastAPI(
     title="Advocate Case Filing Platform",
@@ -32,6 +33,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestContextMiddleware)
 
 
 @app.exception_handler(AppError)
@@ -51,6 +53,18 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health", tags=["health"])
 async def health():
+    """Readiness probe: verifies the database is actually reachable rather
+    than just returning a static 200, matching docker-compose's own
+    `pg_isready`-based healthcheck on the db service."""
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception as exc:
+        logger.error("health_check_failed", error=str(exc))
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "unhealthy", "environment": settings.environment},
+        )
     return {"status": "ok", "environment": settings.environment}
 
 
