@@ -11,6 +11,7 @@ from app.config import settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.models.case import Case, CaseStatus
 from app.models.payment import Payment, PaymentStatus, PaymentType
+from app.models.user import User
 from app.services import audit_service, case_service, notification_service
 
 _FEE_FOR_TYPE = {
@@ -87,6 +88,37 @@ def verify_webhook_signature(raw_body: bytes, signature: str) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
+async def handle_payment_failed(
+    db: AsyncSession, *, gateway_order_id: str, error_description: str | None,
+) -> Payment:
+    result = await db.execute(
+        select(Payment).where(Payment.gateway_order_id == gateway_order_id)
+    )
+    payment = result.scalar_one_or_none()
+    if payment is None:
+        raise NotFoundError(f"No payment found for order {gateway_order_id}")
+
+    if payment.status in (PaymentStatus.PAID, PaymentStatus.FAILED, PaymentStatus.REFUNDED):
+        # Already terminal — a captured payment can't retroactively fail, and
+        # a redelivered failure event is an idempotent no-op.
+        return payment
+
+    payment.status = PaymentStatus.FAILED
+
+    case = await case_service.get_case_or_404(db, payment.case_id)
+
+    await audit_service.log_action(
+        db, user_id=None, action="payment.failed",
+        entity_type="payment", entity_id=str(payment.id),
+        metadata={"error_description": error_description},
+    )
+    await notification_service.notify(
+        db, user_id=case.junior_lawyer_id,
+        message=f"Your payment of Rs.{payment.amount} could not be completed. Please try again.",
+    )
+    return payment
+
+
 async def handle_payment_captured(db: AsyncSession, *, gateway_order_id: str, gateway_payment_id: str) -> Payment:
     result = await db.execute(
         select(Payment).where(Payment.gateway_order_id == gateway_order_id)
@@ -116,5 +148,61 @@ async def handle_payment_captured(db: AsyncSession, *, gateway_order_id: str, ga
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id,
         message=f"Payment of Rs.{payment.amount} received. Your case is progressing.",
+    )
+    return payment
+
+
+async def get_payment_or_404(db: AsyncSession, payment_id: uuid.UUID) -> Payment:
+    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if payment is None:
+        raise NotFoundError("Payment not found")
+    return payment
+
+
+async def refund_payment(db: AsyncSession, *, payment: Payment, admin: User) -> Payment:
+    """Initiates a Razorpay refund for a captured payment. The refund is only
+    confirmed (status -> REFUNDED) once the `refund.processed` webhook lands —
+    this call just kicks it off. Deliberately does not touch case.status; see
+    docs/backlog.md for the open compliance question on whether a refund
+    should roll back the case workflow."""
+    if payment.status != PaymentStatus.PAID:
+        raise ConflictError(
+            f"Only a 'paid' payment can be refunded (current status: '{payment.status.value}')"
+        )
+
+    client = _razorpay_client()
+    client.payment.refund(payment.gateway_payment_id, {})
+
+    await audit_service.log_action(
+        db, user_id=admin.id, action="payment.refund_initiated",
+        entity_type="payment", entity_id=str(payment.id),
+    )
+    return payment
+
+
+async def handle_refund_processed(db: AsyncSession, *, gateway_payment_id: str) -> Payment:
+    result = await db.execute(
+        select(Payment).where(Payment.gateway_payment_id == gateway_payment_id)
+    )
+    payment = result.scalar_one_or_none()
+    if payment is None:
+        raise NotFoundError(f"No payment found for gateway payment {gateway_payment_id}")
+
+    if payment.status == PaymentStatus.REFUNDED:
+        return payment
+
+    payment.status = PaymentStatus.REFUNDED
+    payment.refunded_at = datetime.now(timezone.utc)
+
+    case = await case_service.get_case_or_404(db, payment.case_id)
+
+    await audit_service.log_action(
+        db, user_id=None, action="payment.refunded",
+        entity_type="payment", entity_id=str(payment.id),
+    )
+    await notification_service.notify(
+        db, user_id=case.junior_lawyer_id,
+        message=f"Your payment of Rs.{payment.amount} has been refunded.",
     )
     return payment

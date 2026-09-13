@@ -30,11 +30,14 @@ class Payment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     case: Mapped["Case"] = relationship(back_populates="payments")
 
-    type: Mapped[PaymentType] = mapped_column(Enum(PaymentType, name="payment_type"))
+    type: Mapped[PaymentType] = mapped_column(
+        Enum(PaymentType, name="payment_type", values_callable=lambda e: [m.value for m in e])
+    )
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="INR")
     status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, name="payment_status"), default=PaymentStatus.PENDING
+        Enum(PaymentStatus, name="payment_status", values_callable=lambda e: [m.value for m in e]),
+        default=PaymentStatus.PENDING,
     )
 
     gateway: Mapped[str] = mapped_column(String(50), default="razorpay")
@@ -43,3 +46,4 @@ class Payment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     gateway_signature: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     paid_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refunded_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
