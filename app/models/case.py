@@ -37,7 +37,8 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[CaseStatus] = mapped_column(
-        Enum(CaseStatus, name="case_status"), default=CaseStatus.SUBMITTED, index=True
+        Enum(CaseStatus, name="case_status", values_callable=lambda e: [m.value for m in e]),
+        default=CaseStatus.SUBMITTED, index=True,
     )
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     revision_count: Mapped[int] = mapped_column(Integer, default=0)

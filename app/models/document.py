@@ -23,7 +23,9 @@ class CaseDocument(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     case: Mapped["Case"] = relationship(back_populates="documents")
 
-    type: Mapped[DocumentType] = mapped_column(Enum(DocumentType, name="document_type"))
+    type: Mapped[DocumentType] = mapped_column(
+        Enum(DocumentType, name="document_type", values_callable=lambda e: [m.value for m in e])
+    )
     version: Mapped[int] = mapped_column(Integer, default=1)
     storage_key: Mapped[str] = mapped_column(String(500), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)

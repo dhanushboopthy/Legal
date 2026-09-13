@@ -21,5 +21,6 @@ class RevisionRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     requested_by: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[RevisionStatus] = mapped_column(
-        Enum(RevisionStatus, name="revision_status"), default=RevisionStatus.PENDING
+        Enum(RevisionStatus, name="revision_status", values_callable=lambda e: [m.value for m in e]),
+        default=RevisionStatus.PENDING,
     )
