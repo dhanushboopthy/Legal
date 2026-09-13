@@ -20,6 +20,7 @@ CASE_APPROVE_FINAL = "case:approve_final"
 PAYMENT_INITIATE = "payment:initiate"
 PAYMENT_VIEW_OWN = "payment:view_own"
 PAYMENT_VIEW_ALL = "payment:view_all"
+PAYMENT_REFUND = "payment:refund"
 
 USER_MANAGE = "user:manage"          # approve new junior lawyers, deactivate, etc.
 AUDIT_VIEW = "audit:view"
@@ -28,7 +29,7 @@ AUDIT_VIEW = "audit:view"
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "super_admin": {
         CASE_VIEW_ALL, CASE_REVIEW, CASE_DECIDE, CASE_DRAFT,
-        PAYMENT_VIEW_ALL, USER_MANAGE, AUDIT_VIEW,
+        PAYMENT_VIEW_ALL, PAYMENT_REFUND, USER_MANAGE, AUDIT_VIEW,
     },
     "junior_lawyer": {
         CASE_SUBMIT, CASE_VIEW_OWN, CASE_REQUEST_REVISION, CASE_APPROVE_FINAL,

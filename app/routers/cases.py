@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +11,9 @@ from app.core.permissions import (
     CASE_REQUEST_REVISION,
     CASE_SUBMIT,
     CASE_VIEW_ALL,
+    PAYMENT_INITIATE,
 )
+from app.core.rate_limit import limiter
 from app.database import get_db
 from app.dependencies import get_current_user, require_permission
 from app.models.case import Case
@@ -59,8 +61,11 @@ async def get_case(
 
 @router.post(
     "/{case_id}/review-payment", response_model=PaymentOrderResponse,
+    dependencies=[Depends(require_permission(PAYMENT_INITIATE))],
 )
+@limiter.limit("10/minute")
 async def create_review_payment(
+    request: Request,
     case_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -77,8 +82,11 @@ async def create_review_payment(
 
 @router.post(
     "/{case_id}/drafting-payment", response_model=PaymentOrderResponse,
+    dependencies=[Depends(require_permission(PAYMENT_INITIATE))],
 )
+@limiter.limit("10/minute")
 async def create_drafting_payment(
+    request: Request,
     case_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -113,9 +121,15 @@ async def decide_case(
 
 
 @router.post(
-    "/{case_id}/revision", dependencies=[Depends(require_permission(CASE_REQUEST_REVISION))],
+    "/{case_id}/revision",
+    dependencies=[
+        Depends(require_permission(CASE_REQUEST_REVISION)),
+        Depends(require_permission(PAYMENT_INITIATE)),
+    ],
 )
+@limiter.limit("10/minute")
 async def request_revision(
+    request: Request,
     case_id: uuid.UUID,
     payload: RevisionCreate,
     current_user: User = Depends(get_current_user),

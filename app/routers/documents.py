@@ -1,8 +1,10 @@
 import uuid
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenError
+from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.permissions import CASE_DRAFT
 from app.database import get_db
 from app.dependencies import get_current_user, require_permission
@@ -11,7 +13,6 @@ from app.models.user import User
 from app.schemas.document import ConfirmUploadRequest, DocumentOut, UploadUrlRequest, UploadUrlResponse
 from app.services import audit_service, case_service, storage_service
 from app.config import settings
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -81,12 +82,9 @@ async def get_download_url(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from sqlalchemy import select
-
     result = await db.execute(select(CaseDocument).where(CaseDocument.id == document_id))
     document = result.scalar_one_or_none()
     if document is None:
-        from app.core.exceptions import NotFoundError
         raise NotFoundError("Document not found")
 
     case = await case_service.get_case_or_404(db, document.case_id)
