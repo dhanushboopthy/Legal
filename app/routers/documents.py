@@ -76,6 +76,17 @@ async def confirm_upload(
     return doc
 
 
+@router.get("/case/{case_id}", response_model=list[DocumentOut])
+async def list_case_documents(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    return case.documents
+
+
 @router.get("/{document_id}/download-url")
 async def get_download_url(
     document_id: uuid.UUID,
