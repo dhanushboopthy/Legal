@@ -32,5 +32,25 @@ services:
     ports:
       - "6379:6379"
 
+  bff:
+    build: ./frontend/bff
+    environment:
+      BACKEND_URL: http://api:8000
+      PORT: "4000"
+      NODE_ENV: production
+      REFRESH_TOKEN_EXPIRE_DAYS: "7"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  web:
+    build: ./frontend/web
+    ports:
+      - "3000:80"
+    depends_on:
+      - bff
+      - api
+    restart: unless-stopped
+
 volumes:
   pgdata:
