@@ -1,0 +1,79 @@
+import request from 'supertest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import * as backendClient from '../backend-client.js'
+import { app } from '../server.js'
+
+vi.mock('../backend-client.js', async () => {
+  const actual = await vi.importActual<typeof backendClient>('../backend-client.js')
+  return { ...actual, login: vi.fn(), refresh: vi.fn(), getMe: vi.fn() }
+})
+
+describe('POST /login', () => {
+  beforeEach(() => {
+    vi.mocked(backendClient.login).mockReset()
+    vi.mocked(backendClient.getMe).mockReset()
+  })
+
+  it('sets an httpOnly refresh cookie and returns the access token + user', async () => {
+    vi.mocked(backendClient.login).mockResolvedValue({
+      access_token: 'access-1',
+      refresh_token: 'refresh-1',
+      token_type: 'bearer',
+    })
+    vi.mocked(backendClient.getMe).mockResolvedValue({
+      id: 'u1',
+      full_name: 'Jane Lawyer',
+      email: 'jane@example.com',
+      phone: null,
+      bar_council_id: null,
+      role_name: 'junior_lawyer',
+      is_active: true,
+      is_verified: true,
+    })
+
+    const res = await request(app).post('/login').send({ email: 'jane@example.com', password: 'x' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.access_token).toBe('access-1')
+    expect(res.body.user.email).toBe('jane@example.com')
+
+    const setCookie = res.headers['set-cookie']?.[0] ?? ''
+    expect(setCookie).toContain('refresh_token=refresh-1')
+    expect(setCookie.toLowerCase()).toContain('httponly')
+    // Refresh token itself never appears outside the cookie.
+    expect(res.text).not.toContain('refresh-1')
+  })
+
+  it('rejects a request missing credentials', async () => {
+    const res = await request(app).post('/login').send({ email: 'jane@example.com' })
+    expect(res.status).toBe(400)
+    expect(backendClient.login).not.toHaveBeenCalled()
+  })
+
+  it('propagates a 401 from the backend without leaking internals', async () => {
+    vi.mocked(backendClient.login).mockRejectedValue(
+      new backendClient.BackendError(401, 'Incorrect email or password'),
+    )
+
+    const res = await request(app).post('/login').send({ email: 'jane@example.com', password: 'wrong' })
+    expect(res.status).toBe(401)
+    expect(res.body.detail).toBe('Incorrect email or password')
+  })
+})
+
+describe('POST /refresh', () => {
+  it('returns 401 when there is no refresh cookie', async () => {
+    const res = await request(app).post('/refresh')
+    expect(res.status).toBe(401)
+  })
+})
+
+describe('POST /logout', () => {
+  it('clears the refresh cookie', async () => {
+    const res = await request(app).post('/logout')
+    expect(res.status).toBe(204)
+    const setCookie = res.headers['set-cookie']?.[0] ?? ''
+    expect(setCookie).toContain('refresh_token=;')
+  })
+})
