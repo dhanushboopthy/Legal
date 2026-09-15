@@ -43,6 +43,14 @@ export async function login(email: string, password: string): Promise<TokenPair>
   })
 }
 
+export async function loginWithGoogle(idToken: string): Promise<TokenPair> {
+  return backendFetch<TokenPair>('/auth/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token: idToken }),
+  })
+}
+
 export async function refresh(refreshToken: string): Promise<TokenPair> {
   return backendFetch<TokenPair>('/auth/refresh', {
     method: 'POST',

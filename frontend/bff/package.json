@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
@@ -22,6 +24,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.3",
     "@types/supertest": "^6.0.2",
+    "prettier": "^3.9.6",
     "supertest": "^7.1.0",
     "tsx": "^4.19.2",
     "typescript": "~5.9.0",

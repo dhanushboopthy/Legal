@@ -6,7 +6,13 @@ import { app } from '../server.js'
 
 vi.mock('../backend-client.js', async () => {
   const actual = await vi.importActual<typeof backendClient>('../backend-client.js')
-  return { ...actual, login: vi.fn(), refresh: vi.fn(), getMe: vi.fn() }
+  return {
+    ...actual,
+    login: vi.fn(),
+    loginWithGoogle: vi.fn(),
+    refresh: vi.fn(),
+    getMe: vi.fn(),
+  }
 })
 
 describe('POST /login', () => {
@@ -56,9 +62,59 @@ describe('POST /login', () => {
       new backendClient.BackendError(401, 'Incorrect email or password'),
     )
 
-    const res = await request(app).post('/login').send({ email: 'jane@example.com', password: 'wrong' })
+    const res = await request(app)
+      .post('/login')
+      .send({ email: 'jane@example.com', password: 'wrong' })
     expect(res.status).toBe(401)
     expect(res.body.detail).toBe('Incorrect email or password')
+  })
+})
+
+describe('POST /login/google', () => {
+  beforeEach(() => {
+    vi.mocked(backendClient.loginWithGoogle).mockReset()
+    vi.mocked(backendClient.getMe).mockReset()
+  })
+
+  it('sets the refresh cookie and returns the access token + user', async () => {
+    vi.mocked(backendClient.loginWithGoogle).mockResolvedValue({
+      access_token: 'access-g',
+      refresh_token: 'refresh-g',
+      token_type: 'bearer',
+    })
+    vi.mocked(backendClient.getMe).mockResolvedValue({
+      id: 'u2',
+      full_name: 'Googler',
+      email: 'googler@example.com',
+      phone: null,
+      bar_council_id: null,
+      role_name: 'junior_lawyer',
+      is_active: true,
+      is_verified: true,
+    })
+
+    const res = await request(app).post('/login/google').send({ id_token: 'raw-google-jwt' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.access_token).toBe('access-g')
+    expect(backendClient.loginWithGoogle).toHaveBeenCalledWith('raw-google-jwt')
+    const setCookie = res.headers['set-cookie']?.[0] ?? ''
+    expect(setCookie).toContain('refresh_token=refresh-g')
+  })
+
+  it('rejects a request missing id_token', async () => {
+    const res = await request(app).post('/login/google').send({})
+    expect(res.status).toBe(400)
+    expect(backendClient.loginWithGoogle).not.toHaveBeenCalled()
+  })
+
+  it('propagates a 401 from the backend', async () => {
+    vi.mocked(backendClient.loginWithGoogle).mockRejectedValue(
+      new backendClient.BackendError(401, 'Invalid Google credential'),
+    )
+    const res = await request(app).post('/login/google').send({ id_token: 'bad' })
+    expect(res.status).toBe(401)
+    expect(res.body.detail).toBe('Invalid Google credential')
   })
 })
 
