@@ -34,7 +34,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 _TABLES_TO_CLEAN = (
     "audit_logs", "notifications", "revision_requests",
-    "payments", "case_documents", "cases", "users",
+    "payments", "case_documents", "cases", "email_otps", "users",
 )
 
 

@@ -14,7 +14,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Null for Google-only accounts (see google_sub) — they have no password.
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Google's stable per-user id ("sub" claim). Set on Google sign-in/link.
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     bar_council_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
