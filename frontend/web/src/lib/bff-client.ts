@@ -20,6 +20,11 @@ export async function bffLogin(email: string, password: string): Promise<LoginRe
   return data
 }
 
+export async function bffLoginWithGoogle(idToken: string): Promise<LoginResponse> {
+  const { data } = await bffClient.post<LoginResponse>('/login/google', { id_token: idToken })
+  return data
+}
+
 export async function bffRefresh(): Promise<LoginResponse> {
   const { data } = await bffClient.post<LoginResponse>('/refresh')
   return data

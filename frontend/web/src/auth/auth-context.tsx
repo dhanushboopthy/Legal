@@ -6,6 +6,7 @@ export interface AuthContextValue {
   user: UserOut | null
   status: 'loading' | 'authenticated' | 'unauthenticated'
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: (idToken: string) => Promise<void>
   logout: () => Promise<void>
 }
 

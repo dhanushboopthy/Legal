@@ -138,7 +138,7 @@ function DocumentRow({ filename, documentId }: { filename: string; documentId: s
           toast({ variant: 'error', title: 'Could not get download link' })
         }
       }}
-      className="flex w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 text-left text-[13px] transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+      className="flex w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 text-left text-[13px] transition-colors hover:bg-black/[0.02]"
     >
       <FileText className="size-4 text-[var(--fg-muted)]" />
       <span className="flex-1 truncate">{filename}</span>

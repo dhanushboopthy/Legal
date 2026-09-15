@@ -51,7 +51,7 @@ export function DraftUploadPanel({
         type="button"
         disabled={isPending}
         onClick={() => inputRef.current?.click()}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-control)] border border-dashed border-[var(--border)] px-4 py-3 text-left text-sm transition-colors hover:bg-black/[0.02] disabled:opacity-50 dark:hover:bg-white/[0.04]"
+        className="flex w-full items-center gap-3 rounded-[var(--radius-control)] border border-dashed border-[var(--border)] px-4 py-3 text-left text-sm transition-colors hover:bg-black/[0.02] disabled:opacity-50"
       >
         <UploadCloud className="size-4 text-[var(--fg-muted)]" />
         {isPending ? 'Uploading…' : 'Choose a PDF to upload'}

@@ -7,8 +7,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { useAuth } from '@/auth/auth-context'
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { Button } from '@/components/ui/button'
 import { FieldError, Input, Label } from '@/components/ui/input'
+import { isGoogleSignInConfigured } from '@/hooks/use-google-identity'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -17,10 +19,11 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
+  const [googlePending, setGooglePending] = useState(false)
 
   const {
     register,
@@ -28,20 +31,38 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
+  const goToDestination = () => {
+    const from = (location.state as { from?: Location })?.from
+    navigate(from?.pathname ?? '/', { replace: true })
+  }
+
+  const describeError = (err: unknown): string => {
+    if (isAxiosError(err) && typeof err.response?.data?.detail === 'string') {
+      return err.response.data.detail
+    }
+    return 'Something went wrong. Please try again.'
+  }
+
   const onSubmit = async (values: FormValues) => {
     setError(null)
     try {
       await login(values.email, values.password)
-      const from = (location.state as { from?: Location })?.from
-      navigate(from?.pathname ?? '/', { replace: true })
+      goToDestination()
     } catch (err) {
-      if (isAxiosError(err) && err.response?.status === 403) {
-        setError('Your account is pending admin approval.')
-      } else if (isAxiosError(err) && err.response?.status === 401) {
-        setError('Incorrect email or password.')
-      } else {
-        setError('Something went wrong. Please try again.')
-      }
+      setError(describeError(err))
+    }
+  }
+
+  const onGoogleCredential = async (idToken: string) => {
+    setError(null)
+    setGooglePending(true)
+    try {
+      await loginWithGoogle(idToken)
+      goToDestination()
+    } catch (err) {
+      setError(describeError(err))
+    } finally {
+      setGooglePending(false)
     }
   }
 
@@ -55,6 +76,23 @@ export function LoginPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-muted text-sm">Sign in to your case-filing account</p>
         </div>
+
+        {isGoogleSignInConfigured && (
+          <>
+            <div className="mb-5">
+              <GoogleSignInButton onCredential={onGoogleCredential} onError={setError} />
+              {googlePending && (
+                <p className="text-muted mt-2 text-center text-[13px]">Signing in…</p>
+              )}
+            </div>
+
+            <div className="mb-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[var(--border)]" />
+              <span className="text-muted text-[12px]">or</span>
+              <div className="h-px flex-1 bg-[var(--border)]" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>

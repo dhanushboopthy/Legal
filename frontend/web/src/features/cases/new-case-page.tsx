@@ -103,7 +103,7 @@ export function NewCasePage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center gap-3 rounded-[var(--radius-control)] border border-dashed border-[var(--border)] px-4 py-3 text-left text-sm transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+              className="flex w-full items-center gap-3 rounded-[var(--radius-control)] border border-dashed border-[var(--border)] px-4 py-3 text-left text-sm transition-colors hover:bg-black/[0.02]"
             >
               <UploadCloud className="size-4 text-[var(--fg-muted)]" />
               {file ? file.name : 'Upload PDF (you can also add this later)'}

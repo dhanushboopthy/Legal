@@ -45,7 +45,7 @@ export function AppShell() {
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex size-9 items-center justify-center rounded-full bg-black/[0.05] text-sm font-medium transition-colors hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]">
+                <button className="flex size-9 items-center justify-center rounded-full bg-black/[0.05] text-sm font-medium transition-colors hover:bg-black/[0.08]">
                   {user?.full_name.charAt(0).toUpperCase()}
                 </button>
               </DropdownMenuTrigger>

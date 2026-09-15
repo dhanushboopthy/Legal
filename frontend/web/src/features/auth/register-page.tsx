@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FieldError, Input, Label } from '@/components/ui/input'
+import { OtpStep } from '@/features/auth/otp-step'
 import { register as registerAccount } from '@/lib/api/auth'
 
 const schema = z.object({
@@ -20,9 +21,12 @@ const schema = z.object({
 })
 type FormValues = z.infer<typeof schema>
 
+type Step = 'form' | 'otp' | 'done'
+
 export function RegisterPage() {
   const navigate = useNavigate()
-  const [submitted, setSubmitted] = useState(false)
+  const [step, setStep] = useState<Step>('form')
+  const [registeredEmail, setRegisteredEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -35,7 +39,8 @@ export function RegisterPage() {
     setError(null)
     try {
       await registerAccount(values)
-      setSubmitted(true)
+      setRegisteredEmail(values.email)
+      setStep('otp')
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 422) {
         setError(err.response.data?.detail ?? 'An account with this email already exists.')
@@ -45,15 +50,19 @@ export function RegisterPage() {
     }
   }
 
-  if (submitted) {
+  if (step === 'otp') {
+    return <OtpStep email={registeredEmail} onVerified={() => setStep('done')} />
+  }
+
+  if (step === 'done') {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <Card className="max-w-sm text-center">
           <CheckCircle2 className="mx-auto mb-4 size-10 text-[var(--color-success)]" />
-          <h1 className="mb-2 text-lg font-semibold">Registration received</h1>
+          <h1 className="mb-2 text-lg font-semibold">Email verified</h1>
           <p className="text-muted mb-6 text-sm">
-            An admin needs to approve your account before you can sign in. You'll be notified once
-            that happens.
+            An admin still needs to approve your account before you can sign in. You'll be notified
+            once that happens.
           </p>
           <Button className="w-full" onClick={() => navigate('/login')}>
             Back to sign in

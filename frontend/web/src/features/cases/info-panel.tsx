@@ -15,7 +15,7 @@ export function InfoPanel({
   tone?: 'neutral' | 'success' | 'danger'
 }) {
   const toneClass = {
-    neutral: 'bg-black/[0.04] text-[var(--fg-muted)] dark:bg-white/[0.06]',
+    neutral: 'bg-black/[0.04] text-[var(--fg-muted)]',
     success: 'bg-[var(--color-success)]/10 text-[var(--color-success)]',
     danger: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]',
   }[tone]

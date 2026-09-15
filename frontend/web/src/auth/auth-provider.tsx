@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { AuthContext, type AuthContextValue } from '@/auth/auth-context'
-import { bffLogin, bffLogout, bffRefresh } from '@/lib/bff-client'
+import { bffLogin, bffLoginWithGoogle, bffLogout, bffRefresh } from '@/lib/bff-client'
 import { setSessionExpiredHandler } from '@/lib/api-client'
 import { setAccessToken } from '@/lib/token-store'
 import type { UserOut } from '@/types/api'
@@ -42,6 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated')
   }, [])
 
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const res = await bffLoginWithGoogle(idToken)
+    setAccessToken(res.access_token)
+    setUser(res.user)
+    setStatus('authenticated')
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await bffLogout()
@@ -51,8 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, login, logout }),
-    [user, status, login, logout],
+    () => ({ user, status, login, loginWithGoogle, logout }),
+    [user, status, login, loginWithGoogle, logout],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

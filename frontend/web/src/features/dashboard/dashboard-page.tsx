@@ -75,7 +75,7 @@ export function DashboardPage() {
               'rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ' +
               (i === filterIndex
                 ? 'bg-[var(--color-accent)] text-white'
-                : 'bg-black/[0.04] text-[var(--fg-muted)] hover:bg-black/[0.07] dark:bg-white/[0.06] dark:hover:bg-white/[0.1]')
+                : 'bg-black/[0.04] text-[var(--fg-muted)] hover:bg-black/[0.07]')
             }
           >
             {f.label}

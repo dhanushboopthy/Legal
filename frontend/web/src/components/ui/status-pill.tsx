@@ -46,7 +46,7 @@ const PAYMENT_STATUS_TONE: Record<PaymentStatus, Tone> = {
 type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
 const TONE_CLASSES: Record<Tone, string> = {
-  neutral: 'bg-black/[0.06] text-[var(--fg-muted)] dark:bg-white/[0.08]',
+  neutral: 'bg-black/[0.06] text-[var(--fg-muted)]',
   info: 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]',
   success: 'bg-[var(--color-success)]/10 text-[var(--color-success)]',
   warning: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',

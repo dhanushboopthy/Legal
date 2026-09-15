@@ -36,7 +36,7 @@ export function DialogContent({
               </RadixDialog.Description>
             )}
           </div>
-          <RadixDialog.Close className="rounded-full p-1.5 text-[var(--fg-muted)] transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
+          <RadixDialog.Close className="rounded-full p-1.5 text-[var(--fg-muted)] transition-colors hover:bg-black/[0.05]">
             <X className="size-4" />
           </RadixDialog.Close>
         </div>

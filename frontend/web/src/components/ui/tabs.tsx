@@ -8,10 +8,7 @@ export const Tabs = RadixTabs.Root
 export function TabsList({ className, ...props }: ComponentProps<typeof RadixTabs.List>) {
   return (
     <RadixTabs.List
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-black/[0.04] p-1 dark:bg-white/[0.06]',
-        className,
-      )}
+      className={cn('inline-flex items-center gap-1 rounded-full bg-black/[0.04] p-1', className)}
       {...props}
     />
   )

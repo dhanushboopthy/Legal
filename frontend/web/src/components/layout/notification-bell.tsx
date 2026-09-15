@@ -24,7 +24,7 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="relative flex size-9 items-center justify-center rounded-full transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+          className="relative flex size-9 items-center justify-center rounded-full transition-colors hover:bg-black/[0.05]"
           aria-label="Notifications"
         >
           <Bell className="size-[18px]" strokeWidth={1.75} />
