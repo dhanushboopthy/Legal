@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Clock, Download, FileText, Hourglass, XCircle } from 'lucide-react'
 import { useState } from 'react'
+import { isAxiosError } from 'axios'
 import { useParams } from 'react-router-dom'
 
 import { useAuth } from '@/auth/auth-context'
@@ -8,6 +9,9 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CaseStatusPill, PaymentStatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast-context'
+import { ForbiddenPage } from '@/features/errors/forbidden-page'
+import { NotFoundPage } from '@/features/errors/not-found-page'
+import { ServerErrorPage } from '@/features/errors/server-error-page'
 import { DecisionPanel } from '@/features/cases/decision-panel'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
 import { DraftUploadPanel } from '@/features/cases/draft-upload-panel'
@@ -31,7 +35,12 @@ export function CaseDetailPage() {
 
   const caseId = id!
 
-  const { data: caseData, isLoading } = useQuery({
+  const {
+    data: caseData,
+    isLoading,
+    error: caseError,
+    refetch: refetchCase,
+  } = useQuery({
     queryKey: ['case', caseId],
     queryFn: () => getCase(caseId),
     refetchInterval: (query) => (query.state.data?.status === awaitingStatus ? 3000 : false),
@@ -55,6 +64,22 @@ export function CaseDetailPage() {
   }
 
   const originalDoc = documents?.find((d) => d.type === 'original')
+
+  if (caseError) {
+    const status = isAxiosError(caseError) ? caseError.response?.status : undefined
+    // A malformed id is a 422 from the API — same "no such case" to the user.
+    if (status === 404 || status === 422) {
+      return (
+        <NotFoundPage
+          inline
+          title="Case not found"
+          description="This case doesn't exist, or the link is wrong."
+        />
+      )
+    }
+    if (status === 403) return <ForbiddenPage inline />
+    return <ServerErrorPage inline onRetry={() => void refetchCase()} />
+  }
 
   if (isLoading || !caseData) {
     return (

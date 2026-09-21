@@ -36,6 +36,22 @@ export function LoginPage() {
     navigate(from?.pathname ?? '/', { replace: true })
   }
 
+  // Returns true if the error sent the user to a dedicated page (unverified
+  // email / pending approval), so the caller shouldn't also show it inline.
+  const redirectForAccountState = (err: unknown, email?: string): boolean => {
+    if (!isAxiosError(err) || err.response?.status !== 403) return false
+    const detail = String(err.response.data?.detail ?? '').toLowerCase()
+    if (detail.includes('verify your email') && email) {
+      navigate('/verify-email', { state: { email, resend: true } })
+      return true
+    }
+    if (detail.includes('pending')) {
+      navigate('/pending-approval', { state: { email } })
+      return true
+    }
+    return false
+  }
+
   const describeError = (err: unknown): string => {
     if (isAxiosError(err) && typeof err.response?.data?.detail === 'string') {
       return err.response.data.detail
@@ -49,7 +65,7 @@ export function LoginPage() {
       await login(values.email, values.password)
       goToDestination()
     } catch (err) {
-      setError(describeError(err))
+      if (!redirectForAccountState(err, values.email)) setError(describeError(err))
     }
   }
 
@@ -60,7 +76,7 @@ export function LoginPage() {
       await loginWithGoogle(idToken)
       goToDestination()
     } catch (err) {
-      setError(describeError(err))
+      if (!redirectForAccountState(err)) setError(describeError(err))
     } finally {
       setGooglePending(false)
     }

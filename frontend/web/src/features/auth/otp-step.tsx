@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios'
 import { MailCheck } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,12 +9,32 @@ import { resendOtp, verifyEmail } from '@/lib/api/auth'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
-export function OtpStep({ email, onVerified }: { email: string; onVerified: () => void }) {
+export function OtpStep({
+  email,
+  onVerified,
+  sendOnMount = false,
+}: {
+  email: string
+  onVerified: () => void
+  sendOnMount?: boolean
+}) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+
+  // Sign-in bounced an unverified account here, so any earlier code may be
+  // stale — issue a fresh one. The ref stops StrictMode's double effect run
+  // from sending two.
+  const sentOnMount = useRef(false)
+  useEffect(() => {
+    if (!sendOnMount || sentOnMount.current) return
+    sentOnMount.current = true
+    resendOtp(email)
+      .then(() => setCooldown(RESEND_COOLDOWN_SECONDS))
+      .catch(() => setError('Could not send a new code. Try "Resend code" below.'))
+  }, [sendOnMount, email])
 
   useEffect(() => {
     if (cooldown <= 0) return
