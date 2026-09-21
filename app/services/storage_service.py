@@ -12,7 +12,10 @@ def _s3_client():
         region_name=settings.aws_region,
         aws_access_key_id=settings.aws_access_key_id or None,
         aws_secret_access_key=settings.aws_secret_access_key or None,
-        config=Config(signature_version="s3v4"),
+        endpoint_url=settings.s3_endpoint_url or None,
+        # Self-hosted S3-compatible stores are addressed by host:port, so they
+        # need path-style (bucket in the URL path) — harmless for real AWS too.
+        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
     )
 
 

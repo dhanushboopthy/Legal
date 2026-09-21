@@ -9,6 +9,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      storage-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   db:
@@ -24,13 +26,53 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432"
 
   redis:
     image: redis:7-alpine
+
+  # Self-hosted S3-compatible document store. The browser PUTs/GETs directly
+  # against this via presigned URLs (the api only signs them), so only the S3
+  # port is published — the master/filer ports it also opens are
+  # unauthenticated admin interfaces and must stay on the internal network.
+  storage:
+    image: chrislusf/seaweedfs:4.47
+    command:
+      - server
+      - -dir=/data
+      # Default volume size is 30GB, which makes SeaweedFS refuse to allocate
+      # any volume on a smaller disk ("no free volumes left").
+      - -master.volumeSizeLimitMB=1024
+      - -s3
+      - -s3.allowedOrigins=${STORAGE_ALLOWED_ORIGINS:-http://localhost:3100}
+      - -s3.encryptVolumeData
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?set AWS_ACCESS_KEY_ID in .env}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?set AWS_SECRET_ACCESS_KEY in .env}
+    volumes:
+      - storagedata:/data
     ports:
-      - "6379:6379"
+      - "8333:8333"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf http://$$(hostname -i):9333/cluster/healthz && curl -s -o /dev/null http://127.0.0.1:8333/
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  storage-init:
+    image: chrislusf/seaweedfs:4.47
+    depends_on:
+      storage:
+        condition: service_healthy
+    environment:
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-legal-filing-documents}
+    entrypoint:
+      - sh
+      - -c
+      - echo "s3.bucket.create -name $$S3_BUCKET_NAME" | weed shell -master=storage:9333
+    restart: "no"
 
   bff:
     build: ./frontend/bff
@@ -57,3 +99,4 @@ services:
 
 volumes:
   pgdata:
+  storagedata:

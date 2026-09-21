@@ -16,8 +16,9 @@ The repo has two parts: the `app/` API (this file's main focus) and
 ## Stack
 
 **Backend**: FastAPI (async) + SQLAlchemy 2.0 (async, asyncpg) + PostgreSQL +
-Alembic + Razorpay (payments) + S3 (document storage) + Redis (rate limiting)
-+ JWT auth.
+Alembic + Razorpay (payments) + S3-compatible document storage (self-hosted
+SeaweedFS in docker-compose; any S3 API works) + Redis (rate limiting) + JWT
+auth.
 
 **Frontend**: Vite + React 19 + TypeScript SPA (`frontend/web`) + a Node/
 Express BFF (`frontend/bff`) that brokers login/refresh/logout so the

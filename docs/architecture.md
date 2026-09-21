@@ -16,7 +16,7 @@
    ┌───────────────►│  (this repo)         │        │  webhook events)  │
    │ HTTPS / REST    │                      │        └─────────────────┘
 ┌──┴───────────┐     │                      │        ┌─────────────────┐
-│ Advocate     │     │                      │◄──────►│   AWS S3          │
+│ Advocate     │     │                      │◄──────►│   S3-compatible   │
 │ (admin —     │     └──────────┬───────────┘        │ (case PDFs,       │
 │  reviews,    │                │                     │  drafts, finals)  │
 │  drafts)     │                │                     └─────────────────┘
@@ -29,7 +29,8 @@
 Two human actors — the junior lawyer and the advocate (admin) — interact with
 the same API under different permission sets (see `docs/low-level-design.md`
 §RBAC). Two external systems are integrated: Razorpay for payment collection
-and AWS S3 for document storage. PostgreSQL is the sole system of record;
+and an S3-compatible object store for document storage (self-hosted
+SeaweedFS via docker-compose by default; AWS S3 works unchanged). PostgreSQL is the sole system of record;
 there is no separate cache/read-store in v1 beyond Redis, which is used only
 for rate-limit counters.
 
@@ -40,7 +41,7 @@ for rate-limit counters.
 | **API** (FastAPI, this repo) | All business logic, RBAC enforcement, state machine, request validation | Stateless — horizontally scalable behind a load balancer |
 | **PostgreSQL** | Users, roles, cases, documents (metadata only), payments, audit log | Single primary in v1; see backlog for read-replica note |
 | **Redis** | Rate-limit counters (`slowapi`) | Not used for sessions or caching yet — see backlog |
-| **S3** | Binary storage for PDFs (original / draft / final) | API never proxies file bytes — see §4 |
+| **S3-compatible store** | Binary storage for PDFs (original / draft / final) | API never proxies file bytes — see §4 |
 | **Razorpay** | Payment collection, webhook-based confirmation | API never trusts client-reported payment success — see §4 |
 
 ## 3. Why these choices

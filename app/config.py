@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     aws_region: str = "ap-south-1"
     s3_bucket_name: str = ""
     s3_presigned_url_expire_seconds: int = 300
+    # Empty = real AWS S3. Otherwise the browser-reachable URL of an
+    # S3-compatible store (self-hosted SeaweedFS in docker-compose) — it is
+    # baked into presigned URLs, which the browser calls directly.
+    s3_endpoint_url: str = ""
 
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
