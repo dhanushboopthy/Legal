@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.case import CaseStatus
+from app.models.revision import RevisionStatus
 
 
 class CaseCreate(BaseModel):
@@ -11,6 +12,7 @@ class CaseCreate(BaseModel):
     case_type: str = Field(min_length=2, max_length=100)
     court: str | None = None
     description: str | None = None
+    note: str | None = Field(default=None, max_length=2000)
 
 
 class CaseDecision(BaseModel):
@@ -31,8 +33,18 @@ class CaseOut(BaseModel):
     case_type: str
     court: str | None
     description: str | None
+    note: str | None
     status: CaseStatus
     rejection_reason: str | None
     revision_count: int
     created_at: datetime
     updated_at: datetime
+
+
+class RevisionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    reason: str
+    status: RevisionStatus
+    created_at: datetime

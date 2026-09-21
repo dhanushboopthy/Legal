@@ -1,10 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import PAYMENT_REFUND, PAYMENT_VIEW_ALL
+from app.core.rate_limit import limiter
 from app.database import get_db
 from app.dependencies import get_current_user, require_permission
 from app.models.payment import Payment
@@ -48,6 +49,26 @@ async def refund_payment(
 ):
     payment = await payment_service.get_payment_or_404(db, payment_id)
     payment = await payment_service.refund_payment(db, payment=payment, admin=current_user)
+    await db.commit()
+    await db.refresh(payment)
+    return payment
+
+
+@router.post("/{payment_id}/reconcile", response_model=PaymentOut)
+@limiter.limit("10/minute")
+async def reconcile_payment(
+    request: Request,
+    payment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """"Check status": ask Razorpay what happened to this payment when the
+    webhook hasn't arrived. Safe to call any time; a captured payment is
+    processed exactly as the webhook would."""
+    payment = await payment_service.get_payment_or_404(db, payment_id)
+    case = await case_service.get_case_or_404(db, payment.case_id)
+    case_service.authorize_case_access(case, current_user)
+    payment = await payment_service.reconcile_payment(db, payment=payment)
     await db.commit()
     await db.refresh(payment)
     return payment

@@ -28,11 +28,6 @@ export async function createReviewPayment(caseId: string): Promise<PaymentOrderR
   return data
 }
 
-export async function createDraftingPayment(caseId: string): Promise<PaymentOrderResponse> {
-  const { data } = await apiClient.post<PaymentOrderResponse>(`/cases/${caseId}/drafting-payment`)
-  return data
-}
-
 export async function decideCase(
   caseId: string,
   payload: { accept: boolean; rejection_reason?: string },
@@ -41,21 +36,10 @@ export async function decideCase(
   return data
 }
 
-export type RequestRevisionResult =
-  { requiresPayment: false; case: CaseOut } | { requiresPayment: true; order: PaymentOrderResponse }
-
-export async function requestRevision(
-  caseId: string,
-  reason: string,
-): Promise<RequestRevisionResult> {
-  const { data } = await apiClient.post<CaseOut | PaymentOrderResponse>(
-    `/cases/${caseId}/revision`,
-    { reason },
-  )
-  if ('razorpay_order_id' in data) {
-    return { requiresPayment: true, order: data }
-  }
-  return { requiresPayment: false, case: data }
+// Free: the price of the draft already covers revisions.
+export async function requestRevision(caseId: string, reason: string): Promise<CaseOut> {
+  const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/revision`, { reason })
+  return data
 }
 
 export async function approveCase(caseId: string): Promise<CaseOut> {

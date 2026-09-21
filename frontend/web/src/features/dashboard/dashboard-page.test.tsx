@@ -20,6 +20,7 @@ const aCase = (over: Partial<CaseOut> = {}): CaseOut => ({
   case_type: 'Criminal',
   court: null,
   description: null,
+  note: null,
   status: 'review_fee_paid',
   rejection_reason: null,
   revision_count: 0,

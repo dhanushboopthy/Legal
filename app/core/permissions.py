@@ -16,6 +16,8 @@ CASE_DECIDE = "case:decide"          # accept / reject
 CASE_DRAFT = "case:draft"            # upload draft / final filing
 CASE_REQUEST_REVISION = "case:request_revision"
 CASE_APPROVE_FINAL = "case:approve_final"
+CASE_MESSAGE = "case:message"        # take part in a case's chat (besides its owner)
+QUOTE_CREATE = "quote:create"        # price a draft and send it to the junior
 
 PAYMENT_INITIATE = "payment:initiate"
 PAYMENT_VIEW_OWN = "payment:view_own"
@@ -28,7 +30,7 @@ AUDIT_VIEW = "audit:view"
 # --- default role -> permission sets (used for seeding) ------------------
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "super_admin": {
-        CASE_VIEW_ALL, CASE_REVIEW, CASE_DECIDE, CASE_DRAFT,
+        CASE_VIEW_ALL, CASE_REVIEW, CASE_DECIDE, CASE_DRAFT, CASE_MESSAGE, QUOTE_CREATE,
         PAYMENT_VIEW_ALL, PAYMENT_REFUND, USER_MANAGE, AUDIT_VIEW,
     },
     "junior_lawyer": {

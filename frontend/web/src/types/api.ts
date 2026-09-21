@@ -2,26 +2,21 @@
 // this app. Keep in sync with app/schemas/*.py and app/models/*.py.
 
 export type CaseStatus =
-  // 'draft', 'quoted' and 'delivered' belong to the new flow
-  // (docs/NEW_FLOW_SPEC.md); the API doesn't emit them until Phase 1.
   | 'draft'
-  | 'quoted'
-  | 'delivered'
   | 'submitted'
   | 'review_fee_paid'
-  | 'under_review'
   | 'rejected'
   | 'accepted'
-  | 'drafting_fee_paid'
-  | 'drafting'
-  | 'draft_delivered'
+  | 'quoted'
+  | 'delivered'
   | 'revision_requested'
-  | 'approved'
   | 'completed'
 
-export type PaymentType = 'review' | 'drafting' | 'revision'
+// 'drafting' and 'revision' are retired fixed fees; they only appear on old rows.
+export type PaymentType = 'review' | 'quote' | 'drafting' | 'revision'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
-export type DocumentType = 'original' | 'draft' | 'final'
+export type DocumentType = 'original' | 'supporting' | 'draft'
+export type QuoteStatus = 'open' | 'paid' | 'superseded' | 'refunded'
 
 export interface UserOut {
   id: string
@@ -48,6 +43,7 @@ export interface CaseOut {
   case_type: string
   court: string | null
   description: string | null
+  note: string | null
   status: CaseStatus
   rejection_reason: string | null
   revision_count: number
@@ -70,6 +66,7 @@ export interface PaymentOut {
   amount: number
   currency: string
   status: PaymentStatus
+  quote_id: string | null
   paid_at: string | null
 }
 
@@ -79,7 +76,33 @@ export interface DocumentOut {
   type: DocumentType
   version: number
   original_filename: string
+  size_bytes: number | null
+  content_type: string | null
+  page_count: number | null
   uploaded_by: string
+  created_at: string
+  // A draft the viewer can see but not open until the quote is paid.
+  locked: boolean
+}
+
+export interface QuoteOut {
+  id: string
+  case_id: string
+  version: number
+  amount_inr: number
+  amount_paise: number
+  currency: string
+  note: string | null
+  status: QuoteStatus
+  draft_document_id: string
+  created_at: string
+  paid_at: string | null
+}
+
+export interface RevisionOut {
+  id: string
+  reason: string
+  status: 'pending' | 'resolved'
   created_at: string
 }
 
@@ -92,6 +115,8 @@ export interface UploadUrlResponse {
 export interface NotificationOut {
   id: string
   message: string
+  case_id: string | null
+  kind: string | null
   is_read: boolean
   created_at: string
 }

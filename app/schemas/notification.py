@@ -9,5 +9,7 @@ class NotificationOut(BaseModel):
 
     id: uuid.UUID
     message: str
+    case_id: uuid.UUID | None = None
+    kind: str | None = None
     is_read: bool
     created_at: datetime

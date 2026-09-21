@@ -2,21 +2,17 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Download, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 
-import { useAuth } from '@/auth/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
-import { useRazorpayCheckout } from '@/hooks/use-razorpay'
 import { approveCase, requestRevision } from '@/lib/api/cases'
 import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
 
 export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChanged: () => void }) {
-  const { user } = useAuth()
   const { toast } = useToast()
-  const openCheckout = useRazorpayCheckout()
   const [reason, setReason] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -53,26 +49,15 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
 
   const revise = useMutation({
     mutationFn: () => requestRevision(caseId, reason),
-    onSuccess: async (result) => {
+    onSuccess: () => {
       setDialogOpen(false)
-      if (result.requiresPayment) {
-        await openCheckout({
-          order: result.order,
-          name: 'Advocate Filing',
-          description: 'Revision fee',
-          userEmail: user?.email,
-          userName: user?.full_name,
-          onSuccess: onChanged,
-        })
-      } else {
-        toast({ variant: 'success', title: 'Revision requested' })
-        onChanged()
-      }
+      toast({ variant: 'success', title: 'Changes requested' })
+      onChanged()
     },
     onError: (err) =>
       toast({
         variant: 'error',
-        title: 'Could not request revision',
+        title: 'Could not request changes',
         description: getErrorMessage(err),
       }),
   })
@@ -97,11 +82,11 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="secondary">
-              <RotateCcw className="size-4" /> Request revision
+              <RotateCcw className="size-4" /> Request changes
             </Button>
           </DialogTrigger>
           <DialogContent
-            title="Request a revision"
+            title="Request changes"
             description="Tell the advocate what needs to change."
           >
             <Label htmlFor="revision-reason">What needs to change?</Label>

@@ -15,10 +15,9 @@ import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
 import { DecisionPanel } from '@/features/cases/decision-panel'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
-import { DraftUploadPanel } from '@/features/cases/draft-upload-panel'
 import { InfoPanel } from '@/features/cases/info-panel'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
-import { createDraftingPayment, createReviewPayment, getCase } from '@/lib/api/cases'
+import { createReviewPayment, getCase } from '@/lib/api/cases'
 import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
 import { getErrorMessage } from '@/lib/errors'
 import { listPaymentsForCase } from '@/lib/api/payments'
@@ -215,7 +214,6 @@ function CaseActionPanel({
       )
 
     case 'review_fee_paid':
-    case 'under_review':
       return can(PERMISSIONS.CASE_DECIDE) ? (
         <DecisionPanel caseId={caseId} onDecided={onChanged} />
       ) : (
@@ -232,35 +230,21 @@ function CaseActionPanel({
         />
       )
 
+    // The draft-and-price, pay-to-unlock and new-version screens are built in
+    // phase 4 of the UX plan; until then these states show where the case is.
+    case 'draft':
     case 'accepted':
-      return can(PERMISSIONS.PAYMENT_INITIATE) ? (
-        <PaymentActionCard
-          createOrder={() => createDraftingPayment(caseId)}
-          title="Pay the drafting fee"
-          description="Your case was accepted — pay the drafting fee to begin."
-          onPaid={onChanged}
-        />
-      ) : (
-        waiting(Hourglass)
-      )
-
-    case 'drafting_fee_paid':
-    case 'drafting':
+    case 'quoted':
     case 'revision_requested':
-      return can(PERMISSIONS.CASE_DRAFT) ? (
-        <DraftUploadPanel caseId={caseId} onUploaded={onChanged} />
-      ) : (
-        waiting(Clock)
-      )
+      return waiting(Clock)
 
-    case 'draft_delivered':
+    case 'delivered':
       return can(PERMISSIONS.CASE_APPROVE_FINAL) ? (
         <DraftReviewPanel caseId={caseId} onChanged={onChanged} />
       ) : (
         waiting(Clock)
       )
 
-    case 'approved':
     case 'completed':
       return (
         <InfoPanel

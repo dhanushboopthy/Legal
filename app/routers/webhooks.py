@@ -29,6 +29,7 @@ async def razorpay_webhook(
         entity = payload["payload"]["payment"]["entity"]
         await payment_service.handle_payment_captured(
             db, gateway_order_id=entity["order_id"], gateway_payment_id=entity["id"],
+            amount_paise=entity["amount"], currency=entity.get("currency", "INR"),
         )
         await db.commit()
     elif event == "payment.failed":

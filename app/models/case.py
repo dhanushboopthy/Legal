@@ -10,16 +10,17 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class CaseStatus(str, enum.Enum):
-    SUBMITTED = "submitted"
-    REVIEW_FEE_PAID = "review_fee_paid"
-    UNDER_REVIEW = "under_review"
+    """The case lifecycle, in the order a case normally moves through it. The
+    allowed moves live in app.services.case_service.TRANSITIONS."""
+
+    DRAFT = "draft"                          # junior is still adding files; not visible to the advocate
+    SUBMITTED = "submitted"                  # awaiting the review fee
+    REVIEW_FEE_PAID = "review_fee_paid"      # advocate must decide
     REJECTED = "rejected"
-    ACCEPTED = "accepted"
-    DRAFTING_FEE_PAID = "drafting_fee_paid"
-    DRAFTING = "drafting"
-    DRAFT_DELIVERED = "draft_delivered"
+    ACCEPTED = "accepted"                    # advocate is preparing a draft and a price
+    QUOTED = "quoted"                        # draft sent, locked until the junior pays the quote
+    DELIVERED = "delivered"                  # quote paid, draft downloadable
     REVISION_REQUESTED = "revision_requested"
-    APPROVED = "approved"
     COMPLETED = "completed"
 
 
@@ -35,6 +36,7 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     case_type: Mapped[str] = mapped_column(String(100), nullable=False)
     court: Mapped[str | None] = mapped_column(String(150), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[CaseStatus] = mapped_column(
         Enum(CaseStatus, name="case_status", values_callable=lambda e: [m.value for m in e]),
@@ -48,4 +50,7 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     payments: Mapped[list["Payment"]] = relationship(
         back_populates="case", cascade="all, delete-orphan"
+    )
+    quotes: Mapped[list["Quote"]] = relationship(
+        back_populates="case", cascade="all, delete-orphan", order_by="Quote.version"
     )

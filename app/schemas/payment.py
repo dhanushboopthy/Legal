@@ -27,4 +27,5 @@ class PaymentOut(BaseModel):
     amount: float
     currency: str
     status: PaymentStatus
+    quote_id: uuid.UUID | None = None
     paid_at: datetime | None

@@ -11,6 +11,9 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
 class PaymentType(str, enum.Enum):
     REVIEW = "review"
+    QUOTE = "quote"
+    # Retired fixed fees. Kept only because Postgres cannot drop an enum value
+    # and old payment rows may still carry them; nothing creates these now.
     DRAFTING = "drafting"
     REVISION = "revision"
 
@@ -29,6 +32,11 @@ class Payment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         PG_UUID(as_uuid=True), ForeignKey("cases.id"), nullable=False
     )
     case: Mapped["Case"] = relationship(back_populates="payments")
+
+    # Set for type=quote: the quote this payment unlocks.
+    quote_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("quotes.id"), nullable=True, index=True
+    )
 
     type: Mapped[PaymentType] = mapped_column(
         Enum(PaymentType, name="payment_type", values_callable=lambda e: [m.value for m in e])

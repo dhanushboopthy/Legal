@@ -57,7 +57,7 @@ const completed: StatusMeta = {
 }
 
 export const STATUS_META: Record<CaseStatus, StatusMeta> = {
-  // --- new flow (docs/NEW_FLOW_SPEC.md §3); not emitted by the API yet ---
+  // --- docs/NEW_FLOW_SPEC.md §3 ---
   draft: {
     tone: 'neutral',
     group: 'active',
@@ -97,7 +97,6 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     },
   },
 
-  // --- statuses shared by the current and the new flow ---
   submitted: {
     tone: 'neutral',
     group: 'active',
@@ -123,20 +122,18 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     },
     reviewer: { label: 'Declined', turn: 'none', next: 'You declined this case.' },
   },
-  // Until Phase 1.2 replaces the drafting fee with a quote, "accepted" still
-  // means the lawyer owes the drafting fee.
   accepted: {
     tone: 'info',
     group: 'active',
     submitter: {
-      label: 'Accepted: pay drafting fee',
-      turn: 'you',
-      next: 'Your case was accepted. Pay the drafting fee to begin.',
+      label: 'Accepted',
+      turn: 'them',
+      next: 'The advocate will send you a draft and a price.',
     },
     reviewer: {
-      label: 'Waiting for drafting payment',
-      turn: 'them',
-      next: 'The lawyer needs to pay the drafting fee before you can begin drafting.',
+      label: 'Send draft and price',
+      turn: 'you',
+      next: 'Prepare the draft, then send it with its price.',
     },
   },
   revision_requested: {
@@ -154,44 +151,6 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     },
   },
   completed,
-
-  // --- legacy statuses, deleted with the old flow in Phase 1.2 ---
-  under_review: inReview,
-  drafting_fee_paid: {
-    tone: 'info',
-    group: 'active',
-    submitter: {
-      label: 'Drafting in progress',
-      turn: 'them',
-      next: 'The advocate is preparing your filing.',
-    },
-    reviewer: { label: 'Needs your draft', turn: 'you', next: 'Upload the draft for this case.' },
-  },
-  drafting: {
-    tone: 'info',
-    group: 'active',
-    submitter: {
-      label: 'Drafting in progress',
-      turn: 'them',
-      next: 'The advocate is preparing your filing.',
-    },
-    reviewer: { label: 'Needs your draft', turn: 'you', next: 'Upload the draft for this case.' },
-  },
-  draft_delivered: {
-    tone: 'warning',
-    group: 'active',
-    submitter: {
-      label: 'Draft ready to review',
-      turn: 'you',
-      next: 'Review the draft, then approve it or request changes.',
-    },
-    reviewer: {
-      label: 'Draft delivered',
-      turn: 'them',
-      next: 'Waiting for the lawyer to review the draft.',
-    },
-  },
-  approved: completed,
 }
 
 export function getStatusMeta(status: CaseStatus, perspective: Perspective) {

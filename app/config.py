@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # S3-compatible store (self-hosted SeaweedFS in docker-compose) — it is
     # baked into presigned URLs, which the browser calls directly.
     s3_endpoint_url: str = ""
+    # Address the api itself uses to read objects back (checking a draft is a
+    # real PDF, counting its pages). Inside docker that is the storage
+    # service, not the browser-facing URL above. Empty = same as the public one.
+    s3_internal_endpoint_url: str = ""
 
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
@@ -43,9 +47,11 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
 
     review_fee_inr: int = 100
-    drafting_fee_inr: int = 400
-    free_revisions: int = 1
-    revision_fee_inr: int = 150
+    # The advocate prices each case when sending the draft; the server clamps
+    # that price to this range (catches typos like 25 or 2500000).
+    quote_min_inr: int = 100
+    quote_max_inr: int = 100000
+    max_file_size_mb: int = 25
 
     @property
     def cors_origin_list(self) -> list[str]:

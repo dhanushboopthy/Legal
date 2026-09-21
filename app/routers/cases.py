@@ -12,17 +12,19 @@ from app.core.permissions import (
     CASE_SUBMIT,
     CASE_VIEW_ALL,
     PAYMENT_INITIATE,
+    QUOTE_CREATE,
 )
 from app.core.rate_limit import limiter
 from app.database import get_db
 from app.dependencies import get_current_user, require_permission
 from app.models.case import Case
+from app.models.revision import RevisionRequest
 from app.models.user import User
-from app.schemas.case import CaseCreate, CaseDecision, CaseOut, RevisionCreate
+from app.schemas.case import CaseCreate, CaseDecision, CaseOut, RevisionCreate, RevisionOut
+from app.schemas.document import DocumentOut
 from app.schemas.payment import PaymentOrderResponse
-from app.services import case_service, payment_service
-from app.config import settings
-from app.models.payment import PaymentType
+from app.schemas.quote import DraftUpload, QuoteCreate, QuoteOut
+from app.services import case_service, payment_service, quote_service
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -72,33 +74,9 @@ async def create_review_payment(
 ):
     case = await case_service.get_case_or_404(db, case_id)
     case_service.authorize_case_access(case, current_user)
-    payment, order = await payment_service.create_order(db, case=case, payment_type=PaymentType.REVIEW)
+    payment = await payment_service.create_review_order(db, case=case)
     await db.commit()
-    return PaymentOrderResponse(
-        payment_id=payment.id, razorpay_order_id=order["id"],
-        razorpay_key_id=settings.razorpay_key_id, amount_paise=order["amount"],
-    )
-
-
-@router.post(
-    "/{case_id}/drafting-payment", response_model=PaymentOrderResponse,
-    dependencies=[Depends(require_permission(PAYMENT_INITIATE))],
-)
-@limiter.limit("10/minute")
-async def create_drafting_payment(
-    request: Request,
-    case_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    case = await case_service.get_case_or_404(db, case_id)
-    case_service.authorize_case_access(case, current_user)
-    payment, order = await payment_service.create_order(db, case=case, payment_type=PaymentType.DRAFTING)
-    await db.commit()
-    return PaymentOrderResponse(
-        payment_id=payment.id, razorpay_order_id=order["id"],
-        razorpay_key_id=settings.razorpay_key_id, amount_paise=order["amount"],
-    )
+    return payment_service.order_response(payment)
 
 
 @router.patch(
@@ -121,11 +99,85 @@ async def decide_case(
 
 
 @router.post(
-    "/{case_id}/revision",
-    dependencies=[
-        Depends(require_permission(CASE_REQUEST_REVISION)),
-        Depends(require_permission(PAYMENT_INITIATE)),
-    ],
+    "/{case_id}/quote", response_model=QuoteOut, status_code=201,
+    dependencies=[Depends(require_permission(QUOTE_CREATE))],
+)
+async def send_quote(
+    case_id: uuid.UUID,
+    payload: QuoteCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send the draft and its price together. Also how a draft or price is
+    replaced while the quote is still unpaid."""
+    case = await case_service.get_case_or_404(db, case_id)
+    quote = await quote_service.send_quote(
+        db, case=case, admin=current_user,
+        storage_key=payload.draft.storage_key, filename=payload.draft.original_filename,
+        amount_inr=payload.amount_inr, note=payload.note,
+    )
+    await db.commit()
+    await db.refresh(quote)
+    return quote
+
+
+@router.get("/{case_id}/quote", response_model=QuoteOut)
+async def get_quote(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    return await quote_service.get_quote_or_404(db, case.id)
+
+
+@router.post(
+    "/{case_id}/quote/pay", response_model=PaymentOrderResponse,
+    dependencies=[Depends(require_permission(PAYMENT_INITIATE))],
+)
+@limiter.limit("10/minute")
+async def pay_quote(
+    request: Request,
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Start (or resume) payment of the open quote. The amount is read from the
+    quote, never from the request; repeated calls return the same order."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    quote = await quote_service.get_quote_or_404(db, case.id)
+    payment = await payment_service.create_quote_order(db, case=case, quote=quote)
+    await db.commit()
+    return payment_service.order_response(payment)
+
+
+@router.post(
+    "/{case_id}/drafts", response_model=DocumentOut, status_code=201,
+    dependencies=[Depends(require_permission(CASE_DRAFT))],
+)
+async def upload_revised_draft(
+    case_id: uuid.UUID,
+    payload: DraftUpload,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """A new draft version after the junior asked for changes. Already paid
+    for, so the case goes straight back to `delivered`."""
+    case = await case_service.get_case_or_404(db, case_id)
+    doc = await case_service.deliver_revised_draft(
+        db, case=case, admin=current_user,
+        storage_key=payload.storage_key, filename=payload.original_filename,
+    )
+    await db.commit()
+    await db.refresh(doc)
+    return DocumentOut.of(doc)
+
+
+@router.post(
+    "/{case_id}/revision", response_model=CaseOut,
+    dependencies=[Depends(require_permission(CASE_REQUEST_REVISION))],
 )
 @limiter.limit("10/minute")
 async def request_revision(
@@ -135,27 +187,32 @@ async def request_revision(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Ask for changes. Free; the reason is required and shown to the advocate."""
     case = await case_service.get_case_or_404(db, case_id)
     case_service.authorize_case_access(case, current_user)
-
-    case, requires_payment = await case_service.request_revision(
+    case = await case_service.request_revision(
         db, case=case, junior_lawyer=current_user, reason=payload.reason,
-        free_revisions=settings.free_revisions,
     )
-
-    if requires_payment:
-        payment, order = await payment_service.create_order(
-            db, case=case, payment_type=PaymentType.REVISION,
-        )
-        await db.commit()
-        return PaymentOrderResponse(
-            payment_id=payment.id, razorpay_order_id=order["id"],
-            razorpay_key_id=settings.razorpay_key_id, amount_paise=order["amount"],
-        )
-
     await db.commit()
     await db.refresh(case)
-    return CaseOut.model_validate(case)
+    return case
+
+
+@router.get("/{case_id}/revisions", response_model=list[RevisionOut])
+async def list_revisions(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """What changes were asked for. Until this existed the reason was stored but
+    nothing could read it (F-04)."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    result = await db.execute(
+        select(RevisionRequest).where(RevisionRequest.case_id == case.id)
+        .order_by(RevisionRequest.created_at)
+    )
+    return list(result.scalars().all())
 
 
 @router.post(

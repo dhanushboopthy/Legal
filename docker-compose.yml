@@ -4,6 +4,10 @@ services:
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      # Reads objects (draft validation) over the internal network; the
+      # browser-facing S3_ENDPOINT_URL in .env is only for signing URLs.
+      S3_INTERNAL_ENDPOINT_URL: http://storage:8333
     depends_on:
       db:
         condition: service_healthy

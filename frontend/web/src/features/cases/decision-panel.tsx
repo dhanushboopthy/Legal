@@ -20,7 +20,7 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
         variant: 'success',
         title: accept ? 'Case accepted' : 'Case rejected',
         description: accept
-          ? 'The junior lawyer can now pay the drafting fee.'
+          ? 'The lawyer has been told you will send a draft and a price.'
           : 'The junior lawyer has been notified.',
       })
       onDecided()
@@ -37,7 +37,7 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
     <Card>
       <h3 className="mb-1 font-semibold">Review this case</h3>
       <p className="text-muted mb-4 text-sm">
-        Accept to request the drafting fee, or reject with a reason.
+        Accept to take this case on, or reject it with a reason.
       </p>
 
       {showReject && (
