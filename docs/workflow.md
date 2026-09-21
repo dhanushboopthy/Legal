@@ -1,5 +1,10 @@
 # Workflow
 
+> **Being replaced.** `docs/NEW_FLOW_SPEC.md` (quote after draft, case chat,
+> multi-file upload) wins wherever it disagrees with this file. This page
+> describes the flow as currently built and gets rewritten in Phase 6 of
+> `docs/UX_REDESIGN_PLAN.md`.
+
 The business-facing view of the case-filing journey — see
 `docs/low-level-design.md` §3 for the exact technical state machine this
 implements.

@@ -152,3 +152,12 @@ the existing pattern in that file rather than autogenerating blind.
 - The review/drafting fee split between a senior and junior advocate has an
   open compliance question under the Bar Council of India rules — flagged in
   docs/backlog.md, not resolved in code.
+
+## UX work
+
+- Before any UI change, read `.claude/skills/ux-principles` and `design-system`.
+- The product flow is defined in `docs/NEW_FLOW_SPEC.md`. The plan is `docs/UX_REDESIGN_PLAN.md`. Do not skip phases.
+- Gate UI by permissions from `/users/me`, never by `role_name`.
+- Every screen designs loading, empty, error and success states.
+- Money is always visible before any pay action. Amounts come from the server.
+- Download access is enforced on the server, never only in the UI.
