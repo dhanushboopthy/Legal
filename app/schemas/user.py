@@ -12,6 +12,9 @@ class UserOut(BaseModel):
     phone: str | None
     bar_council_id: str | None
     role_name: str
+    # The role's current permission names, so the UI can gate by capability
+    # ("can submit a case") instead of hard-coding role names.
+    permissions: list[str]
     is_active: bool
     is_verified: bool
 
@@ -25,6 +28,7 @@ class UserOut(BaseModel):
             phone=user.phone,
             bar_council_id=user.bar_council_id,
             role_name=user.role.name,
+            permissions=sorted(user.role.permissions or []),
             is_active=user.is_active,
             is_verified=user.is_verified,
         )

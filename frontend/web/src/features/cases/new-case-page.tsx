@@ -11,6 +11,7 @@ import { FieldError, Input, Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast-context'
 import { createCase } from '@/lib/api/cases'
 import { uploadCaseDocument } from '@/lib/api/documents'
+import { getErrorMessage } from '@/lib/errors'
 
 const schema = z.object({
   title: z.string().min(3, 'At least 3 characters').max(255),
@@ -46,8 +47,12 @@ export function NewCasePage() {
         description: 'Pay the review fee to send it for review.',
       })
       navigate(`/cases/${created.id}`)
-    } catch {
-      toast({ variant: 'error', title: 'Could not submit case', description: 'Please try again.' })
+    } catch (err) {
+      toast({
+        variant: 'error',
+        title: 'Could not submit case',
+        description: getErrorMessage(err),
+      })
     } finally {
       setSubmitting(false)
     }

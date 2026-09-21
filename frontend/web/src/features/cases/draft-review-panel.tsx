@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast-context'
+import { getErrorMessage } from '@/lib/errors'
 import { useRazorpayCheckout } from '@/hooks/use-razorpay'
 import { approveCase, requestRevision } from '@/lib/api/cases'
 import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
@@ -28,7 +29,12 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
   const download = useMutation({
     mutationFn: () => getDownloadUrl(latestDraft!.id),
     onSuccess: (url) => window.open(url, '_blank'),
-    onError: () => toast({ variant: 'error', title: 'Could not get download link' }),
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not get download link',
+        description: getErrorMessage(err),
+      }),
   })
 
   const approve = useMutation({
@@ -37,7 +43,12 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
       toast({ variant: 'success', title: 'Case approved', description: 'Your filing is complete.' })
       onChanged()
     },
-    onError: () => toast({ variant: 'error', title: 'Could not approve case' }),
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not approve case',
+        description: getErrorMessage(err),
+      }),
   })
 
   const revise = useMutation({
@@ -58,7 +69,12 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
         onChanged()
       }
     },
-    onError: () => toast({ variant: 'error', title: 'Could not request revision' }),
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not request revision',
+        description: getErrorMessage(err),
+      }),
   })
 
   return (

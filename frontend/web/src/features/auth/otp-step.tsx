@@ -1,4 +1,3 @@
-import { isAxiosError } from 'axios'
 import { MailCheck } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input, Label } from '@/components/ui/input'
 import { resendOtp, verifyEmail } from '@/lib/api/auth'
+import { getErrorMessage } from '@/lib/errors'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
@@ -42,13 +42,6 @@ export function OtpStep({
     return () => clearInterval(timer)
   }, [cooldown])
 
-  const describeError = (err: unknown, fallback: string): string => {
-    if (isAxiosError(err) && typeof err.response?.data?.detail === 'string') {
-      return err.response.data.detail
-    }
-    return fallback
-  }
-
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -57,7 +50,7 @@ export function OtpStep({
       await verifyEmail(email, code)
       onVerified()
     } catch (err) {
-      setError(describeError(err, 'Invalid code. Please try again.'))
+      setError(getErrorMessage(err, 'Invalid code. Please try again.'))
     } finally {
       setVerifying(false)
     }
@@ -70,7 +63,7 @@ export function OtpStep({
       await resendOtp(email)
       setCooldown(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
-      setError(describeError(err, 'Could not resend the code.'))
+      setError(getErrorMessage(err, 'Could not resend the code.'))
     } finally {
       setResending(false)
     }
@@ -104,7 +97,11 @@ export function OtpStep({
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               />
             </div>
-            {error && <p className="text-[13px] text-[var(--color-danger)]">{error}</p>}
+            {error && (
+              <p role="alert" className="text-label text-danger-ink">
+                {error}
+              </p>
+            )}
             <Button
               type="submit"
               className="w-full"
@@ -122,7 +119,7 @@ export function OtpStep({
             type="button"
             onClick={onResend}
             disabled={resending || cooldown > 0}
-            className="font-medium text-[var(--color-accent)] disabled:opacity-50"
+            className="text-accent-ink font-medium disabled:opacity-50"
           >
             {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
           </button>

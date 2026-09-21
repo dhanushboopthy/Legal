@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast-context'
 import { useRazorpayCheckout } from '@/hooks/use-razorpay'
+import { getErrorMessage } from '@/lib/errors'
 import type { PaymentOrderResponse } from '@/types/api'
 
 interface Props {
@@ -37,11 +38,11 @@ export function PaymentActionCard({ createOrder, title, description, onPaid }: P
         },
       })
     },
-    onError: () => {
+    onError: (err) => {
       toast({
         variant: 'error',
         title: 'Could not start payment',
-        description: 'Please try again.',
+        description: getErrorMessage(err),
       })
     },
   })
@@ -56,7 +57,7 @@ export function PaymentActionCard({ createOrder, title, description, onPaid }: P
           <h3 className="font-semibold">{title}</h3>
           <p className="text-muted mt-0.5 text-sm">{description}</p>
           {awaitingConfirmation ? (
-            <p className="text-muted mt-3 text-[13px]">
+            <p className="text-muted text-label mt-3">
               Confirming your payment&hellip; this page will update automatically.
             </p>
           ) : (

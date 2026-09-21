@@ -3,6 +3,8 @@ import { Briefcase, LogOut, Plus, User as UserIcon } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/auth-context'
+import { PERMISSIONS } from '@/auth/permissions'
+import { usePermissions } from '@/auth/use-permissions'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,7 +20,7 @@ export function AppShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const isAdmin = user?.role_name === 'super_admin'
+  const { can } = usePermissions()
 
   return (
     <div className="min-h-screen">
@@ -31,12 +33,16 @@ export function AppShell() {
             </NavLink>
             <nav className="hidden items-center gap-6 text-sm sm:flex">
               <NavItem to="/">Cases</NavItem>
-              {isAdmin && <NavItem to="/admin/pending-users">Pending lawyers</NavItem>}
-              {isAdmin && <NavItem to="/admin/payments">Payments</NavItem>}
+              {can(PERMISSIONS.USER_MANAGE) && (
+                <NavItem to="/admin/pending-users">Pending lawyers</NavItem>
+              )}
+              {can(PERMISSIONS.PAYMENT_VIEW_ALL) && (
+                <NavItem to="/admin/payments">Payments</NavItem>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-2">
-            {!isAdmin && (
+            {can(PERMISSIONS.CASE_SUBMIT) && (
               <Button size="sm" onClick={() => navigate('/cases/new')}>
                 <Plus className="size-4" />
                 New case
@@ -45,14 +51,17 @@ export function AppShell() {
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex size-9 items-center justify-center rounded-full bg-black/[0.05] text-sm font-medium transition-colors hover:bg-black/[0.08]">
+                <button
+                  aria-label="Account menu"
+                  className="flex size-9 items-center justify-center rounded-full bg-black/[0.05] text-sm font-medium transition-colors hover:bg-black/[0.08]"
+                >
                   {user?.full_name.charAt(0).toUpperCase()}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <div className="px-2.5 py-1.5">
                   <p className="text-sm font-medium">{user?.full_name}</p>
-                  <p className="text-muted text-[13px]">{user?.email}</p>
+                  <p className="text-muted text-label">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => navigate('/profile')}>

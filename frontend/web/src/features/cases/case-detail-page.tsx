@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, Download, FileText, Hourglass, XCircle } from 'lucide-react'
+import { Clock, Download, FileText, Hourglass, XCircle, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
 import { useParams } from 'react-router-dom'
 
-import { useAuth } from '@/auth/auth-context'
+import { PERMISSIONS, type CanFn } from '@/auth/permissions'
+import { usePermissions } from '@/auth/use-permissions'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CaseStatusPill, PaymentStatusPill } from '@/components/ui/status-pill'
@@ -19,15 +20,17 @@ import { InfoPanel } from '@/features/cases/info-panel'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { createDraftingPayment, createReviewPayment, getCase } from '@/lib/api/cases'
 import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
+import { getErrorMessage } from '@/lib/errors'
 import { listPaymentsForCase } from '@/lib/api/payments'
+import { getStatusMeta, perspectiveFor, type Perspective } from '@/lib/status-meta'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { CaseStatus } from '@/types/api'
 
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { can } = usePermissions()
+  const perspective = perspectiveFor(can)
   const queryClient = useQueryClient()
-  const isAdmin = user?.role_name === 'super_admin'
   // Set to the case's status right before a payment/action is kicked off;
   // polling stops itself the moment a refetch reports a *different* status,
   // with no separate effect needed to notice that and turn polling off.
@@ -100,7 +103,7 @@ export function CaseDetailPage() {
             {caseData.court && ` · ${caseData.court}`} · Submitted {formatDate(caseData.created_at)}
           </p>
         </div>
-        <CaseStatusPill status={caseData.status} />
+        <CaseStatusPill status={caseData.status} perspective={perspective} />
       </div>
 
       {caseData.description && (
@@ -113,7 +116,8 @@ export function CaseDetailPage() {
         <CaseActionPanel
           caseId={caseId}
           status={caseData.status}
-          isAdmin={isAdmin}
+          can={can}
+          perspective={perspective}
           rejectionReason={caseData.rejection_reason}
           onChanged={refresh}
         />
@@ -125,7 +129,7 @@ export function CaseDetailPage() {
           {originalDoc ? (
             <DocumentRow filename={originalDoc.original_filename} documentId={originalDoc.id} />
           ) : (
-            <p className="text-muted text-[13px]">No original document uploaded.</p>
+            <p className="text-muted text-label">No original document uploaded.</p>
           )}
         </Card>
         <Card>
@@ -133,7 +137,7 @@ export function CaseDetailPage() {
           {payments && payments.length > 0 ? (
             <ul className="space-y-2">
               {payments.map((p) => (
-                <li key={p.id} className="flex items-center justify-between text-[13px]">
+                <li key={p.id} className="text-label flex items-center justify-between">
                   <span className="capitalize">{p.type} fee</span>
                   <div className="flex items-center gap-2">
                     <span className="text-muted">{formatCurrency(p.amount)}</span>
@@ -143,7 +147,7 @@ export function CaseDetailPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted text-[13px]">No payments yet.</p>
+            <p className="text-muted text-label">No payments yet.</p>
           )}
         </Card>
       </div>
@@ -159,11 +163,15 @@ function DocumentRow({ filename, documentId }: { filename: string; documentId: s
         try {
           const url = await getDownloadUrl(documentId)
           window.open(url, '_blank')
-        } catch {
-          toast({ variant: 'error', title: 'Could not get download link' })
+        } catch (err) {
+          toast({
+            variant: 'error',
+            title: 'Could not get download link',
+            description: getErrorMessage(err),
+          })
         }
       }}
-      className="flex w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 text-left text-[13px] transition-colors hover:bg-black/[0.02]"
+      className="text-label flex w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 text-left transition-colors hover:bg-black/[0.02]"
     >
       <FileText className="size-4 text-[var(--fg-muted)]" />
       <span className="flex-1 truncate">{filename}</span>
@@ -175,43 +183,43 @@ function DocumentRow({ filename, documentId }: { filename: string; documentId: s
 function CaseActionPanel({
   caseId,
   status,
-  isAdmin,
+  can,
+  perspective,
   rejectionReason,
   onChanged,
 }: {
   caseId: string
   status: CaseStatus
-  isAdmin: boolean
+  can: CanFn
+  perspective: Perspective
   rejectionReason: string | null
   onChanged: () => void
 }) {
+  // What the viewer sees when there is nothing for them to do.
+  const meta = getStatusMeta(status, perspective)
+  const waiting = (icon: LucideIcon) => (
+    <InfoPanel icon={icon} title={meta.label} description={meta.next} />
+  )
+
   switch (status) {
     case 'submitted':
-      return isAdmin ? (
-        <InfoPanel
-          icon={Hourglass}
-          title="Awaiting review payment"
-          description="The junior lawyer needs to pay the review fee before you can review this case."
-        />
-      ) : (
+      return can(PERMISSIONS.PAYMENT_INITIATE) ? (
         <PaymentActionCard
           createOrder={() => createReviewPayment(caseId)}
           title="Pay the review fee"
           description="Pay the review fee so the advocate can start reviewing your case."
           onPaid={onChanged}
         />
+      ) : (
+        waiting(Hourglass)
       )
 
     case 'review_fee_paid':
     case 'under_review':
-      return isAdmin ? (
+      return can(PERMISSIONS.CASE_DECIDE) ? (
         <DecisionPanel caseId={caseId} onDecided={onChanged} />
       ) : (
-        <InfoPanel
-          icon={Clock}
-          title="Under review"
-          description="The advocate is reviewing your case. You'll be notified once a decision is made."
-        />
+        waiting(Clock)
       )
 
     case 'rejected':
@@ -225,43 +233,31 @@ function CaseActionPanel({
       )
 
     case 'accepted':
-      return isAdmin ? (
-        <InfoPanel
-          icon={Hourglass}
-          title="Awaiting drafting payment"
-          description="The junior lawyer needs to pay the drafting fee before you can begin drafting."
-        />
-      ) : (
+      return can(PERMISSIONS.PAYMENT_INITIATE) ? (
         <PaymentActionCard
           createOrder={() => createDraftingPayment(caseId)}
           title="Pay the drafting fee"
           description="Your case was accepted — pay the drafting fee to begin."
           onPaid={onChanged}
         />
+      ) : (
+        waiting(Hourglass)
       )
 
     case 'drafting_fee_paid':
     case 'drafting':
     case 'revision_requested':
-      return isAdmin ? (
+      return can(PERMISSIONS.CASE_DRAFT) ? (
         <DraftUploadPanel caseId={caseId} onUploaded={onChanged} />
       ) : (
-        <InfoPanel
-          icon={Clock}
-          title="Drafting in progress"
-          description="The advocate is preparing your filing."
-        />
+        waiting(Clock)
       )
 
     case 'draft_delivered':
-      return isAdmin ? (
-        <InfoPanel
-          icon={Clock}
-          title="Draft delivered"
-          description="Waiting for the junior lawyer to review the draft."
-        />
-      ) : (
+      return can(PERMISSIONS.CASE_APPROVE_FINAL) ? (
         <DraftReviewPanel caseId={caseId} onChanged={onChanged} />
+      ) : (
+        waiting(Clock)
       )
 
     case 'approved':

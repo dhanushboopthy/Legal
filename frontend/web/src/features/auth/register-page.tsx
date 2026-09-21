@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { isAxiosError } from 'axios'
 import { Briefcase } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -7,8 +6,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { FieldError, Input, Label } from '@/components/ui/input'
+import { Field, Input } from '@/components/ui/input'
 import { register as registerAccount } from '@/lib/api/auth'
+import { getErrorMessage } from '@/lib/errors'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Enter your full name').max(150),
@@ -35,11 +35,7 @@ export function RegisterPage() {
       await registerAccount(values)
       navigate('/verify-email', { state: { email: values.email } })
     } catch (err) {
-      if (isAxiosError(err) && err.response?.status === 422) {
-        setError(err.response.data?.detail ?? 'An account with this email already exists.')
-      } else {
-        setError('Something went wrong. Please try again.')
-      }
+      setError(getErrorMessage(err))
     }
   }
 
@@ -55,31 +51,32 @@ export function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="full_name">Full name</Label>
-            <Input id="full_name" autoComplete="name" {...register('full_name')} />
-            <FieldError>{errors.full_name?.message}</FieldError>
-          </div>
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register('email')} />
-            <FieldError>{errors.email?.message}</FieldError>
-          </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register('password')}
-            />
-            <FieldError>{errors.password?.message}</FieldError>
-          </div>
-          <div>
-            <Label htmlFor="bar_council_id">Bar council ID (optional)</Label>
-            <Input id="bar_council_id" {...register('bar_council_id')} />
-          </div>
-          {error && <p className="text-[13px] text-[var(--color-danger)]">{error}</p>}
+          <Field id="full_name" label="Full name" error={errors.full_name?.message}>
+            {(control) => <Input autoComplete="name" {...control} {...register('full_name')} />}
+          </Field>
+          <Field id="email" label="Email" error={errors.email?.message}>
+            {(control) => (
+              <Input type="email" autoComplete="email" {...control} {...register('email')} />
+            )}
+          </Field>
+          <Field id="password" label="Password" error={errors.password?.message}>
+            {(control) => (
+              <Input
+                type="password"
+                autoComplete="new-password"
+                {...control}
+                {...register('password')}
+              />
+            )}
+          </Field>
+          <Field id="bar_council_id" label="Bar council ID (optional)">
+            {(control) => <Input {...control} {...register('bar_council_id')} />}
+          </Field>
+          {error && (
+            <p role="alert" className="text-label text-danger-ink">
+              {error}
+            </p>
+          )}
           <Button type="submit" className="w-full" loading={isSubmitting}>
             Create account
           </Button>
@@ -87,7 +84,7 @@ export function RegisterPage() {
 
         <p className="text-muted mt-6 text-center text-sm">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-[var(--color-accent)]">
+          <Link to="/login" className="text-accent-ink font-medium">
             Sign in
           </Link>
         </p>

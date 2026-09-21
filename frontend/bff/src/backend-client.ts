@@ -7,6 +7,7 @@ export interface UserOut {
   phone: string | null
   bar_council_id: string | null
   role_name: string
+  permissions: string[]
   is_active: boolean
   is_verified: boolean
 }

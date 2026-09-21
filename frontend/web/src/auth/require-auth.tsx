@@ -1,11 +1,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/auth/auth-context'
+import type { Permission } from '@/auth/permissions'
+import { usePermissions } from '@/auth/use-permissions'
 import { PageSpinner } from '@/components/ui/page-spinner'
 import { ForbiddenPage } from '@/features/errors/forbidden-page'
 
-export function RequireAuth({ roles }: { roles?: string[] }) {
+export function RequireAuth({ permission }: { permission?: Permission }) {
   const { user, status } = useAuth()
+  const { can } = usePermissions()
   const location = useLocation()
 
   if (status === 'loading') return <PageSpinner />
@@ -14,7 +17,7 @@ export function RequireAuth({ roles }: { roles?: string[] }) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (roles && !roles.includes(user.role_name)) {
+  if (permission && !can(permission)) {
     return <ForbiddenPage inline />
   }
 

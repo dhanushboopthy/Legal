@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div>
               <RadixToast.Title className="text-sm font-medium">{item.title}</RadixToast.Title>
               {item.description && (
-                <RadixToast.Description className="text-muted mt-0.5 text-[13px]">
+                <RadixToast.Description className="text-muted text-label mt-0.5">
                   {item.description}
                 </RadixToast.Description>
               )}

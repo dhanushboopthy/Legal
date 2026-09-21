@@ -12,20 +12,26 @@ import { cn, formatDate } from '@/lib/utils'
 
 export function NotificationBell() {
   const queryClient = useQueryClient()
-  const { data: notifications = [] } = useQuery({
+  const {
+    data: notifications,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['notifications'],
     queryFn: listMyNotifications,
     refetchInterval: 30_000,
   })
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length
+  const list = notifications ?? []
+  const unreadCount = list.filter((n) => !n.is_read).length
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           className="relative flex size-9 items-center justify-center rounded-full transition-colors hover:bg-black/[0.05]"
-          aria-label="Notifications"
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
           <Bell className="size-[18px]" strokeWidth={1.75} />
           {unreadCount > 0 && (
@@ -38,10 +44,23 @@ export function NotificationBell() {
           <p className="text-sm font-semibold">Notifications</p>
         </div>
         <div className="max-h-80 overflow-y-auto p-1.5">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <p className="text-muted px-3 py-6 text-center text-sm">Loading…</p>
+          ) : error && !notifications ? (
+            <div role="alert" className="px-3 py-6 text-center text-sm">
+              <p className="text-muted">Couldn't load notifications.</p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="text-accent-ink mt-2 font-medium"
+              >
+                Try again
+              </button>
+            </div>
+          ) : list.length === 0 ? (
             <p className="text-muted px-3 py-6 text-center text-sm">You're all caught up.</p>
           ) : (
-            notifications.map((n) => (
+            list.map((n) => (
               <DropdownMenuItem
                 key={n.id}
                 className={cn(
@@ -57,8 +76,8 @@ export function NotificationBell() {
                   }
                 }}
               >
-                <p className="text-[13px] leading-snug">{n.message}</p>
-                <p className="text-muted text-[11px]">{formatDate(n.created_at)}</p>
+                <p className="text-label leading-snug">{n.message}</p>
+                <p className="text-muted text-caption">{formatDate(n.created_at)}</p>
               </DropdownMenuItem>
             ))
           )}

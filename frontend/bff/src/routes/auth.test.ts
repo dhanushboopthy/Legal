@@ -34,6 +34,7 @@ describe('POST /login', () => {
       phone: null,
       bar_council_id: null,
       role_name: 'junior_lawyer',
+      permissions: ['case:submit'],
       is_active: true,
       is_verified: true,
     })
@@ -89,6 +90,7 @@ describe('POST /login/google', () => {
       phone: null,
       bar_council_id: null,
       role_name: 'junior_lawyer',
+      permissions: ['case:submit'],
       is_active: true,
       is_verified: true,
     })

@@ -1,15 +1,33 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  /* System stack only: nothing loads a webfont, so naming one would only ever
+     apply if it happened to be installed. */
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 
+  /* Fill colours are for backgrounds, borders and icons. Text set on a tint of
+     a fill uses its -ink twin, which clears WCAG AA (4.5:1) on white, on the
+     page background and on the 10% pill tint. */
   --color-accent: #0071e3;
-  --color-accent-hover: #0077ed;
-  --color-accent-active: #006edb;
+  --color-accent-hover: #0066cc;
+  --color-accent-active: #005bb8;
+  --color-accent-ink: #005bb8;
 
   --color-success: #16a34a;
+  --color-success-ink: #166534;
   --color-warning: #d97706;
+  --color-warning-ink: #92400e;
   --color-danger: #dc2626;
+  --color-danger-ink: #b91c1c;
+
+  /* Named steps below the Tailwind defaults; nothing smaller than 12px. */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.25rem;
+  --text-lead: 0.9375rem;
+  --text-lead--line-height: 1.5rem;
 
   --radius-card: 1.25rem;
   --radius-control: 0.75rem;
@@ -19,7 +37,7 @@
   --bg: #f5f5f7;
   --bg-elevated: #ffffff;
   --fg: #1d1d1f;
-  --fg-muted: #6e6e73;
+  --fg-muted: #636366;
   --border: rgba(0, 0, 0, 0.08);
   --shadow-color: rgba(0, 0, 0, 0.08);
 }

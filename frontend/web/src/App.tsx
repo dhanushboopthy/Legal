@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import { AuthProvider } from '@/auth/auth-provider'
+import { PERMISSIONS } from '@/auth/permissions'
 import { RequireAuth } from '@/auth/require-auth'
 import { AppShell } from '@/components/layout/app-shell'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -35,12 +36,15 @@ function AppRoutes() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/cases/:id" element={<CaseDetailPage />} />
 
-            <Route element={<RequireAuth roles={['junior_lawyer']} />}>
+            <Route element={<RequireAuth permission={PERMISSIONS.CASE_SUBMIT} />}>
               <Route path="/cases/new" element={<NewCasePage />} />
             </Route>
 
-            <Route element={<RequireAuth roles={['super_admin']} />}>
+            <Route element={<RequireAuth permission={PERMISSIONS.USER_MANAGE} />}>
               <Route path="/admin/pending-users" element={<PendingUsersPage />} />
+            </Route>
+
+            <Route element={<RequireAuth permission={PERMISSIONS.PAYMENT_VIEW_ALL} />}>
               <Route path="/admin/payments" element={<PaymentsPage />} />
             </Route>
           </Route>

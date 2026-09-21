@@ -3,9 +3,11 @@ import { Receipt } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PaymentStatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast-context'
+import { getErrorMessage } from '@/lib/errors'
 import { listAllPayments, refundPayment } from '@/lib/api/payments'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -13,7 +15,12 @@ export function PaymentsPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: payments, isLoading } = useQuery({
+  const {
+    data: payments,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['all-payments'],
     queryFn: listAllPayments,
   })
@@ -24,7 +31,12 @@ export function PaymentsPage() {
       toast({ variant: 'success', title: 'Refund initiated' })
       void queryClient.invalidateQueries({ queryKey: ['all-payments'] })
     },
-    onError: () => toast({ variant: 'error', title: 'Could not initiate refund' }),
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not initiate refund',
+        description: getErrorMessage(err),
+      }),
   })
 
   return (
@@ -37,13 +49,15 @@ export function PaymentsPage() {
           <Skeleton className="h-16" />
           <Skeleton className="h-16" />
         </div>
+      ) : error && !payments ? (
+        <ErrorState error={error} title="Couldn't load payments" onRetry={() => void refetch()} />
       ) : !payments || payments.length === 0 ? (
         <EmptyState icon={Receipt} title="No payments yet" />
       ) : (
         <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--border)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-muted border-b border-[var(--border)] text-left text-[13px]">
+              <tr className="text-muted text-label border-b border-[var(--border)] text-left">
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Amount</th>
                 <th className="px-4 py-3 font-medium">Status</th>

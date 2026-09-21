@@ -68,3 +68,15 @@ async def test_only_junior_lawyer_can_initiate_payment_even_with_view_all(client
 
     resp = await client.post(f"/cases/{case_id}/review-payment", headers=auth_header(clerk))
     assert resp.status_code == 403
+
+
+async def test_users_me_lists_the_roles_permissions(client, db_session):
+    lawyer = await make_user(db_session, role_name="junior_lawyer")
+    admin = await make_user(db_session, role_name="super_admin")
+
+    lawyer_perms = (await client.get("/users/me", headers=auth_header(lawyer))).json()["permissions"]
+    admin_perms = (await client.get("/users/me", headers=auth_header(admin))).json()["permissions"]
+
+    assert "case:submit" in lawyer_perms and "case:decide" not in lawyer_perms
+    assert "case:decide" in admin_perms and "case:submit" not in admin_perms
+    assert lawyer_perms == sorted(lawyer_perms)

@@ -2,6 +2,11 @@
 // this app. Keep in sync with app/schemas/*.py and app/models/*.py.
 
 export type CaseStatus =
+  // 'draft', 'quoted' and 'delivered' belong to the new flow
+  // (docs/NEW_FLOW_SPEC.md); the API doesn't emit them until Phase 1.
+  | 'draft'
+  | 'quoted'
+  | 'delivered'
   | 'submitted'
   | 'review_fee_paid'
   | 'under_review'
@@ -25,6 +30,7 @@ export interface UserOut {
   phone: string | null
   bar_council_id: string | null
   role_name: string
+  permissions: string[]
   is_active: boolean
   is_verified: boolean
 }

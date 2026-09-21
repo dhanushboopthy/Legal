@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast-context'
+import { getErrorMessage } from '@/lib/errors'
 import { decideCase } from '@/lib/api/cases'
 
 export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided: () => void }) {
@@ -24,7 +25,12 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
       })
       onDecided()
     },
-    onError: () => toast({ variant: 'error', title: 'Could not save decision' }),
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not save decision',
+        description: getErrorMessage(err),
+      }),
   })
 
   return (
