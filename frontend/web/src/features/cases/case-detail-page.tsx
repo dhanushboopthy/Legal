@@ -141,6 +141,9 @@ export function CaseDetailPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
+          {caseData.case_number && (
+            <p className="text-muted text-label font-medium">{caseData.case_number}</p>
+          )}
           <h1 className="text-2xl font-semibold tracking-tight">{caseData.title}</h1>
           <p className="text-muted mt-1 text-sm">
             {caseData.case_type}

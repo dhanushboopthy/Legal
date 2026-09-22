@@ -1,6 +1,7 @@
 import enum
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -87,9 +88,16 @@ def transition(case: Case, to: CaseStatus, *, by: User | None) -> None:
     case.status = to
 
 
+async def _next_case_number(db: AsyncSession) -> str:
+    seq = (await db.execute(func.nextval("case_number_seq"))).scalar_one()
+    year = datetime.now(timezone.utc).year
+    return f"LF-{year}-{seq:04d}"
+
+
 async def create_case(db: AsyncSession, *, junior_lawyer: User, data: CaseCreate) -> Case:
     case = Case(
         junior_lawyer_id=junior_lawyer.id,
+        case_number=await _next_case_number(db),
         title=data.title,
         case_type=data.case_type,
         court=data.court,

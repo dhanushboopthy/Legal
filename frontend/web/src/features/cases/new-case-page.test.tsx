@@ -30,6 +30,7 @@ const RULES: UploadRules = {
 const draftCase = (over: Partial<CaseOut> = {}): CaseOut => ({
   id: 'c1',
   junior_lawyer_id: 'u1',
+  case_number: 'LF-2026-0001',
   title: 'Bail petition',
   case_type: 'Criminal',
   court: null,

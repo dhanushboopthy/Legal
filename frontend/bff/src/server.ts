@@ -2,11 +2,10 @@ import 'dotenv/config'
 
 import cookieParser from 'cookie-parser'
 import express from 'express'
-import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 
-import { config } from './config.js'
 import { authRouter } from './routes/auth.js'
+import { config } from './config.js'
 
 export const app = express()
 
@@ -19,14 +18,9 @@ app.use(cookieParser())
 // (nginx/Vite proxy /bff -> here), so a same-origin-only CORS posture (i.e.
 // no CORS headers at all) is intentional, not an oversight.
 
-app.use(
-  rateLimit({
-    windowMs: 60_000,
-    limit: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-  }),
-)
+// Rate limits live per-route in routes/auth.ts — /refresh gets its own,
+// looser bucket there (see the comment on refreshLimiter) so a page quietly
+// refreshing its session can't be starved by, or starve, login attempts.
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 app.use('/', authRouter)

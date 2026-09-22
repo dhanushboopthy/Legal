@@ -11,6 +11,7 @@ vi.mock('../backend-client.js', async () => {
     login: vi.fn(),
     loginWithGoogle: vi.fn(),
     refresh: vi.fn(),
+    verifyEmail: vi.fn(),
     getMe: vi.fn(),
   }
 })
@@ -117,6 +118,60 @@ describe('POST /login/google', () => {
     const res = await request(app).post('/login/google').send({ id_token: 'bad' })
     expect(res.status).toBe(401)
     expect(res.body.detail).toBe('Invalid Google credential')
+  })
+})
+
+describe('POST /verify-email', () => {
+  beforeEach(() => {
+    vi.mocked(backendClient.verifyEmail).mockReset()
+    vi.mocked(backendClient.getMe).mockReset()
+  })
+
+  it('signs the freshly-verified account in, pending approval or not', async () => {
+    vi.mocked(backendClient.verifyEmail).mockResolvedValue({
+      access_token: 'access-v',
+      refresh_token: 'refresh-v',
+      token_type: 'bearer',
+    })
+    vi.mocked(backendClient.getMe).mockResolvedValue({
+      id: 'u3',
+      full_name: 'New Lawyer',
+      email: 'new@example.com',
+      phone: null,
+      bar_council_id: null,
+      role_name: 'junior_lawyer',
+      permissions: ['case:submit'],
+      is_active: false,
+      is_verified: true,
+    })
+
+    const res = await request(app)
+      .post('/verify-email')
+      .send({ email: 'new@example.com', code: '123456' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.access_token).toBe('access-v')
+    expect(res.body.user.is_active).toBe(false)
+    const setCookie = res.headers['set-cookie']?.[0] ?? ''
+    expect(setCookie).toContain('refresh_token=refresh-v')
+    expect(setCookie.toLowerCase()).toContain('httponly')
+  })
+
+  it('rejects a request missing the code', async () => {
+    const res = await request(app).post('/verify-email').send({ email: 'new@example.com' })
+    expect(res.status).toBe(400)
+    expect(backendClient.verifyEmail).not.toHaveBeenCalled()
+  })
+
+  it('propagates a wrong-code error from the backend', async () => {
+    vi.mocked(backendClient.verifyEmail).mockRejectedValue(
+      new backendClient.BackendError(422, 'Invalid or expired code'),
+    )
+    const res = await request(app)
+      .post('/verify-email')
+      .send({ email: 'new@example.com', code: '000000' })
+    expect(res.status).toBe(422)
+    expect(res.body.detail).toBe('Invalid or expired code')
   })
 })
 

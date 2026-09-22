@@ -38,8 +38,12 @@ async def test_verify_email_with_correct_code_marks_verified(client, db_session)
 
     resp = await client.post("/auth/verify-email", json={"email": body["email"], "code": code})
     assert resp.status_code == 200
-    assert resp.json()["is_verified"] is True
+    # Verifying is itself enough for a token (see _require_verified) — no
+    # separate login step, whether or not admin approval is next.
+    assert "access_token" in resp.json()
 
+    await db_session.refresh(user)
+    assert user.is_verified is True
     assert await _first_otp(db_session, user.id) is None
 
 

@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
+from app.core.permissions import USER_MANAGE
 from app.models.case import Case, CaseStatus
 from app.models.message import CaseRead, Message, MessageKind
+from app.models.role import Role
 from app.models.user import User
 from app.services import audience, case_service, email_service, message_service
 
@@ -157,3 +159,69 @@ async def _email_case_participants(
         sent += 1
     await db.rollback()
     return sent
+
+
+# --- stale pending approvals -> admin reminder --------------------------------
+
+_warned_no_smtp_pending = False
+
+
+async def remind_stale_pending_approvals(db: AsyncSession, *, now: datetime | None = None) -> int:
+    """The admin-approval gate stays manual, but doesn't get to sit forgotten:
+    once a verified account has been waiting longer than
+    `pending_approval_reminder_after_hours`, every USER_MANAGE holder gets one
+    email listing every such account, not once per account — and not again
+    for `pending_approval_reminder_gap_hours`, so the same backlog doesn't
+    renag on every worker tick. Returns how many accounts were included."""
+    global _warned_no_smtp_pending
+    if not email_service.is_configured():
+        if not _warned_no_smtp_pending:
+            logger.warning("pending_approval_reminder_skipped", reason="SMTP is not configured")
+            _warned_no_smtp_pending = True
+        return 0
+
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=settings.pending_approval_reminder_after_hours)
+    gap = timedelta(hours=settings.pending_approval_reminder_gap_hours)
+
+    stale = list((await db.execute(
+        select(User).where(
+            User.is_active.is_(False), User.is_verified.is_(True), User.created_at < cutoff,
+            (User.pending_reminder_sent_at.is_(None)) | (User.pending_reminder_sent_at < now - gap),
+        ).order_by(User.created_at).limit(_BATCH)
+    )).scalars().all())
+    if not stale:
+        await db.rollback()
+        return 0
+
+    admins = list((await db.execute(
+        select(User).join(Role, User.role_id == Role.id)
+        .where(Role.permissions.any(USER_MANAGE), User.is_active.is_(True))
+    )).scalars().all())
+    if not admins:
+        await db.rollback()
+        return 0
+
+    lines = [
+        f"{u.full_name} ({u.email}) — waiting {(now - u.created_at).days} days"
+        for u in stale
+    ]
+    link = f"{settings.app_base_url.rstrip('/')}/admin/people"
+    text_body = (
+        "These registrations are still waiting for approval:\n\n"
+        + "\n".join(lines)
+        + f"\n\nReview them: {link}"
+    )
+    html_items = "".join(f"<li>{html.escape(line)}</li>" for line in lines)
+    html_body = (
+        f"<p>These registrations are still waiting for approval:</p><ul>{html_items}</ul>"
+        f"<p><a href=\"{html.escape(link)}\">Review them</a></p>"
+    )
+    for admin in admins:
+        await email_service.send_email(
+            admin.email, "Pending lawyer approvals need attention", text_body, html_body,
+        )
+    for user in stale:
+        user.pending_reminder_sent_at = now
+    await db.commit()
+    return len(stale)

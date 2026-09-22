@@ -35,11 +35,13 @@ async def _get_role(db: AsyncSession, name: str) -> Role:
     return role
 
 
-def _require_login_eligible(user: User) -> None:
+def _require_verified(user: User) -> None:
+    """A verified email is enough to be issued a token — not admin approval.
+    A verified-but-inactive user gets the same access/refresh token as anyone
+    else; app.dependencies.get_current_user still 403s them everywhere except
+    GET /users/me, which is what the pending-approval screen polls."""
     if not user.is_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email first")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account pending admin approval")
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
@@ -80,9 +82,12 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     return UserOut.from_user(user)
 
 
-@router.post("/verify-email", response_model=UserOut)
+@router.post("/verify-email", response_model=Token)
 @limiter.limit("10/hour")
 async def verify_email(request: Request, payload: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
+    """Verifying is enough to be issued a token (see _require_verified) — a
+    freshly-verified junior lawyer lands on /pending-approval already signed
+    in, with no separate login step, whether or not admin approval is next."""
     result = await db.execute(
         select(User).options(selectinload(User.role)).where(User.email == payload.email)
     )
@@ -101,8 +106,11 @@ async def verify_email(request: Request, payload: VerifyEmailRequest, db: AsyncS
         await db.commit()
         raise
     await db.commit()
-    await db.refresh(user)
-    return UserOut.from_user(user)
+
+    return Token(
+        access_token=create_access_token(user.id),
+        refresh_token=create_refresh_token(user.id),
+    )
 
 
 @router.post("/resend-otp", status_code=status.HTTP_204_NO_CONTENT)
@@ -137,7 +145,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
-    _require_login_eligible(user)
+    _require_verified(user)
 
     return Token(
         access_token=create_access_token(user.id),
@@ -188,7 +196,7 @@ async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(g
         await db.commit()
         await db.refresh(user, attribute_names=["role"])
 
-    _require_login_eligible(user)
+    _require_verified(user)
 
     return Token(
         access_token=create_access_token(user.id),
@@ -209,8 +217,8 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)):
     user_id = data["sub"]
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
-        raise UnauthorizedError("User no longer active")
+    if user is None or not user.is_verified:
+        raise UnauthorizedError("User no longer eligible for a session")
 
     return Token(
         access_token=create_access_token(user.id),

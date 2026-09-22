@@ -25,6 +25,11 @@ export async function bffLoginWithGoogle(idToken: string): Promise<LoginResponse
   return data
 }
 
+export async function bffVerifyEmail(email: string, code: string): Promise<LoginResponse> {
+  const { data } = await bffClient.post<LoginResponse>('/verify-email', { email, code })
+  return data
+}
+
 export async function bffRefresh(): Promise<LoginResponse> {
   const { data } = await bffClient.post<LoginResponse>('/refresh')
   return data

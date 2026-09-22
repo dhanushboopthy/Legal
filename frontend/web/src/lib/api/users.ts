@@ -6,8 +6,13 @@ export async function getMe(): Promise<UserOut> {
   return data
 }
 
-export async function listPendingUsers(): Promise<UserOut[]> {
-  const { data } = await apiClient.get<UserOut[]>('/users/pending')
+export interface UpdateMePayload {
+  phone?: string
+  bar_council_id?: string
+}
+
+export async function updateMe(payload: UpdateMePayload): Promise<UserOut> {
+  const { data } = await apiClient.patch<UserOut>('/users/me', payload)
   return data
 }
 

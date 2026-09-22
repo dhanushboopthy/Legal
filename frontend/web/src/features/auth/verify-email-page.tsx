@@ -1,6 +1,10 @@
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
+import { destinationFor } from '@/auth/destination'
 import { OtpStep } from '@/features/auth/otp-step'
+import type { UserOut } from '@/types/api'
+
+const EMAIL_KEY = 'verify-email:address'
 
 interface VerifyState {
   email?: string
@@ -13,16 +17,17 @@ export function VerifyEmailPage() {
   const navigate = useNavigate()
   const state = useLocation().state as VerifyState | null
 
-  // The email only lives in router state; a hard refresh loses it.
-  if (!state?.email) return <Navigate to="/login" replace />
+  // Router state doesn't survive a hard refresh; sessionStorage does. Landing
+  // here with state.email (from register or a bounced sign-in) refreshes it.
+  const email = state?.email ?? sessionStorage.getItem(EMAIL_KEY)
+  if (state?.email) sessionStorage.setItem(EMAIL_KEY, state.email)
 
-  return (
-    <OtpStep
-      email={state.email}
-      sendOnMount={state.resend}
-      onVerified={() =>
-        navigate('/pending-approval', { state: { email: state.email }, replace: true })
-      }
-    />
-  )
+  if (!email) return <Navigate to="/login" replace />
+
+  const onVerified = (user: UserOut) => {
+    sessionStorage.removeItem(EMAIL_KEY)
+    navigate(destinationFor(user), { replace: true })
+  }
+
+  return <OtpStep email={email} sendOnMount={state?.resend} onVerified={onVerified} />
 }

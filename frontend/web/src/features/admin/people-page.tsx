@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Users } from 'lucide-react'
+import { AlertTriangle, Users } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,20 @@ import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
 import { approveUser, listUsers } from '@/lib/api/users'
 import type { UserOut } from '@/types/api'
+
+// Matches the backend's default PENDING_APPROVAL_REMINDER_AFTER_HOURS — only
+// used here to decide when to flag a row, not to gate anything.
+const OVERDUE_AFTER_HOURS = 48
+
+function hoursWaiting(createdAt: string): number {
+  return (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60)
+}
+
+function waitingLabel(hours: number): string {
+  const days = Math.floor(hours / 24)
+  if (days < 1) return 'Waiting less than a day'
+  return `Waiting ${days} ${days === 1 ? 'day' : 'days'}`
+}
 
 export function PeoplePage() {
   const { toast } = useToast()
@@ -68,14 +82,30 @@ export function PeoplePage() {
                 Pending approval ({pending.length})
               </h2>
               <div className="space-y-3">
-                {pending.map((u) => (
-                  <Card key={u.id} className="flex items-center justify-between">
-                    <PersonInfo user={u} />
-                    <Button size="sm" onClick={() => setConfirming(u)}>
-                      Approve
-                    </Button>
-                  </Card>
-                ))}
+                {pending.map((u) => {
+                  const hours = hoursWaiting(u.created_at)
+                  const overdue = hours >= OVERDUE_AFTER_HOURS
+                  return (
+                    <Card key={u.id} className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <PersonInfo user={u} />
+                        <p
+                          className={
+                            overdue
+                              ? 'text-warning-ink text-caption mt-1 flex items-center gap-1 font-medium'
+                              : 'text-muted text-caption mt-1'
+                          }
+                        >
+                          {overdue && <AlertTriangle className="size-3" aria-hidden />}
+                          {waitingLabel(hours)}
+                        </p>
+                      </div>
+                      <Button size="sm" className="shrink-0" onClick={() => setConfirming(u)}>
+                        Approve
+                      </Button>
+                    </Card>
+                  )
+                })}
               </div>
             </section>
           )}

@@ -28,6 +28,7 @@ export interface UserOut {
   permissions: string[]
   is_active: boolean
   is_verified: boolean
+  created_at: string
 }
 
 export interface Token {
@@ -39,6 +40,7 @@ export interface Token {
 export interface CaseOut {
   id: string
   junior_lawyer_id: string
+  case_number: string | null
   title: string
   case_type: string
   court: string | null
@@ -123,6 +125,7 @@ export interface PaymentOut {
 
 // A row in the admin payments table: which case and whose it is.
 export interface PaymentListItem extends PaymentOut {
+  case_number: string | null
   case_title: string
   junior_lawyer_name: string
 }

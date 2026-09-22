@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/auth/auth-context'
+import { destinationFor } from '@/auth/destination'
 import type { Permission } from '@/auth/permissions'
 import { usePermissions } from '@/auth/use-permissions'
 import { PageSpinner } from '@/components/ui/page-spinner'
@@ -15,6 +16,11 @@ export function RequireAuth({ permission }: { permission?: Permission }) {
 
   if (status === 'unauthenticated' || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  const destination = destinationFor(user)
+  if (destination !== '/') {
+    return <Navigate to={destination} replace />
   }
 
   if (permission && !can(permission)) {

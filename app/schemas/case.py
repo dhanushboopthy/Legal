@@ -40,6 +40,7 @@ class CaseOut(BaseModel):
 
     id: uuid.UUID
     junior_lawyer_id: uuid.UUID
+    case_number: str | None
     title: str
     case_type: str
     court: str | None

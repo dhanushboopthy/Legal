@@ -52,6 +52,17 @@ export async function loginWithGoogle(idToken: string): Promise<TokenPair> {
   })
 }
 
+// Verifying is enough for a token (see app.routers.auth._require_verified) —
+// this is how a freshly-verified account gets a session with no separate
+// login step, pending or not.
+export async function verifyEmail(email: string, code: string): Promise<TokenPair> {
+  return backendFetch<TokenPair>('/auth/verify-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  })
+}
+
 export async function refresh(refreshToken: string): Promise<TokenPair> {
   return backendFetch<TokenPair>('/auth/refresh', {
     method: 'POST',

@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,5 +28,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Junior lawyers are inactive until the admin approves their account.
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Last time an admin was reminded this account is still waiting; None
+    # until the first reminder. Only meaningful while is_active is False.
+    pending_reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     cases: Mapped[list["Case"]] = relationship(back_populates="junior_lawyer")

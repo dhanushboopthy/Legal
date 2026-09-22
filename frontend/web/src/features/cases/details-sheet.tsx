@@ -26,6 +26,7 @@ export function DetailsSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Details" description={caseData.title}>
       <div className="space-y-4">
+        {caseData.case_number && <Row label="Case number" value={caseData.case_number} />}
         <Row label="Case type" value={caseData.case_type} />
         {caseData.court && <Row label="Court" value={caseData.court} />}
         {caseData.description && <Row label="Description" value={caseData.description} />}

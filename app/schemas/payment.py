@@ -34,5 +34,6 @@ class PaymentOut(BaseModel):
 class PaymentListItem(PaymentOut):
     """A row in the admin payments table: which case and whose it is."""
 
+    case_number: str | None = None
     case_title: str = ""
     junior_lawyer_name: str = ""

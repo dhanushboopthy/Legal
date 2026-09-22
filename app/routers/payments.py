@@ -43,7 +43,8 @@ async def list_all_payments(db: AsyncSession = Depends(get_db)):
     )
     return [
         PaymentListItem.model_validate(p).model_copy(update={
-            "case_title": p.case.title, "junior_lawyer_name": p.case.junior_lawyer.full_name,
+            "case_number": p.case.case_number, "case_title": p.case.title,
+            "junior_lawyer_name": p.case.junior_lawyer.full_name,
         })
         for p in result.scalars().all()
     ]

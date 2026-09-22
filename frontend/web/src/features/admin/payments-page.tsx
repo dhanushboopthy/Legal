@@ -80,6 +80,9 @@ export function PaymentsPage() {
                     <Link to={`/cases/${p.case_id}`} className="text-accent-ink hover:underline">
                       {p.case_title}
                     </Link>
+                    {p.case_number && (
+                      <p className="text-muted text-caption">{p.case_number}</p>
+                    )}
                   </td>
                   <td className="text-muted px-4 py-3">{p.junior_lawyer_name}</td>
                   <td className="px-4 py-3 capitalize">{p.type} fee</td>

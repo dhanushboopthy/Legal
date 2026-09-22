@@ -5,6 +5,7 @@ import { PERMISSIONS } from '@/auth/permissions'
 import { RequireAuth } from '@/auth/require-auth'
 import { AppShell } from '@/components/layout/app-shell'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { CompleteProfilePage } from '@/features/auth/complete-profile-page'
 import { LoginPage } from '@/features/auth/login-page'
 import { PendingApprovalPage } from '@/features/auth/pending-approval-page'
 import { RegisterPage } from '@/features/auth/register-page'
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/complete-profile" element={<CompleteProfilePage />} />
         <Route path="/pending-approval" element={<PendingApprovalPage />} />
 
         <Route element={<RequireAuth />}>

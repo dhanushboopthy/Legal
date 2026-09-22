@@ -16,6 +16,7 @@ import type { CaseListItem } from '@/types/api'
 const aCase = (over: Partial<CaseListItem> = {}): CaseListItem => ({
   id: 'c1',
   junior_lawyer_id: 'u1',
+  case_number: 'LF-2026-0001',
   title: 'Bail petition',
   case_type: 'Criminal',
   court: null,

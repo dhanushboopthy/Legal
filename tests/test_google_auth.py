@@ -21,16 +21,26 @@ async def test_google_login_creates_new_unapproved_but_verified_user(client, db_
     monkeypatch.setattr(auth_router, "verify_google_id_token", lambda token: _claims())
 
     resp = await client.post("/auth/google", json={"id_token": "whatever"})
-    # New account still needs admin approval, same gate as password signup.
-    assert resp.status_code == 403
-    assert "approval" in resp.json()["detail"].lower()
+    # Verified (Google's own verification counts) is enough for a token even
+    # before admin approval — a limited session, not full access: GET
+    # /users/me works (the pending-approval screen's poll), but a
+    # permission-gated route still 403s until an admin approves.
+    assert resp.status_code == 200
+    token = resp.json()["access_token"]
+
+    me = await client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert me.status_code == 200
+    assert me.json()["is_active"] is False
+
+    gated = await client.get("/users", headers={"Authorization": f"Bearer {token}"})
+    assert gated.status_code == 403
 
 
 async def test_google_login_succeeds_once_active(client, db_session, monkeypatch):
     monkeypatch.setattr(auth_router, "verify_google_id_token", lambda token: _claims())
 
     first = await client.post("/auth/google", json={"id_token": "whatever"})
-    assert first.status_code == 403  # creates the (inactive) user as a side effect
+    assert first.status_code == 200  # creates the (inactive) user as a side effect
 
     user = (
         await db_session.execute(select(User).where(User.email == "googler@example.com"))

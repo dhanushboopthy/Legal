@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     chat_email_after_minutes: int = 10
     chat_email_min_gap_minutes: int = 60
 
+    # The approval gate stays manual, but a pending account this old gets its
+    # admin(s) nudged (once per gap, not every sweep) rather than sitting
+    # forgotten indefinitely.
+    pending_approval_reminder_after_hours: int = 48
+    pending_approval_reminder_gap_hours: int = 24
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

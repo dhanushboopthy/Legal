@@ -52,7 +52,10 @@ export function DashboardPage() {
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
-        (c) => c.title.toLowerCase().includes(q) || c.junior_lawyer_name.toLowerCase().includes(q),
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.junior_lawyer_name.toLowerCase().includes(q) ||
+          c.case_number?.toLowerCase().includes(q),
       )
     }
     return list
@@ -104,7 +107,7 @@ export function DashboardPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title or lawyer"
+              placeholder="Search by title, lawyer or case number"
               aria-label="Search cases"
               className="w-full rounded-full border border-[var(--border)] surface py-1.5 pr-3 pl-9 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/40"
             />
@@ -208,6 +211,9 @@ function CaseList({
         <Link key={c.id} to={`/cases/${c.id}`}>
           <Card className="flex items-center justify-between gap-4 transition-transform hover:-translate-y-0.5">
             <div className="min-w-0">
+              {c.case_number && (
+                <p className="text-muted text-caption font-medium">{c.case_number}</p>
+              )}
               <div className="flex items-center gap-2">
                 <p className="truncate font-medium">{c.title}</p>
                 {c.turn === 'you' && (

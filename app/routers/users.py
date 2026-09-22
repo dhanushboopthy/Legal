@@ -1,6 +1,7 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+import structlog
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,25 +9,29 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import NotFoundError
 from app.core.permissions import USER_MANAGE
 from app.database import get_db
-from app.dependencies import get_current_user, require_permission
+from app.dependencies import get_current_user, get_current_user_or_pending, require_permission
 from app.models.user import User
-from app.schemas.user import UserOut
+from app.schemas.user import UserOut, UserUpdate
+from app.services import email_service
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = structlog.get_logger()
 
 
 @router.get("/me", response_model=UserOut)
-async def read_me(current_user: User = Depends(get_current_user)):
+async def read_me(current_user: User = Depends(get_current_user_or_pending)):
+    """Works for a verified-but-not-yet-approved account too — this is what
+    the pending-approval screen polls to notice its own approval."""
     return UserOut.from_user(current_user)
 
 
-@router.get("/pending", response_model=list[UserOut], dependencies=[Depends(require_permission(USER_MANAGE))])
-async def list_pending_users(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(User).options(selectinload(User.role)).where(User.is_active.is_(False))
-    )
-    users = result.scalars().all()
-    return [UserOut.from_user(u) for u in users]
+@router.patch("/me", response_model=UserOut)
+async def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(current_user, field, value)
+    await db.commit()
+    await db.refresh(current_user, attribute_names=["role"])
+    return UserOut.from_user(current_user)
 
 
 @router.get("", response_model=list[UserOut], dependencies=[Depends(require_permission(USER_MANAGE))])
@@ -52,4 +57,15 @@ async def approve_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     user.is_verified = True
     await db.commit()
     await db.refresh(user)
+
+    try:
+        await email_service.send_email(
+            user.email, "Your account has been approved",
+            f"Hi {user.full_name}, your account has been approved. You can now sign in and submit cases.",
+            f"<p>Hi {user.full_name},</p><p>Your account has been approved. "
+            "You can now sign in and submit cases.</p>",
+        )
+    except Exception as exc:  # noqa: BLE001 - a flaky mail server shouldn't fail the approval
+        logger.warning("approval_email_send_failed", email=user.email, error=str(exc))
+
     return UserOut.from_user(user)

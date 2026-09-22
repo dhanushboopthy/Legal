@@ -14,10 +14,7 @@ from app.models.user import User
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db),
-) -> User:
+async def _user_from_token(token: str, db: AsyncSession) -> User:
     try:
         payload = decode_token(token)
     except ValueError as exc:
@@ -34,13 +31,30 @@ async def get_current_user(
         select(User).options(selectinload(User.role)).where(User.id == uuid.UUID(user_id))
     )
     user = result.scalar_one_or_none()
-
     if user is None:
         raise UnauthorizedError("User no longer exists")
+    return user
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    user = await _user_from_token(token, db)
     if not user.is_active:
         raise ForbiddenError("Account is not active yet — awaiting admin approval")
-
     return user
+
+
+async def get_current_user_or_pending(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Like get_current_user, but admits a verified-but-not-yet-approved
+    account too. Only for the one endpoint a limited session needs to work at
+    all: GET /users/me, which the pending-approval screen polls. Every other
+    route stays behind get_current_user / require_permission."""
+    return await _user_from_token(token, db)
 
 
 def require_permission(permission: str):

@@ -18,6 +18,7 @@ const OWNER = 'u-owner'
 const aCase = (status: CaseStatus): CaseOut => ({
   id: 'c1',
   junior_lawyer_id: OWNER,
+  case_number: 'LF-2026-0001',
   title: 'Bail petition',
   case_type: 'Criminal',
   court: null,

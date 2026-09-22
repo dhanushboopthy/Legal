@@ -1,8 +1,24 @@
-import { useQuery } from '@tanstack/react-query'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Pencil } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Field, Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getMe } from '@/lib/api/users'
+import { useToast } from '@/components/ui/toast-context'
+import { getErrorMessage } from '@/lib/errors'
+import { getMe, updateMe } from '@/lib/api/users'
+import type { UserOut } from '@/types/api'
+
+const schema = z.object({
+  phone: z.string().trim().max(20).optional().or(z.literal('')),
+  bar_council_id: z.string().trim().max(100).optional().or(z.literal('')),
+})
+type FormValues = z.infer<typeof schema>
 
 export function ProfilePage() {
   const { data: user, isLoading } = useQuery({ queryKey: ['me'], queryFn: getMe })
@@ -16,13 +32,96 @@ export function ProfilePage() {
         <dl className="divide-y divide-[var(--border)]">
           <Row label="Full name" value={user.full_name} />
           <Row label="Email" value={user.email} />
-          <Row label="Phone" value={user.phone ?? '—'} />
-          <Row label="Bar council ID" value={user.bar_council_id ?? '—'} />
-          <Row label="Role" value={user.role_name.replace('_', ' ')} />
+          <Row label="Role" value={user.role_name.replace(/_/g, ' ')} />
           <Row label="Status" value={user.is_active ? 'Active' : 'Pending approval'} />
         </dl>
       </Card>
+      <div className="mt-4">
+        <EditableFields user={user} />
+      </div>
     </div>
+  )
+}
+
+function EditableFields({ user }: { user: UserOut }) {
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const [editing, setEditing] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    values: { phone: user.phone ?? '', bar_council_id: user.bar_council_id ?? '' },
+  })
+
+  const save = useMutation({
+    mutationFn: (values: FormValues) =>
+      updateMe({
+        phone: values.phone || undefined,
+        bar_council_id: values.bar_council_id || undefined,
+      }),
+    onSuccess: () => {
+      toast({ variant: 'success', title: 'Profile updated' })
+      void queryClient.invalidateQueries({ queryKey: ['me'] })
+      setEditing(false)
+    },
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: "Couldn't save your profile",
+        description: getErrorMessage(err),
+      }),
+  })
+
+  if (!editing) {
+    return (
+      <Card>
+        <dl className="divide-y divide-[var(--border)]">
+          <Row label="Phone" value={user.phone ?? '—'} />
+          <Row label="Bar council ID" value={user.bar_council_id ?? '—'} />
+        </dl>
+        <Button variant="secondary" size="sm" className="mt-4" onClick={() => setEditing(true)}>
+          <Pencil className="size-4" /> Edit
+        </Button>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <form
+        onSubmit={handleSubmit((values) => save.mutate(values))}
+        className="space-y-4"
+      >
+        <Field id="phone" label="Phone" error={errors.phone?.message}>
+          {(control) => <Input type="tel" {...control} {...register('phone')} />}
+        </Field>
+        <Field id="bar_council_id" label="Bar council ID" error={errors.bar_council_id?.message}>
+          {(control) => <Input {...control} {...register('bar_council_id')} />}
+        </Field>
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" loading={save.isPending}>
+            Save
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={save.isPending}
+            onClick={() => {
+              reset()
+              setEditing(false)
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }
 

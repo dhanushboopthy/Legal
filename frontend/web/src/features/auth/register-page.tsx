@@ -14,8 +14,6 @@ const schema = z.object({
   full_name: z.string().min(2, 'Enter your full name').max(150),
   email: z.string().email('Enter a valid email address'),
   password: z.string().min(8, 'At least 8 characters').max(128),
-  phone: z.string().optional(),
-  bar_council_id: z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -68,9 +66,6 @@ export function RegisterPage() {
                 {...register('password')}
               />
             )}
-          </Field>
-          <Field id="bar_council_id" label="Bar council ID (optional)">
-            {(control) => <Input {...control} {...register('bar_council_id')} />}
           </Field>
           {error && (
             <p role="alert" className="text-label text-danger-ink">

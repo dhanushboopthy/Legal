@@ -30,25 +30,35 @@ export function makeUser(permissions: string[], overrides: Partial<UserOut> = {}
     full_name: 'Test User',
     email: 'test@example.com',
     phone: null,
-    bar_council_id: null,
+    // A fully onboarded test user by default — RequireAuth otherwise routes
+    // straight to /complete-profile. Pass `bar_council_id: null` to test that.
+    bar_council_id: 'BAR-TEST-0001',
     role_name: 'unused_by_ui_gating',
     permissions,
     is_active: true,
     is_verified: true,
+    created_at: '2026-09-15T10:00:00Z',
     ...overrides,
   }
 }
 
 export function renderWithProviders(
   ui: ReactElement,
-  { user = null, route = '/' }: { user?: UserOut | null; route?: string } = {},
+  {
+    user = null,
+    route = '/',
+    authOverrides = {},
+  }: { user?: UserOut | null; route?: string; authOverrides?: Partial<AuthContextValue> } = {},
 ) {
   const auth: AuthContextValue = {
     user,
-    status: user ? 'authenticated' : 'unauthenticated',
+    status: user ? (user.is_active ? 'authenticated' : 'pending') : 'unauthenticated',
     login: vi.fn(),
     loginWithGoogle: vi.fn(),
+    verifyEmail: vi.fn(),
     logout: vi.fn(),
+    refreshUser: vi.fn(),
+    ...authOverrides,
   }
   // No retries: a failing request should surface immediately in a test.
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

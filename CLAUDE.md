@@ -138,6 +138,26 @@ frontend/
   (never a token in the URL); `ENVIRONMENT=test` swaps Redis pub/sub for an
   in-process stand-in (`MemoryBackend`) so tests need no Redis, and
   `realtime.enabled` is off in tests unless a test turns it on.
+- **A verified email is enough for a token; admin approval is a separate,
+  narrower gate.** `_require_verified` (not `_require_login_eligible`) is what
+  `/auth/login`, `/auth/google` and `/auth/verify-email` check before issuing
+  one — a verified-but-inactive account gets the same access/refresh token as
+  anyone else. `get_current_user` still 403s that token everywhere except
+  `GET /users/me` (`get_current_user_or_pending`), which is what the
+  pending-approval screen polls. Don't loosen `get_current_user` itself to
+  "fix" a pending-user 403 on some other route — add a route-specific lenient
+  dependency instead, the way `/users/me` does.
+- **The admin-approval gate is manual on purpose, but bounded.** It's never
+  automated (a human always approves), but a verified account waiting past
+  `pending_approval_reminder_after_hours` gets every `user:manage` holder one
+  email (not one per pending account) via
+  `maintenance_service.remind_stale_pending_approvals`, at most once per
+  `pending_approval_reminder_gap_hours`.
+- **A case's `case_number` (`LF-2026-0042`) is assigned once, in
+  `case_service.create_case`, from the `case_number_seq` Postgres sequence —
+  never recomputed, never derived from `id`.** It's nullable at the DB level
+  only so a test fixture that builds a `Case` directly doesn't need one; every
+  case created through the API has one.
 
 ## Commands
 

@@ -25,6 +25,10 @@ async def run_once() -> None:
         emailed = await maintenance_service.email_unread_messages(db)
     if emailed:
         logger.info("chat_emails_sent", count=emailed)
+    async with AsyncSessionLocal() as db:
+        reminded = await maintenance_service.remind_stale_pending_approvals(db)
+    if reminded:
+        logger.info("pending_approvals_reminded", count=reminded)
 
 
 async def main() -> None:

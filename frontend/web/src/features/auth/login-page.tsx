@@ -3,15 +3,17 @@ import { isAxiosError } from 'axios'
 import { Briefcase } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { useAuth } from '@/auth/auth-context'
+import { destinationFor } from '@/auth/destination'
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/input'
 import { isGoogleSignInConfigured } from '@/hooks/use-google-identity'
 import { getErrorMessage } from '@/lib/errors'
+import type { UserOut } from '@/types/api'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -20,7 +22,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function LoginPage() {
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, status, user: sessionUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
@@ -32,34 +34,38 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  const goToDestination = () => {
+  // A verified-but-not-yet-approved account still signs in (a limited
+  // session — see useAuth().status 'pending'), and a signup with no Bar
+  // Council ID yet goes to collect one; only a fully set-up, active account
+  // goes on to wherever it was headed, query and hash intact.
+  const routeSignedInUser = (user: UserOut) => {
+    const destination = destinationFor(user)
+    if (destination !== '/') {
+      navigate(destination, { replace: true })
+      return
+    }
     const from = (location.state as { from?: Location })?.from
-    navigate(from?.pathname ?? '/', { replace: true })
+    navigate(from ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}` : '/', {
+      replace: true,
+    })
   }
 
-  // Returns true if the error sent the user to a dedicated page (unverified
-  // email / pending approval), so the caller shouldn't also show it inline.
-  const redirectForAccountState = (err: unknown, email?: string): boolean => {
-    if (!isAxiosError(err) || err.response?.status !== 403) return false
+  // True if the error sent the user to verify their email instead, so the
+  // caller shouldn't also show it inline.
+  const redirectIfUnverified = (err: unknown, email?: string): boolean => {
+    if (!isAxiosError(err) || err.response?.status !== 403 || !email) return false
     const detail = String(err.response.data?.detail ?? '').toLowerCase()
-    if (detail.includes('verify your email') && email) {
-      navigate('/verify-email', { state: { email, resend: true } })
-      return true
-    }
-    if (detail.includes('pending')) {
-      navigate('/pending-approval', { state: { email } })
-      return true
-    }
-    return false
+    if (!detail.includes('verify your email')) return false
+    navigate('/verify-email', { state: { email, resend: true } })
+    return true
   }
 
   const onSubmit = async (values: FormValues) => {
     setError(null)
     try {
-      await login(values.email, values.password)
-      goToDestination()
+      routeSignedInUser(await login(values.email, values.password))
     } catch (err) {
-      if (!redirectForAccountState(err, values.email)) setError(getErrorMessage(err))
+      if (!redirectIfUnverified(err, values.email)) setError(getErrorMessage(err))
     }
   }
 
@@ -67,13 +73,18 @@ export function LoginPage() {
     setError(null)
     setGooglePending(true)
     try {
-      await loginWithGoogle(idToken)
-      goToDestination()
+      routeSignedInUser(await loginWithGoogle(idToken))
     } catch (err) {
-      if (!redirectForAccountState(err)) setError(getErrorMessage(err))
+      if (!redirectIfUnverified(err)) setError(getErrorMessage(err))
     } finally {
       setGooglePending(false)
     }
+  }
+
+  // Landed here with a session already: nothing to do here. Checked after
+  // every hook above runs, so hook order stays the same on every render.
+  if (sessionUser && status !== 'unauthenticated') {
+    return <Navigate to={destinationFor(sessionUser)} replace />
   }
 
   return (

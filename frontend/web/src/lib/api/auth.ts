@@ -14,10 +14,8 @@ export async function register(payload: RegisterPayload): Promise<UserOut> {
   return data
 }
 
-export async function verifyEmail(email: string, code: string): Promise<UserOut> {
-  const { data } = await apiClient.post<UserOut>('/auth/verify-email', { email, code })
-  return data
-}
+// Verifying the code itself signs the account in (a Token, not a UserOut) —
+// that goes through the BFF as useAuth().verifyEmail, not through here.
 
 export async function resendOtp(email: string): Promise<void> {
   await apiClient.post('/auth/resend-otp', { email })

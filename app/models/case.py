@@ -32,6 +32,12 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     junior_lawyer: Mapped["User"] = relationship(back_populates="cases")
 
+    # "LF-2026-0042": assigned once at creation from case_number_seq, never
+    # recomputed. Nullable at the DB level only so a fixture that inserts a
+    # Case directly doesn't need one; every real case gets one from
+    # case_service.create_case.
+    case_number: Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
+
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     case_type: Mapped[str] = mapped_column(String(100), nullable=False)
     court: Mapped[str | None] = mapped_column(String(150), nullable=True)
