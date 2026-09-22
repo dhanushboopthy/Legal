@@ -147,6 +147,13 @@ frontend/
   pending-approval screen polls. Don't loosen `get_current_user` itself to
   "fix" a pending-user 403 on some other route — add a route-specific lenient
   dependency instead, the way `/users/me` does.
+- **A phone number is stored only once verified — never written directly.**
+  `PATCH /users/me` doesn't accept `phone` at all. `POST /users/me/phone/otp`
+  texts a code (MSG91, `app/services/sms_service.py`) to a candidate number
+  held only in the `phone_otps` table; `POST /users/me/phone/verify` is what
+  writes it to `users.phone`, mirroring the registration email-OTP pattern
+  (`app/services/otp_service.py`) but keyed on `(user_id, phone)` since the
+  candidate number can change between attempts, unlike email.
 - **The admin-approval gate is manual on purpose, but bounded.** It's never
   automated (a human always approves), but a verified account waiting past
   `pending_approval_reminder_after_hours` gets every `user:manage` holder one

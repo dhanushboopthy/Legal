@@ -7,24 +7,10 @@ import { Card } from '@/components/ui/card'
 import { Input, Label } from '@/components/ui/input'
 import { resendOtp } from '@/lib/api/auth'
 import { getErrorMessage } from '@/lib/errors'
+import { useOtpCooldown } from '@/lib/use-otp-cooldown'
 import type { UserOut } from '@/types/api'
 
 const RESEND_COOLDOWN_SECONDS = 60
-
-// A refresh shouldn't reset the visible resend timer to zero — the real OTP
-// expiry is server-side either way, this just keeps the UI honest.
-function cooldownKey(email: string): string {
-  return `otp-resend-until:${email}`
-}
-
-function readStoredCooldown(email: string): number {
-  const until = Number(sessionStorage.getItem(cooldownKey(email)) ?? 0)
-  return Math.max(0, Math.ceil((until - Date.now()) / 1000))
-}
-
-function storeCooldown(email: string, seconds: number): void {
-  sessionStorage.setItem(cooldownKey(email), String(Date.now() + seconds * 1000))
-}
 
 export function OtpStep({
   email,
@@ -40,7 +26,7 @@ export function OtpStep({
   const [error, setError] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [resending, setResending] = useState(false)
-  const [cooldown, setCooldown] = useState(() => readStoredCooldown(email))
+  const { cooldown, start, clear } = useOtpCooldown('otp', email)
 
   // Sign-in bounced an unverified account here, so any earlier code may be
   // stale — issue a fresh one. The ref stops StrictMode's double effect run
@@ -50,25 +36,16 @@ export function OtpStep({
     if (!sendOnMount || sentOnMount.current) return
     sentOnMount.current = true
     resendOtp(email)
-      .then(() => {
-        storeCooldown(email, RESEND_COOLDOWN_SECONDS)
-        setCooldown(RESEND_COOLDOWN_SECONDS)
-      })
+      .then(() => start(RESEND_COOLDOWN_SECONDS))
       .catch(() => setError('Could not send a new code. Try "Resend code" below.'))
-  }, [sendOnMount, email])
-
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const timer = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000)
-    return () => clearInterval(timer)
-  }, [cooldown])
+  }, [sendOnMount, email, start])
 
   const submit = async (candidate: string) => {
     setError(null)
     setVerifying(true)
     try {
       const user = await verifyEmail(email, candidate)
-      sessionStorage.removeItem(cooldownKey(email))
+      clear()
       onVerified(user)
     } catch (err) {
       setError(getErrorMessage(err, 'Invalid code. Please try again.'))
@@ -96,8 +73,7 @@ export function OtpStep({
     setResending(true)
     try {
       await resendOtp(email)
-      storeCooldown(email, RESEND_COOLDOWN_SECONDS)
-      setCooldown(RESEND_COOLDOWN_SECONDS)
+      start(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
       setError(getErrorMessage(err, 'Could not resend the code.'))
     } finally {

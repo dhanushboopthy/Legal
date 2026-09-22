@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
 
+    # MSG91 for the phone-number-verification OTP (profile page). The OTP API
+    # needs a DLT-approved template for Indian numbers — create one in the
+    # MSG91 dashboard with the code as its only variable. Leave
+    # MSG91_AUTH_KEY empty in dev — with DEBUG=true the OTP code is logged
+    # server-side instead of texted.
+    msg91_auth_key: str = ""
+    msg91_template_id: str = ""
+
     review_fee_inr: int = 100
     # The advocate prices each case when sending the draft; the server clamps
     # that price to this range (catches typos like 25 or 2500000).

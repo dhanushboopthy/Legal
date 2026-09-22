@@ -7,12 +7,22 @@ export async function getMe(): Promise<UserOut> {
 }
 
 export interface UpdateMePayload {
-  phone?: string
   bar_council_id?: string
 }
 
 export async function updateMe(payload: UpdateMePayload): Promise<UserOut> {
   const { data } = await apiClient.patch<UserOut>('/users/me', payload)
+  return data
+}
+
+// A phone number is never set directly — it's texted a code first, and only
+// stored once that code is confirmed (see CLAUDE.md).
+export async function requestPhoneOtp(phone: string): Promise<void> {
+  await apiClient.post('/users/me/phone/otp', { phone })
+}
+
+export async function verifyPhoneOtp(phone: string, code: string): Promise<UserOut> {
+  const { data } = await apiClient.post<UserOut>('/users/me/phone/verify', { phone, code })
   return data
 }
 
