@@ -1,6 +1,8 @@
 services:
   api:
     build: .
+    # Shared with the worker below: one image, two commands.
+    image: legal-filing-api
     ports:
       - "8000:8000"
     env_file: .env
@@ -13,6 +15,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      storage-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Housekeeping loop (python -m app.worker): today it deletes draft cases
+  # nobody submitted within DRAFT_RETENTION_DAYS, along with their files. Same
+  # image as the api; safe to run more than one.
+  worker:
+    build: .
+    image: legal-filing-api
+    command: ["python", "-m", "app.worker"]
+    env_file: .env
+    environment:
+      S3_INTERNAL_ENDPOINT_URL: http://storage:8333
+    depends_on:
+      db:
+        condition: service_healthy
       storage-init:
         condition: service_completed_successfully
     restart: unless-stopped

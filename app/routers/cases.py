@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,6 @@ from app.core.permissions import (
     CASE_DRAFT,
     CASE_REQUEST_REVISION,
     CASE_SUBMIT,
-    CASE_VIEW_ALL,
     PAYMENT_INITIATE,
     QUOTE_CREATE,
 )
@@ -20,7 +19,7 @@ from app.dependencies import get_current_user, require_permission
 from app.models.case import Case
 from app.models.revision import RevisionRequest
 from app.models.user import User
-from app.schemas.case import CaseCreate, CaseDecision, CaseOut, RevisionCreate, RevisionOut
+from app.schemas.case import CaseCreate, CaseDecision, CaseOut, CaseUpdate, RevisionCreate, RevisionOut
 from app.schemas.document import DocumentOut
 from app.schemas.payment import PaymentOrderResponse
 from app.schemas.quote import DraftUpload, QuoteCreate, QuoteOut
@@ -43,10 +42,7 @@ async def create_case(
 
 @router.get("", response_model=list[CaseOut])
 async def list_cases(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    query = select(Case)
-    if CASE_VIEW_ALL not in (current_user.role.permissions or []):
-        query = query.where(Case.junior_lawyer_id == current_user.id)
-    result = await db.execute(query.order_by(Case.created_at.desc()))
+    result = await db.execute(case_service.visible_cases_query(current_user).order_by(Case.created_at.desc()))
     return list(result.scalars().all())
 
 
@@ -58,6 +54,62 @@ async def get_case(
 ):
     case = await case_service.get_case_or_404(db, case_id)
     case_service.authorize_case_access(case, current_user)
+    return case
+
+
+@router.patch(
+    "/{case_id}", response_model=CaseOut, dependencies=[Depends(require_permission(CASE_SUBMIT))],
+)
+async def update_case(
+    case_id: uuid.UUID,
+    payload: CaseUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Edit the details of a draft case (before it is submitted)."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.require_owner(case, current_user)
+    case = await case_service.lock_case(db, case.id)
+    case = await case_service.update_draft(db, case=case, data=payload)
+    await db.commit()
+    await db.refresh(case)
+    return case
+
+
+@router.delete(
+    "/{case_id}", status_code=204, dependencies=[Depends(require_permission(CASE_SUBMIT))],
+)
+async def discard_case(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Throw away a draft case and its uploaded files. A submitted case can't
+    be deleted."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.require_owner(case, current_user)
+    case = await case_service.lock_case(db, case.id)
+    await case_service.discard_draft(db, case=case, user=current_user)
+    await db.commit()
+    return Response(status_code=204)
+
+
+@router.post(
+    "/{case_id}/submit", response_model=CaseOut, dependencies=[Depends(require_permission(CASE_SUBMIT))],
+)
+async def submit_case(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a draft case for review. Needs at least one confirmed file; the
+    lawyer pays the review fee next."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.require_owner(case, current_user)
+    case = await case_service.lock_case(db, case.id)
+    case = await case_service.submit_case(db, case=case, user=current_user)
+    await db.commit()
+    await db.refresh(case)
     return case
 
 

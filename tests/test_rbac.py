@@ -1,4 +1,5 @@
-from tests.conftest import auth_header, make_user
+from app.models.case import CaseStatus
+from tests.conftest import auth_header, make_case, make_user
 
 
 async def test_case_submit_denied_without_permission(client, db_session):
@@ -25,31 +26,32 @@ async def test_case_submit_allowed_for_junior_lawyer(client, db_session):
 async def test_junior_lawyer_cannot_view_another_lawyers_case(client, db_session):
     owner = await make_user(db_session, role_name="junior_lawyer")
     other = await make_user(db_session, role_name="junior_lawyer")
+    case = await make_case(db_session, owner, status=CaseStatus.SUBMITTED)
 
-    create = await client.post(
-        "/cases",
-        json={"title": "Owner's case", "case_type": "civil"},
-        headers=auth_header(owner),
-    )
-    case_id = create.json()["id"]
-
-    resp = await client.get(f"/cases/{case_id}", headers=auth_header(other))
+    resp = await client.get(f"/cases/{case.id}", headers=auth_header(other))
     assert resp.status_code == 403
 
 
 async def test_case_view_all_permission_bypasses_ownership_check(client, db_session):
     owner = await make_user(db_session, role_name="junior_lawyer")
     clerk = await make_user(db_session, role_name="clerk")
+    case = await make_case(db_session, owner, status=CaseStatus.SUBMITTED)
 
-    create = await client.post(
-        "/cases",
-        json={"title": "Owner's case", "case_type": "civil"},
-        headers=auth_header(owner),
-    )
-    case_id = create.json()["id"]
-
-    resp = await client.get(f"/cases/{case_id}", headers=auth_header(clerk))
+    resp = await client.get(f"/cases/{case.id}", headers=auth_header(clerk))
     assert resp.status_code == 200
+
+
+async def test_view_all_does_not_reach_a_draft(client, db_session):
+    """A draft is its owner's private work: not even someone who can see every
+    case sees it, and it doesn't exist as far as they can tell."""
+    owner = await make_user(db_session, role_name="junior_lawyer")
+    advocate = await make_user(db_session, role_name="super_admin")
+    case = await make_case(db_session, owner, status=CaseStatus.DRAFT)
+
+    assert (await client.get(f"/cases/{case.id}", headers=auth_header(advocate))).status_code == 404
+    listed = (await client.get("/cases", headers=auth_header(advocate))).json()
+    assert case.id.hex not in {c["id"].replace("-", "") for c in listed}
+    assert (await client.get(f"/cases/{case.id}", headers=auth_header(owner))).status_code == 200
 
 
 async def test_only_junior_lawyer_can_initiate_payment_even_with_view_all(client, db_session):

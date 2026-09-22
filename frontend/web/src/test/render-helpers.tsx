@@ -6,6 +6,7 @@ import { vi } from 'vitest'
 
 import { AuthContext, type AuthContextValue } from '@/auth/auth-context'
 import { PERMISSIONS } from '@/auth/permissions'
+import { ToastContext } from '@/components/ui/toast-context'
 import type { UserOut } from '@/types/api'
 
 export const LAWYER_PERMISSIONS: string[] = [
@@ -50,11 +51,16 @@ export function renderWithProviders(
   // No retries: a failing request should surface immediately in a test.
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
-  return render(
+  const toast = vi.fn()
+
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <AuthContext value={auth}>
-        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        <ToastContext value={{ toast }}>
+          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        </ToastContext>
       </AuthContext>
     </QueryClientProvider>,
   )
+  return { ...result, toast, queryClient }
 }

@@ -11,7 +11,7 @@ from app.core.exceptions import AppError
 from app.core.rate_limit import limiter
 from app.database import engine
 from app.middleware import RequestContextMiddleware
-from app.routers import auth, cases, documents, notifications, payments, users, webhooks
+from app.routers import auth, cases, config, documents, notifications, payments, users, webhooks
 
 logger = structlog.get_logger()
 
@@ -75,3 +75,4 @@ app.include_router(documents.router)
 app.include_router(payments.router)
 app.include_router(notifications.router)
 app.include_router(webhooks.router)
+app.include_router(config.router)

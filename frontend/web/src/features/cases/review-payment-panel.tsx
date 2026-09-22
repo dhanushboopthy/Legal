@@ -8,20 +8,34 @@ import { Card } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast-context'
 import { useRazorpayCheckout } from '@/hooks/use-razorpay'
 import { getErrorMessage } from '@/lib/errors'
+import { formatCurrency } from '@/lib/utils'
 import type { PaymentOrderResponse } from '@/types/api'
 
 interface Props {
   createOrder: () => Promise<PaymentOrderResponse>
   title: string
   description: string
+  // Shown on the button: nobody should be asked to pay without seeing the
+  // amount. Comes from the server; the button waits until it has it.
+  amountInr: number | undefined
+  // The fee was paid moments ago (in the checkout that opened from the
+  // new-case page), so start out waiting for it to be confirmed.
+  initiallyConfirming?: boolean
   onPaid: () => void
 }
 
-export function PaymentActionCard({ createOrder, title, description, onPaid }: Props) {
+export function PaymentActionCard({
+  createOrder,
+  title,
+  description,
+  amountInr,
+  initiallyConfirming = false,
+  onPaid,
+}: Props) {
   const { user } = useAuth()
   const { toast } = useToast()
   const openCheckout = useRazorpayCheckout()
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(initiallyConfirming)
 
   const { mutate, isPending } = useMutation({
     mutationFn: createOrder,
@@ -61,8 +75,14 @@ export function PaymentActionCard({ createOrder, title, description, onPaid }: P
               Confirming your payment&hellip; this page will update automatically.
             </p>
           ) : (
-            <Button className="mt-3" size="sm" loading={isPending} onClick={() => mutate()}>
-              Pay now
+            <Button
+              className="mt-3"
+              size="sm"
+              loading={isPending}
+              disabled={amountInr === undefined}
+              onClick={() => mutate()}
+            >
+              {amountInr === undefined ? 'Pay' : `Pay ${formatCurrency(amountInr)}`}
             </Button>
           )}
         </div>

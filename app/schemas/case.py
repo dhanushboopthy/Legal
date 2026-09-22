@@ -15,6 +15,16 @@ class CaseCreate(BaseModel):
     note: str | None = Field(default=None, max_length=2000)
 
 
+class CaseUpdate(BaseModel):
+    """Edits to a draft case before it is submitted; only what is sent changes."""
+
+    title: str | None = Field(default=None, min_length=3, max_length=255)
+    case_type: str | None = Field(default=None, min_length=2, max_length=100)
+    court: str | None = Field(default=None, max_length=150)
+    description: str | None = None
+    note: str | None = Field(default=None, max_length=2000)
+
+
 class CaseDecision(BaseModel):
     accept: bool
     rejection_reason: str | None = None

@@ -35,9 +35,11 @@ app/
   config.py          pydantic-settings, reads .env
   database.py        async engine/session, declarative Base
   dependencies.py    get_current_user, require_permission() — RBAC enforcement point
+  worker.py          background loop (`python -m app.worker`): purges stale drafts
   core/
     security.py      password hashing, JWT issue/decode
     permissions.py    permission constants + ROLE_PERMISSIONS seed map
+    uploads.py        accepted file types, magic bytes, filename rules
     exceptions.py     AppError hierarchy -> mapped to HTTP responses in main.py
   models/            SQLAlchemy ORM models (one file per table)
   schemas/           Pydantic request/response models
@@ -96,9 +98,22 @@ frontend/
   `locked` and never includes a storage key.
 - **Documents are not served through the API.** Downloads and uploads use
   presigned URLs (`storage_service.py`) that the browser calls directly. The
-  api reads an object itself only to verify an upload (exists, size, really a
-  PDF, page count) — `storage_service.head_object/read_object` over
-  `S3_INTERNAL_ENDPOINT_URL` — and never to serve it.
+  api reads an object itself only to verify an upload (exists, size, first
+  bytes, a draft's page count) — `storage_service.head_object/read_head/
+  read_object` over `S3_INTERNAL_ENDPOINT_URL` — and never to serve it.
+- **A draft case is its owner's private work.** A new case is `draft`;
+  `authorize_case_access` and `visible_cases_query` hide it from everyone else
+  (404, not 403), and the review fee can't be paid until `POST /cases/{id}/submit`.
+  Files can be added or removed only in `draft`/`submitted`.
+- **Upload rules are enforced by the server, twice.** `upload-urls` checks
+  type (`app/core/uploads.py`), size and count, then signs the content type
+  *and* size into the PUT (SeaweedFS answers 403 to any other); `confirm-batch`
+  re-checks each object (belongs to the case, exists, limits, magic bytes),
+  deletes what fails, and takes `lock_case` first so two confirmations can't
+  both slip under the limit. Limits live in config, and the UI reads them from
+  `GET /config/uploads` and `GET /config/pricing`.
+- **Background work goes in the `worker` service**, not in request handlers:
+  one asyncio loop, idempotent sweeps (`maintenance_service`), safe to run twice.
 
 ## Commands
 
@@ -112,6 +127,7 @@ python -m venv venv && ./venv/bin/pip install -r requirements.txt -r requirement
 
 # run
 ./venv/bin/uvicorn app.main:app --reload
+./venv/bin/python -m app.worker        # background sweeps (docker: the `worker` service)
 
 # test (see note below — needs a real Postgres, not sqlite)
 ./venv/bin/pytest
@@ -149,7 +165,10 @@ API access, not something the deployed frontend relies on.
 Models use Postgres-specific types (`UUID`, `ARRAY`, native `ENUM`), so tests
 run against a real Postgres database, not sqlite — point `DATABASE_URL` in
 `.env` at a disposable test database before running pytest. `docker-compose.yml`
-includes a `db` service you can point tests at.
+includes a `db` service you can point tests at; with `docker-compose.override.yml`
+it is on host port 5540, e.g.
+`DATABASE_URL=postgresql+asyncpg://legal_user:legal_pass@localhost:5540/legal_filing_test pytest`.
+Object storage is faked in tests (`fake_store` in `tests/conftest.py`).
 
 ## Migration note
 

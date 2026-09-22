@@ -4,8 +4,7 @@ import type { CaseOut, PaymentOrderResponse } from '@/types/api'
 export interface CreateCasePayload {
   title: string
   case_type: string
-  court?: string
-  description?: string
+  note?: string
 }
 
 export async function listCases(): Promise<CaseOut[]> {
@@ -21,6 +20,25 @@ export async function getCase(caseId: string): Promise<CaseOut> {
 export async function createCase(payload: CreateCasePayload): Promise<CaseOut> {
   const { data } = await apiClient.post<CaseOut>('/cases', payload)
   return data
+}
+
+// Creates the case as a private draft; it is hidden from the advocate and
+// can't be paid for until it is submitted.
+export async function updateCase(
+  caseId: string,
+  payload: Partial<CreateCasePayload>,
+): Promise<CaseOut> {
+  const { data } = await apiClient.patch<CaseOut>(`/cases/${caseId}`, payload)
+  return data
+}
+
+export async function submitCase(caseId: string): Promise<CaseOut> {
+  const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/submit`)
+  return data
+}
+
+export async function discardCase(caseId: string): Promise<void> {
+  await apiClient.delete(`/cases/${caseId}`)
 }
 
 export async function createReviewPayment(caseId: string): Promise<PaymentOrderResponse> {

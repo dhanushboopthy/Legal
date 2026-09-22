@@ -114,44 +114,21 @@ async def test_an_unknown_document_is_a_404(client, db_session, fake_store):
 
 # --- uploads and confirming --------------------------------------------------
 
-async def test_confirm_files_only_an_original_and_only_before_review(client, db_session, fake_store):
-    lawyer = await make_user(db_session, role_name="junior_lawyer")
-    case = await make_case(db_session, lawyer, status=CaseStatus.SUBMITTED)
-    ok = await client.post("/documents/confirm", headers=auth_header(lawyer), json={
-        "case_id": str(case.id), "storage_key": f"cases/{case.id}/a.pdf",
-        "original_filename": "a.pdf", "document_type": "original",
-    })
-    assert ok.status_code == 200 and ok.json()["locked"] is False
-
-    as_draft = await client.post("/documents/confirm", headers=auth_header(lawyer), json={
-        "case_id": str(case.id), "storage_key": f"cases/{case.id}/b.pdf",
-        "original_filename": "b.pdf", "document_type": "draft",
-    })
-    assert as_draft.status_code == 422 and "quote" in as_draft.json()["detail"]
-
-    case.status = CaseStatus.ACCEPTED
-    await db_session.commit()
-    late = await client.post("/documents/confirm", headers=auth_header(lawyer), json={
-        "case_id": str(case.id), "storage_key": f"cases/{case.id}/c.pdf",
-        "original_filename": "c.pdf", "document_type": "original",
-    })
-    assert late.status_code == 422
-
-
 async def test_a_junior_cannot_get_an_upload_url_for_a_draft(client, db_session, fake_store):
     lawyer = await make_user(db_session, role_name="junior_lawyer")
     admin = await make_user(db_session, role_name="super_admin")
     case = await make_case(db_session, lawyer, status=CaseStatus.ACCEPTED)
-    payload = {"case_id": str(case.id), "filename": "d.pdf", "document_type": "draft"}
+    payload = {"case_id": str(case.id), "filename": "d.pdf"}
     assert (await client.post("/documents/upload-url", json=payload, headers=auth_header(lawyer))).status_code == 403
     assert (await client.post("/documents/upload-url", json=payload, headers=auth_header(admin))).status_code == 200
 
 
-async def test_the_supporting_type_is_not_uploadable_yet(client, db_session, fake_store):
+async def test_the_draft_upload_url_is_for_pdfs_only(client, db_session, fake_store):
+    admin = await make_user(db_session, role_name="super_admin")
     lawyer = await make_user(db_session, role_name="junior_lawyer")
-    case = await make_case(db_session, lawyer)
+    case = await make_case(db_session, lawyer, status=CaseStatus.ACCEPTED)
     resp = await client.post(
-        "/documents/upload-url", headers=auth_header(lawyer),
-        json={"case_id": str(case.id), "filename": "x.pdf", "document_type": "supporting"},
+        "/documents/upload-url", headers=auth_header(admin),
+        json={"case_id": str(case.id), "filename": "d.docx"},
     )
     assert resp.status_code == 422

@@ -106,10 +106,40 @@ export interface RevisionOut {
   created_at: string
 }
 
-export interface UploadUrlResponse {
-  upload_url: string
+// One signed PUT per file the lawyer adds to a case (POST /documents/upload-urls).
+export interface UploadTarget {
+  filename: string
+  content_type: string
+  size: number
   storage_key: string
+  upload_url: string
   expires_in_seconds: number
+}
+
+export interface RejectedFile {
+  storage_key: string
+  original_filename: string
+  reason: string
+}
+
+// Each file stands or falls alone, so a retry only redoes what failed.
+export interface ConfirmBatchResponse {
+  confirmed: DocumentOut[]
+  rejected: RejectedFile[]
+}
+
+export interface UploadRules {
+  max_files: number
+  max_file_size_mb: number
+  max_case_size_mb: number
+  // extension -> content type, e.g. { '.pdf': 'application/pdf' }
+  accepted: Record<string, string>
+}
+
+export interface Pricing {
+  review_fee_inr: number
+  quote_min_inr: number
+  quote_max_inr: number
 }
 
 export interface NotificationOut {

@@ -7,9 +7,10 @@ from app.models.document import DocumentType
 
 
 class UploadUrlRequest(BaseModel):
+    """For the advocate's draft PDF; the lawyer's files use UploadUrlsRequest."""
+
     case_id: uuid.UUID
     filename: str
-    document_type: DocumentType
 
 
 class UploadUrlResponse(BaseModel):
@@ -41,10 +42,3 @@ class DocumentOut(BaseModel):
         out = cls.model_validate(document)
         out.locked = locked
         return out
-
-
-class ConfirmUploadRequest(BaseModel):
-    case_id: uuid.UUID
-    storage_key: str
-    original_filename: str
-    document_type: DocumentType

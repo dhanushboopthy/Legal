@@ -157,18 +157,30 @@ def fake_store(monkeypatch) -> FakeStore:
     async def read_object(key):
         return store.objects[key]
 
+    async def read_head(key, length):
+        return store.objects[key][:length]
+
     async def delete_object(key):
         store.objects.pop(key, None)
         store.deleted.append(key)
 
+    async def delete_prefix(prefix):
+        keys = [k for k in store.objects if k.startswith(prefix)]
+        for key in keys:
+            store.objects.pop(key)
+            store.deleted.append(key)
+        return len(keys)
+
     monkeypatch.setattr(storage_service, "head_object", head_object)
     monkeypatch.setattr(storage_service, "read_object", read_object)
+    monkeypatch.setattr(storage_service, "read_head", read_head)
     monkeypatch.setattr(storage_service, "delete_object", delete_object)
+    monkeypatch.setattr(storage_service, "delete_prefix", delete_prefix)
     monkeypatch.setattr(
         storage_service, "generate_presigned_download_url", lambda key: f"https://store.test/{key}?sig=x"
     )
     monkeypatch.setattr(
-        storage_service, "generate_presigned_upload_url", lambda key, content_type="application/pdf": f"https://store.test/{key}?put=x"
+        storage_service, "generate_presigned_upload_url", lambda key, content_type="application/pdf", size=None: f"https://store.test/{key}?put=x&type={content_type}&size={size}"
     )
     return store
 

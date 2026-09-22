@@ -1,11 +1,20 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, Download, FileText, Hourglass, XCircle, type LucideIcon } from 'lucide-react'
+import {
+  Clock,
+  Download,
+  FileText,
+  Hourglass,
+  Pencil,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
-import { useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { PERMISSIONS, type CanFn } from '@/auth/permissions'
 import { usePermissions } from '@/auth/use-permissions'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CaseStatusPill, PaymentStatusPill } from '@/components/ui/status-pill'
@@ -18,10 +27,12 @@ import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
 import { InfoPanel } from '@/features/cases/info-panel'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { createReviewPayment, getCase } from '@/lib/api/cases'
+import { getPricing } from '@/lib/api/config'
 import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
 import { getErrorMessage } from '@/lib/errors'
 import { listPaymentsForCase } from '@/lib/api/payments'
 import { getStatusMeta, perspectiveFor, type Perspective } from '@/lib/status-meta'
+import { formatBytes } from '@/lib/uploads'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { CaseStatus } from '@/types/api'
 
@@ -33,7 +44,14 @@ export function CaseDetailPage() {
   // Set to the case's status right before a payment/action is kicked off;
   // polling stops itself the moment a refetch reports a *different* status,
   // with no separate effect needed to notice that and turn polling off.
-  const [awaitingStatus, setAwaitingStatus] = useState<CaseStatus | null>(null)
+  // Arriving from the checkout on the new-case page: the fee was just paid, so
+  // start out waiting for the webhook to move the case on.
+  const location = useLocation()
+  const justPaid =
+    (location.state as { confirmingPayment?: boolean } | null)?.confirmingPayment === true
+  const [awaitingStatus, setAwaitingStatus] = useState<CaseStatus | null>(
+    justPaid ? 'submitted' : null,
+  )
 
   const caseId = id!
 
@@ -53,6 +71,13 @@ export function CaseDetailPage() {
     queryFn: () => listCaseDocuments(caseId),
   })
 
+  // The fee on the button that spends it comes from the server.
+  const { data: pricing } = useQuery({
+    queryKey: ['pricing'],
+    queryFn: getPricing,
+    staleTime: Infinity,
+  })
+
   const { data: payments } = useQuery({
     queryKey: ['case-payments', caseId],
     queryFn: () => listPaymentsForCase(caseId),
@@ -65,7 +90,9 @@ export function CaseDetailPage() {
     void queryClient.invalidateQueries({ queryKey: ['case-payments', caseId] })
   }
 
-  const originalDoc = documents?.find((d) => d.type === 'original')
+  // What the lawyer submitted. Drafts are the advocate's work and get their own
+  // card once a quote exists.
+  const caseFiles = documents?.filter((d) => d.type !== 'draft') ?? []
 
   if (caseError) {
     const status = isAxiosError(caseError) ? caseError.response?.status : undefined
@@ -99,7 +126,9 @@ export function CaseDetailPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{caseData.title}</h1>
           <p className="text-muted mt-1 text-sm">
             {caseData.case_type}
-            {caseData.court && ` · ${caseData.court}`} · Submitted {formatDate(caseData.created_at)}
+            {caseData.court && ` · ${caseData.court}`} ·{' '}
+            {caseData.status === 'draft' ? 'Started' : 'Submitted'}{' '}
+            {formatDate(caseData.created_at)}
           </p>
         </div>
         <CaseStatusPill status={caseData.status} perspective={perspective} />
@@ -118,6 +147,8 @@ export function CaseDetailPage() {
           can={can}
           perspective={perspective}
           rejectionReason={caseData.rejection_reason}
+          reviewFeeInr={pricing?.review_fee_inr}
+          confirmingPayment={justPaid}
           onChanged={refresh}
         />
       </div>
@@ -125,10 +156,20 @@ export function CaseDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <h3 className="text-muted mb-3 text-sm font-semibold">Documents</h3>
-          {originalDoc ? (
-            <DocumentRow filename={originalDoc.original_filename} documentId={originalDoc.id} />
+          {caseFiles.length > 0 ? (
+            <ul className="space-y-2">
+              {caseFiles.map((doc) => (
+                <li key={doc.id}>
+                  <DocumentRow
+                    filename={doc.original_filename}
+                    size={doc.size_bytes}
+                    documentId={doc.id}
+                  />
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="text-muted text-label">No original document uploaded.</p>
+            <p className="text-muted text-label">No documents uploaded.</p>
           )}
         </Card>
         <Card>
@@ -154,7 +195,15 @@ export function CaseDetailPage() {
   )
 }
 
-function DocumentRow({ filename, documentId }: { filename: string; documentId: string }) {
+function DocumentRow({
+  filename,
+  size,
+  documentId,
+}: {
+  filename: string
+  size: number | null
+  documentId: string
+}) {
   const { toast } = useToast()
   return (
     <button
@@ -174,6 +223,7 @@ function DocumentRow({ filename, documentId }: { filename: string; documentId: s
     >
       <FileText className="size-4 text-[var(--fg-muted)]" />
       <span className="flex-1 truncate">{filename}</span>
+      {size !== null && <span className="text-muted text-caption">{formatBytes(size)}</span>}
       <Download className="size-4 text-[var(--fg-muted)]" />
     </button>
   )
@@ -185,6 +235,8 @@ function CaseActionPanel({
   can,
   perspective,
   rejectionReason,
+  reviewFeeInr,
+  confirmingPayment,
   onChanged,
 }: {
   caseId: string
@@ -192,6 +244,8 @@ function CaseActionPanel({
   can: CanFn
   perspective: Perspective
   rejectionReason: string | null
+  reviewFeeInr: number | undefined
+  confirmingPayment: boolean
   onChanged: () => void
 }) {
   // What the viewer sees when there is nothing for them to do.
@@ -207,6 +261,8 @@ function CaseActionPanel({
           createOrder={() => createReviewPayment(caseId)}
           title="Pay the review fee"
           description="Pay the review fee so the advocate can start reviewing your case."
+          amountInr={reviewFeeInr}
+          initiallyConfirming={confirmingPayment}
           onPaid={onChanged}
         />
       ) : (
@@ -233,6 +289,24 @@ function CaseActionPanel({
     // The draft-and-price, pay-to-unlock and new-version screens are built in
     // phase 4 of the UX plan; until then these states show where the case is.
     case 'draft':
+      return can(PERMISSIONS.CASE_SUBMIT) ? (
+        <InfoPanel
+          icon={Pencil}
+          title={meta.label}
+          description={meta.next}
+          action={
+            <Link
+              to={`/cases/new?draft=${caseId}`}
+              className={buttonVariants({ size: 'sm', className: 'mt-3' })}
+            >
+              Continue your draft
+            </Link>
+          }
+        />
+      ) : (
+        waiting(Clock)
+      )
+
     case 'accepted':
     case 'quoted':
     case 'revision_requested':

@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -8,11 +9,14 @@ export function InfoPanel({
   title,
   description,
   tone = 'neutral',
+  action,
 }: {
   icon: LucideIcon
   title: string
   description: string
   tone?: 'neutral' | 'success' | 'danger'
+  // The one thing to do next, when there is one.
+  action?: ReactNode
 }) {
   const toneClass = {
     neutral: 'bg-black/[0.04] text-[var(--fg-muted)]',
@@ -34,6 +38,7 @@ export function InfoPanel({
         <div>
           <h3 className="font-semibold">{title}</h3>
           <p className="text-muted mt-0.5 text-sm">{description}</p>
+          {action}
         </div>
       </div>
     </Card>

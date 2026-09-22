@@ -14,7 +14,7 @@ from sqlalchemy import select
 from app.models.case import Case, CaseStatus
 from app.models.payment import PaymentStatus, PaymentType
 from app.models.quote import QuoteStatus
-from tests.conftest import auth_header, make_case, make_user
+from tests.conftest import auth_header, make_case, make_pdf, make_user
 from tests.helpers import seed_original, seed_payment, seed_quote
 
 ROLE_OF = {
@@ -67,6 +67,11 @@ def pdf_body(world: World, **extra) -> dict:
     return {"draft": {"storage_key": key, "original_filename": "draft.pdf"}, "amount_inr": 2500, **extra}
 
 
+def confirm_body(world: World) -> dict:
+    key = world.store.put(f"cases/{world.case.id}/new.pdf", make_pdf(1))
+    return {"case_id": str(world.case.id), "files": [{"storage_key": key, "original_filename": "new.pdf"}]}
+
+
 def draft_only(world: World) -> dict:
     return {"storage_key": world.store.put_pdf(world.case), "original_filename": "v2.pdf"}
 
@@ -104,13 +109,16 @@ ENDPOINTS = [
     Endpoint("check payment status", "POST", lambda w: f"/payments/{w.quote_payment_id}/reconcile", CaseStatus.QUOTED, ("owner", "advocate", "clerk"), needs_razorpay=True),
     Endpoint("all payments", "GET", lambda w: "/payments", CaseStatus.QUOTED, ("advocate", "accountant")),
     Endpoint("refund", "POST", lambda w: f"/payments/{w.paid_payment_id}/refund", CaseStatus.DELIVERED, ("advocate",), needs_razorpay=True),
-    Endpoint("upload url: original", "POST", lambda w: "/documents/upload-url", CaseStatus.SUBMITTED, ("owner",),
-             lambda w: {"case_id": str(w.case.id), "filename": "a.pdf", "document_type": "original"}),
     Endpoint("upload url: draft", "POST", lambda w: "/documents/upload-url", CaseStatus.ACCEPTED, ("advocate",),
-             lambda w: {"case_id": str(w.case.id), "filename": "d.pdf", "document_type": "draft"}),
-    Endpoint("confirm original", "POST", lambda w: "/documents/confirm", CaseStatus.SUBMITTED, ("owner",),
-             lambda w: {"case_id": str(w.case.id), "storage_key": f"cases/{w.case.id}/x.pdf",
-                        "original_filename": "x.pdf", "document_type": "original"}),
+             lambda w: {"case_id": str(w.case.id), "filename": "d.pdf"}),
+    Endpoint("upload urls", "POST", lambda w: "/documents/upload-urls", CaseStatus.DRAFT, ("owner",),
+             lambda w: {"case_id": str(w.case.id), "files": [
+                 {"filename": "a.pdf", "content_type": "application/pdf", "size": 1000}]}),
+    Endpoint("confirm batch", "POST", lambda w: "/documents/confirm-batch", CaseStatus.DRAFT, ("owner",), confirm_body),
+    Endpoint("remove file", "DELETE", lambda w: f"/documents/{w.original_id}", CaseStatus.DRAFT, ("owner",)),
+    Endpoint("edit draft", "PATCH", _case, CaseStatus.DRAFT, ("owner",), lambda w: {"title": "A better title"}),
+    Endpoint("submit", "POST", lambda w: _case(w) + "/submit", CaseStatus.DRAFT, ("owner",)),
+    Endpoint("discard draft", "DELETE", _case, CaseStatus.DRAFT, ("owner",)),
 ]
 
 
@@ -158,6 +166,11 @@ ACTIONS = [
     Action("upload revised draft", "advocate", {CaseStatus.REVISION_REQUESTED}, _endpoint("upload revised draft")),
     Action("request changes", "owner", {CaseStatus.DELIVERED}, _endpoint("request changes")),
     Action("approve", "owner", {CaseStatus.DELIVERED}, _endpoint("approve")),
+    Action("submit", "owner", {CaseStatus.DRAFT}, _endpoint("submit")),
+    Action("edit draft", "owner", {CaseStatus.DRAFT}, _endpoint("edit draft")),
+    Action("discard draft", "owner", {CaseStatus.DRAFT}, _endpoint("discard draft")),
+    Action("upload urls", "owner", {CaseStatus.DRAFT, CaseStatus.SUBMITTED}, _endpoint("upload urls")),
+    Action("confirm batch", "owner", {CaseStatus.DRAFT, CaseStatus.SUBMITTED}, _endpoint("confirm batch")),
 ]
 
 

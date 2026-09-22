@@ -52,6 +52,13 @@ class Settings(BaseSettings):
     quote_min_inr: int = 100
     quote_max_inr: int = 100000
     max_file_size_mb: int = 25
+    # Intake limits (docs/NEW_FLOW_SPEC.md D7): per submission and per case.
+    max_files_per_case: int = 10
+    max_case_size_mb: int = 100
+    # A draft case nobody submitted is deleted (with its files) after this many
+    # days without a change; the worker service does the sweeping.
+    draft_retention_days: int = 7
+    worker_interval_seconds: int = 60
 
     @property
     def cors_origin_list(self) -> list[str]:

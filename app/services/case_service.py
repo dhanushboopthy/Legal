@@ -2,7 +2,7 @@ import enum
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,8 +21,8 @@ from app.models.document import CaseDocument
 from app.models.quote import QuoteStatus
 from app.models.revision import RevisionRequest, RevisionStatus
 from app.models.user import User
-from app.schemas.case import CaseCreate
-from app.services import audit_service, document_service, notification_service
+from app.schemas.case import CaseCreate, CaseUpdate
+from app.services import audit_service, document_service, notification_service, storage_service
 
 
 class Actor(str, enum.Enum):
@@ -94,7 +94,9 @@ async def create_case(db: AsyncSession, *, junior_lawyer: User, data: CaseCreate
         court=data.court,
         description=data.description,
         note=data.note,
-        status=CaseStatus.SUBMITTED,
+        # Not visible to the advocate and not payable until the lawyer has added
+        # files and submitted it.
+        status=CaseStatus.DRAFT,
     )
     db.add(case)
     await db.flush()
@@ -131,11 +133,101 @@ async def lock_case(db: AsyncSession, case_id: uuid.UUID) -> Case:
     return case
 
 
+# Whose move each status is: the lawyer's or the advocate's. Rejected and
+# completed cases are nobody's.
+_TURN_SIDE = {
+    CaseStatus.DRAFT: Actor.SUBMITTER, CaseStatus.SUBMITTED: Actor.SUBMITTER,
+    CaseStatus.REVIEW_FEE_PAID: Actor.REVIEWER, CaseStatus.ACCEPTED: Actor.REVIEWER,
+    CaseStatus.QUOTED: Actor.SUBMITTER, CaseStatus.DELIVERED: Actor.SUBMITTER,
+    CaseStatus.REVISION_REQUESTED: Actor.REVIEWER,
+}
+
+
+def turn_for(case: Case, user: User) -> str:
+    """"you" if the ball is in this viewer's court, "them" if in the other
+    party's, "none" if nobody's (or the viewer is neither party)."""
+    side = _TURN_SIDE.get(case.status)
+    if side is None:
+        return "none"
+    if case.junior_lawyer_id == user.id:
+        return "you" if side is Actor.SUBMITTER else "them"
+    permissions = user.role.permissions or []
+    if CASE_DECIDE in permissions or CASE_DRAFT in permissions:
+        return "you" if side is Actor.REVIEWER else "them"
+    return "none"
+
+
+def visible_cases_query(user: User):
+    """The cases `user` may list. A draft is its owner's private work: nobody
+    else sees it, whatever they hold."""
+    query = select(Case)
+    if CASE_VIEW_ALL in (user.role.permissions or []):
+        return query.where(or_(Case.status != CaseStatus.DRAFT, Case.junior_lawyer_id == user.id))
+    return query.where(Case.junior_lawyer_id == user.id)
+
+
 def authorize_case_access(case: Case, user: User) -> None:
+    if case.status == CaseStatus.DRAFT and case.junior_lawyer_id != user.id:
+        # Not "forbidden": for anyone else a draft simply doesn't exist yet.
+        raise NotFoundError("Case not found")
     if CASE_VIEW_ALL in (user.role.permissions or []):
         return
     if case.junior_lawyer_id != user.id:
         raise ForbiddenError("You may only access your own cases")
+
+
+def touch(case: Case) -> None:
+    # Force an UPDATE so `updated_at` moves even when no column changed: a
+    # draft that is still being worked on must not look abandoned.
+    case.updated_at = func.now()
+
+
+def _require_draft(case: Case) -> None:
+    if case.status != CaseStatus.DRAFT:
+        raise ConflictError("Only a case that hasn't been submitted can be changed this way")
+
+
+async def update_draft(db: AsyncSession, *, case: Case, data: CaseUpdate) -> Case:
+    _require_draft(case)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        # title and case_type are required columns; ignore an explicit null.
+        if value is None and field in {"title", "case_type"}:
+            continue
+        setattr(case, field, value)
+    touch(case)
+    await db.flush()
+    return case
+
+
+async def submit_case(db: AsyncSession, *, case: Case, user: User) -> Case:
+    """Draft -> submitted, once at least one file is confirmed. The lawyer pays
+    the review fee next; the advocate still can't see the case until then."""
+    require_owner(case, user)
+    if await document_service.count_originals(db, case.id) < 1:
+        raise ConflictError("Add at least one file before submitting the case")
+    transition(case, CaseStatus.SUBMITTED, by=user)
+    await audit_service.log_action(
+        db, user_id=user.id, action="case.submitted",
+        entity_type="case", entity_id=str(case.id),
+    )
+    return case
+
+
+async def discard_draft(db: AsyncSession, *, case: Case, user: User | None) -> None:
+    """Delete a never-submitted case and everything uploaded to it. Used when a
+    lawyer starts over and by the worker for drafts nobody came back to."""
+    _require_draft(case)
+    if user is not None:
+        require_owner(case, user)
+    # Sweep the whole prefix, not just filed documents: a file that was uploaded
+    # but never confirmed is in the store too.
+    await storage_service.delete_prefix(f"cases/{case.id}/")
+    await audit_service.log_action(
+        db, user_id=user.id if user else None, action="case.draft_discarded",
+        entity_type="case", entity_id=str(case.id),
+    )
+    await db.delete(case)
+    await db.flush()
 
 
 def require_owner(case: Case, user: User) -> None:

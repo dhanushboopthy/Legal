@@ -3,6 +3,7 @@ import {
   type InputHTMLAttributes,
   type LabelHTMLAttributes,
   type ReactNode,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
 
@@ -25,6 +26,16 @@ export const Textarea = forwardRef<
   <textarea ref={ref} className={cn(fieldClassName, 'min-h-24 resize-y', className)} {...props} />
 ))
 Textarea.displayName = 'Textarea'
+
+// A native select: on a phone it opens the OS picker, which beats any custom list.
+export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
+  ({ className, children, ...props }, ref) => (
+    <select ref={ref} className={cn(fieldClassName, 'appearance-auto', className)} {...props}>
+      {children}
+    </select>
+  ),
+)
+Select.displayName = 'Select'
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
