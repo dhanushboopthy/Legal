@@ -46,11 +46,16 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
 
-    # MSG91 for the phone-number-verification OTP (profile page). The OTP API
-    # needs a DLT-approved template for Indian numbers — create one in the
-    # MSG91 dashboard with the code as its only variable. Leave
-    # MSG91_AUTH_KEY empty in dev — with DEBUG=true the OTP code is logged
-    # server-side instead of texted.
+    # MSG91 for the phone-number-verification OTP (profile page), via
+    # POST /api/v5/otp (app/services/sms_service.py). Indian numbers need a
+    # DLT-approved template (a TRAI regulatory requirement, not an MSG91
+    # one) — MSG91 says a default template can stand in until yours is
+    # approved (https://help.msg91.com/article/373), which costs nothing to
+    # register but comes with account limits disabled while it's in use;
+    # check MSG91 support/dashboard for how that's enabled on your account
+    # before assuming MSG91_TEMPLATE_ID can stay empty. Leave MSG91_AUTH_KEY
+    # empty in dev — with DEBUG=true the OTP code is logged server-side
+    # instead of texted.
     msg91_auth_key: str = ""
     msg91_template_id: str = ""
 
