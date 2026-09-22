@@ -12,8 +12,10 @@ export const buttonVariants = cva(
         danger: 'bg-[var(--color-danger)] text-white hover:opacity-90',
       },
       size: {
-        sm: 'h-8 px-3 text-[13px]',
-        md: 'h-10 px-4',
+        // 44px minimum touch target on mobile; the visual height shrinks
+        // back to the desktop-designed size from `sm` up.
+        sm: 'h-11 sm:h-8 px-3 text-[13px]',
+        md: 'h-11 sm:h-10 px-4',
         lg: 'h-12 px-6 text-[15px]',
       },
     },

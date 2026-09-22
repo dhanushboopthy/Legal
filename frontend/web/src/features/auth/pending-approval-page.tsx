@@ -9,10 +9,10 @@ import { StatusPage } from '@/components/ui/status-page'
 
 const POLL_MS = 5_000
 
-// Where a lawyer lands once their email is verified but an admin hasn't
-// approved the account yet. It holds the same limited session the pending
+// Where a lawyer lands once their email is verified but the account hasn't
+// been approved yet. It holds the same limited session the pending
 // approval gate allows (GET /users/me only) and polls that endpoint, moving
-// on to Cases the moment an admin approves — no re-login needed.
+// on to Cases the moment it's approved — no re-login needed.
 export function PendingApprovalPage() {
   const { user, status, refreshUser, logout } = useAuth()
   const navigate = useNavigate()
@@ -35,10 +35,10 @@ export function PendingApprovalPage() {
   return (
     <StatusPage
       icon={Hourglass}
-      title="Waiting for admin approval"
+      title="Waiting for approval"
       description={`${
         user?.email ? `${user.email} is verified. ` : 'Your email is verified. '
-      }An admin needs to approve your account before you can use it — this page will move on by itself as soon as that happens.`}
+      }Someone at the practice needs to approve your account before you can use it — this page will move on by itself as soon as that happens.`}
       actions={
         <Button
           variant="secondary"

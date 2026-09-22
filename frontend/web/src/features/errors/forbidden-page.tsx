@@ -11,7 +11,7 @@ export function ForbiddenPage({ inline = false }: { inline?: boolean }) {
       icon={ShieldAlert}
       code="403"
       title="You don't have access to this page"
-      description="Your account's role doesn't allow this. If you think that's a mistake, contact an administrator."
+      description="Your account doesn't have access to this. If you think that's a mistake, contact whoever manages accounts at your practice."
       actions={
         <Link to="/" className={buttonVariants({ variant: 'primary', size: 'md' })}>
           Back to dashboard

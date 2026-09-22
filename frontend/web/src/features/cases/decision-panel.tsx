@@ -21,7 +21,7 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
         title: accept ? 'Case accepted' : 'Case rejected',
         description: accept
           ? 'The lawyer has been told you will send a draft and a price.'
-          : 'The junior lawyer has been notified.',
+          : 'The lawyer has been notified.',
       })
       onDecided()
     },

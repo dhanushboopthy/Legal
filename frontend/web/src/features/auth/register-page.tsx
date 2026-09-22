@@ -45,7 +45,7 @@ export function RegisterPage() {
             <Briefcase className="size-6" strokeWidth={1.75} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
-          <p className="text-muted text-center text-sm">For junior lawyers submitting cases</p>
+          <p className="text-muted text-center text-sm">For lawyers submitting cases</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

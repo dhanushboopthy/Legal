@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Briefcase, Folder, LogOut, Receipt, User as UserIcon, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -23,6 +23,7 @@ export function AppShell() {
   const { can } = usePermissions()
   const showPeople = can(PERMISSIONS.USER_MANAGE)
   const showPayments = can(PERMISSIONS.PAYMENT_VIEW_ALL)
+  const reduceMotion = useReducedMotion()
 
   return (
     <div className="min-h-screen">
@@ -77,9 +78,9 @@ export function AppShell() {
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 6 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
           >
             <Outlet />
           </motion.div>
