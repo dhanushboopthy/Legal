@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client'
-import type { CaseListItem, CaseOut, PaymentOrderResponse } from '@/types/api'
+import type { CaseListItem, CaseOut, PaymentOrderResponse, QuoteOut } from '@/types/api'
 
 export interface CreateCasePayload {
   title: string
@@ -63,4 +63,37 @@ export async function requestRevision(caseId: string, reason: string): Promise<C
 export async function approveCase(caseId: string): Promise<CaseOut> {
   const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/approve`)
   return data
+}
+
+export interface SendQuotePayload {
+  draft: { storage_key: string; original_filename: string }
+  amount_inr: number
+  note?: string
+}
+
+// The draft and its price together, and how either is replaced while the
+// quote is still unpaid: a second call here supersedes the open one.
+export async function sendQuote(caseId: string, payload: SendQuotePayload): Promise<QuoteOut> {
+  const { data } = await apiClient.post<QuoteOut>(`/cases/${caseId}/quote`, payload)
+  return data
+}
+
+export async function getQuote(caseId: string): Promise<QuoteOut> {
+  const { data } = await apiClient.get<QuoteOut>(`/cases/${caseId}/quote`)
+  return data
+}
+
+// The amount is read from the quote on the server, never sent here.
+export async function payQuote(caseId: string): Promise<PaymentOrderResponse> {
+  const { data } = await apiClient.post<PaymentOrderResponse>(`/cases/${caseId}/quote/pay`)
+  return data
+}
+
+// A new draft version once changes were requested; the quote was already
+// paid, so the lawyer can download it as soon as it's filed.
+export async function uploadRevisedDraft(
+  caseId: string,
+  payload: { storage_key: string; original_filename: string },
+): Promise<void> {
+  await apiClient.post(`/cases/${caseId}/drafts`, payload)
 }

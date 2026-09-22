@@ -9,7 +9,7 @@ import { LoginPage } from '@/features/auth/login-page'
 import { PendingApprovalPage } from '@/features/auth/pending-approval-page'
 import { RegisterPage } from '@/features/auth/register-page'
 import { VerifyEmailPage } from '@/features/auth/verify-email-page'
-import { PendingUsersPage } from '@/features/admin/pending-users-page'
+import { PeoplePage } from '@/features/admin/people-page'
 import { PaymentsPage } from '@/features/admin/payments-page'
 import { CaseDetailPage } from '@/features/cases/case-detail-page'
 import { NewCasePage } from '@/features/cases/new-case-page'
@@ -41,7 +41,7 @@ function AppRoutes() {
             </Route>
 
             <Route element={<RequireAuth permission={PERMISSIONS.USER_MANAGE} />}>
-              <Route path="/admin/pending-users" element={<PendingUsersPage />} />
+              <Route path="/admin/people" element={<PeoplePage />} />
             </Route>
 
             <Route element={<RequireAuth permission={PERMISSIONS.PAYMENT_VIEW_ALL} />}>

@@ -29,6 +29,8 @@ const aCase = (over: Partial<CaseListItem> = {}): CaseListItem => ({
   last_message: null,
   unread_count: 0,
   turn: 'none',
+  junior_lawyer_name: 'Priya Shah',
+  junior_lawyer_bar_council_id: 'MH/1234/2020',
   ...over,
 })
 

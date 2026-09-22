@@ -97,6 +97,9 @@ export interface CaseListItem extends CaseOut {
   last_message: LastMessage | null
   unread_count: number
   turn: Turn
+  // Only meaningful to a viewer with case:view_all (the advocate's list).
+  junior_lawyer_name: string
+  junior_lawyer_bar_council_id: string | null
 }
 
 export interface PaymentOrderResponse {
@@ -116,6 +119,12 @@ export interface PaymentOut {
   status: PaymentStatus
   quote_id: string | null
   paid_at: string | null
+}
+
+// A row in the admin payments table: which case and whose it is.
+export interface PaymentListItem extends PaymentOut {
+  case_title: string
+  junior_lawyer_name: string
 }
 
 export interface DocumentOut {
@@ -161,6 +170,13 @@ export interface UploadTarget {
   size: number
   storage_key: string
   upload_url: string
+  expires_in_seconds: number
+}
+
+// A signed PUT for the advocate's single draft PDF (POST /documents/upload-url).
+export interface UploadUrlResponse {
+  upload_url: string
+  storage_key: string
   expires_in_seconds: number
 }
 

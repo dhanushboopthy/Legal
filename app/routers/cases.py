@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import (
     CASE_APPROVE_FINAL,
@@ -42,13 +43,19 @@ async def create_case(
 
 @router.get("", response_model=list[CaseListItem])
 async def list_cases(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(case_service.visible_cases_query(current_user).order_by(Case.created_at.desc()))
+    result = await db.execute(
+        case_service.visible_cases_query(current_user)
+        .options(selectinload(Case.junior_lawyer))
+        .order_by(Case.created_at.desc())
+    )
     cases = list(result.scalars().all())
     chat = await message_service.summaries(db, user=current_user, cases=cases)
     return [
         CaseListItem.model_validate(case).model_copy(update={
             "last_message": chat[case.id][0], "unread_count": chat[case.id][1],
             "turn": case_service.turn_for(case, current_user),
+            "junior_lawyer_name": case.junior_lawyer.full_name,
+            "junior_lawyer_bar_council_id": case.junior_lawyer.bar_council_id,
         })
         for case in cases
     ]

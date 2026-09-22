@@ -34,6 +34,9 @@ interface OpenCheckoutOptions {
   userName?: string
   onSuccess: () => void
   onDismiss?: () => void
+  // Razorpay itself reported the attempt failed (declined card, etc.) — not
+  // the same as the checkout window simply being closed.
+  onFailed?: () => void
 }
 
 export function useRazorpayCheckout() {
@@ -53,6 +56,12 @@ export function useRazorpayCheckout() {
       handler: () => opts.onSuccess(),
       modal: { ondismiss: opts.onDismiss },
     })
+    if (opts.onFailed) {
+      ;(rzp as unknown as { on: (event: string, cb: () => void) => void }).on(
+        'payment.failed',
+        opts.onFailed,
+      )
+    }
     rzp.open()
   }, [])
 }

@@ -4,17 +4,28 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
 import { approveCase, requestRevision } from '@/lib/api/cases'
-import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
+import { openDocument } from '@/lib/download'
+import { listCaseDocuments } from '@/lib/api/documents'
 
-export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChanged: () => void }) {
+export function DraftReviewPanel({
+  caseId,
+  caseTitle,
+  onChanged,
+}: {
+  caseId: string
+  caseTitle: string
+  onChanged: () => void
+}) {
   const { toast } = useToast()
   const [reason, setReason] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [confirmApprove, setConfirmApprove] = useState(false)
 
   const { data: documents } = useQuery({
     queryKey: ['case-documents', caseId],
@@ -23,12 +34,11 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
   const latestDraft = documents?.filter((d) => d.type === 'draft').at(-1)
 
   const download = useMutation({
-    mutationFn: () => getDownloadUrl(latestDraft!.id),
-    onSuccess: (url) => window.open(url, '_blank'),
+    mutationFn: () => openDocument(latestDraft!.id),
     onError: (err) =>
       toast({
         variant: 'error',
-        title: 'Could not get download link',
+        title: 'Could not open the draft',
         description: getErrorMessage(err),
       }),
   })
@@ -36,6 +46,7 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
   const approve = useMutation({
     mutationFn: () => approveCase(caseId),
     onSuccess: () => {
+      setConfirmApprove(false)
       toast({ variant: 'success', title: 'Case approved', description: 'Your filing is complete.' })
       onChanged()
     },
@@ -70,13 +81,12 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="secondary"
-          loading={download.isPending}
-          disabled={!latestDraft}
-          onClick={() => download.mutate()}
-        >
+        <Button loading={download.isPending} disabled={!latestDraft} onClick={() => download.mutate()}>
           <Download className="size-4" /> Download draft
+        </Button>
+
+        <Button variant="secondary" onClick={() => setConfirmApprove(true)}>
+          <CheckCircle2 className="size-4" /> Approve filing
         </Button>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -106,11 +116,17 @@ export function DraftReviewPanel({ caseId, onChanged }: { caseId: string; onChan
             </Button>
           </DialogContent>
         </Dialog>
-
-        <Button loading={approve.isPending} onClick={() => approve.mutate()}>
-          <CheckCircle2 className="size-4" /> Approve filing
-        </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmApprove}
+        onOpenChange={setConfirmApprove}
+        title={`Approve "${caseTitle}"?`}
+        description="This marks the filing complete. The chat becomes read-only, and the draft stays downloadable."
+        confirmLabel="Approve filing"
+        loading={approve.isPending}
+        onConfirm={() => approve.mutate()}
+      />
     </Card>
   )
 }

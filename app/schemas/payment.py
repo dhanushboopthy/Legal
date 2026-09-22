@@ -29,3 +29,10 @@ class PaymentOut(BaseModel):
     status: PaymentStatus
     quote_id: uuid.UUID | None = None
     paid_at: datetime | None
+
+
+class PaymentListItem(PaymentOut):
+    """A row in the admin payments table: which case and whose it is."""
+
+    case_title: str = ""
+    junior_lawyer_name: str = ""

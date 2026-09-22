@@ -3,14 +3,16 @@ import uuid
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import PAYMENT_REFUND, PAYMENT_VIEW_ALL
 from app.core.rate_limit import limiter
 from app.database import get_db
 from app.dependencies import get_current_user, require_permission
+from app.models.case import Case
 from app.models.payment import Payment
 from app.models.user import User
-from app.schemas.payment import PaymentOut
+from app.schemas.payment import PaymentListItem, PaymentOut
 from app.services import case_service, payment_service
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -30,12 +32,21 @@ async def list_payments_for_case(
 
 
 @router.get(
-    "", response_model=list[PaymentOut],
+    "", response_model=list[PaymentListItem],
     dependencies=[Depends(require_permission(PAYMENT_VIEW_ALL))],
 )
 async def list_all_payments(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Payment).order_by(Payment.created_at.desc()))
-    return list(result.scalars().all())
+    result = await db.execute(
+        select(Payment)
+        .options(selectinload(Payment.case).selectinload(Case.junior_lawyer))
+        .order_by(Payment.created_at.desc())
+    )
+    return [
+        PaymentListItem.model_validate(p).model_copy(update={
+            "case_title": p.case.title, "junior_lawyer_name": p.case.junior_lawyer.full_name,
+        })
+        for p in result.scalars().all()
+    ]
 
 
 @router.post(

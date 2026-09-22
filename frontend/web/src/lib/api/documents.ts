@@ -1,7 +1,21 @@
 import axios from 'axios'
 
 import { apiClient } from '@/lib/api-client'
-import type { ConfirmBatchResponse, DocumentOut, UploadTarget } from '@/types/api'
+import type { ConfirmBatchResponse, DocumentOut, UploadTarget, UploadUrlResponse } from '@/types/api'
+
+// The advocate's draft PDF: filed with its price (POST /cases/:id/quote) or
+// as a new version (POST /cases/:id/drafts), which verify it against the
+// object this signs. The lawyer's own files use requestUploadUrls below.
+export async function requestDraftUploadUrl(
+  caseId: string,
+  filename: string,
+): Promise<UploadUrlResponse> {
+  const { data } = await apiClient.post<UploadUrlResponse>('/documents/upload-url', {
+    case_id: caseId,
+    filename,
+  })
+  return data
+}
 
 export async function requestUploadUrls(
   caseId: string,

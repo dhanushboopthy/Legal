@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 
 import { useAuth } from '@/auth/auth-context'
@@ -42,9 +42,18 @@ const loadOnce = {
   refetchOnReconnect: false,
 } as const
 
+export interface CasePrefill {
+  title?: string
+  case_type?: string
+}
+
 export function NewCasePage() {
   const [params] = useSearchParams()
+  const location = useLocation()
   const wantedDraft = params.get('draft')
+  // Carried over from "Start a new case" on a rejected case; ignored once
+  // there's an unfinished draft to resume instead.
+  const prefill = (location.state as { prefill?: CasePrefill } | null)?.prefill
 
   const pricing = useQuery({ queryKey: ['pricing'], queryFn: getPricing, ...loadOnce })
   const rules = useQuery({ queryKey: ['upload-rules'], queryFn: getUploadRules, ...loadOnce })
@@ -93,6 +102,7 @@ export function NewCasePage() {
       rules={rules.data}
       draft={draft}
       draftDocuments={documents.data ?? []}
+      prefill={draft ? undefined : prefill}
     />
   )
 }
@@ -102,11 +112,13 @@ function NewCaseForm({
   rules,
   draft,
   draftDocuments,
+  prefill,
 }: {
   pricing: Pricing
   rules: UploadRules
   draft: CaseOut | null
   draftDocuments: DocumentOut[]
+  prefill: CasePrefill | undefined
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -166,8 +178,8 @@ function NewCaseForm({
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: draft?.title ?? '',
-      case_type: draft?.case_type ?? '',
+      title: draft?.title ?? prefill?.title ?? '',
+      case_type: draft?.case_type ?? prefill?.case_type ?? '',
       note: draft?.note ?? '',
     },
   })

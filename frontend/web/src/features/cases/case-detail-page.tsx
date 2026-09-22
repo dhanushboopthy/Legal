@@ -1,13 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Clock,
-  Download,
-  FileText,
-  Hourglass,
-  Pencil,
-  XCircle,
-  type LucideIcon,
-} from 'lucide-react'
+import { Clock, FolderOpen, Hourglass, Info, Pencil, PenSquare, XCircle, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
 import { Link, useLocation, useParams } from 'react-router-dom'
@@ -15,28 +7,35 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { PERMISSIONS, type CanFn } from '@/auth/permissions'
 import { useAuth } from '@/auth/auth-context'
 import { usePermissions } from '@/auth/use-permissions'
+import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CaseStatusPill, PaymentStatusPill } from '@/components/ui/status-pill'
+import { CaseStatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast-context'
 import { ForbiddenPage } from '@/features/errors/forbidden-page'
 import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
 import { ChatThread } from '@/features/chat/chat-thread'
+import { CaseProgress } from '@/features/cases/case-progress'
 import { DecisionPanel } from '@/features/cases/decision-panel'
+import { DetailsSheet } from '@/features/cases/details-sheet'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
+import { FilesSheet } from '@/features/cases/files-sheet'
 import { InfoPanel } from '@/features/cases/info-panel'
+import { QuotedPaymentPanel } from '@/features/cases/quoted-payment-panel'
+import { QuoteSheet } from '@/features/cases/quote-sheet'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
+import { UploadRevisionPanel } from '@/features/cases/upload-revision-panel'
 import { createReviewPayment, getCase } from '@/lib/api/cases'
 import { getPricing } from '@/lib/api/config'
-import { getDownloadUrl, listCaseDocuments } from '@/lib/api/documents'
-import { getErrorMessage } from '@/lib/errors'
+import { listCaseDocuments } from '@/lib/api/documents'
 import { listPaymentsForCase } from '@/lib/api/payments'
 import { getStatusMeta, perspectiveFor, type Perspective } from '@/lib/status-meta'
-import { formatBytes } from '@/lib/uploads'
-import { formatCurrency, formatDate } from '@/lib/utils'
-import type { CaseStatus } from '@/types/api'
+import { openDocument } from '@/lib/download'
+import { getErrorMessage } from '@/lib/errors'
+import { formatDate } from '@/lib/utils'
+import type { CaseOut, CaseStatus, DocumentOut, Pricing } from '@/types/api'
 
 // The statuses in which a case has a chat (docs/NEW_FLOW_SPEC.md D4).
 const CHAT_STATUSES: CaseStatus[] = [
@@ -64,6 +63,9 @@ export function CaseDetailPage() {
   const [awaitingStatus, setAwaitingStatus] = useState<CaseStatus | null>(
     justPaid ? 'submitted' : null,
   )
+  const [filesOpen, setFilesOpen] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [quoteSheet, setQuoteSheet] = useState<'closed' | 'send' | 'replace'>('closed')
 
   const caseId = id!
 
@@ -100,11 +102,13 @@ export function CaseDetailPage() {
     void queryClient.invalidateQueries({ queryKey: ['case', caseId] })
     void queryClient.invalidateQueries({ queryKey: ['case-documents', caseId] })
     void queryClient.invalidateQueries({ queryKey: ['case-payments', caseId] })
+    void queryClient.invalidateQueries({ queryKey: ['quote', caseId] })
   }
 
   // What the lawyer submitted. Drafts are the advocate's work and get their own
   // card once a quote exists.
   const caseFiles = documents?.filter((d) => d.type !== 'draft') ?? []
+  const latestDraft = documents?.filter((d) => d.type === 'draft').at(-1)
 
   if (caseError) {
     const status = isAxiosError(caseError) ? caseError.response?.status : undefined
@@ -131,9 +135,11 @@ export function CaseDetailPage() {
     )
   }
 
+  const isOwner = user?.id === caseData.junior_lawyer_id
+
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{caseData.title}</h1>
           <p className="text-muted mt-1 text-sm">
@@ -146,22 +152,21 @@ export function CaseDetailPage() {
         <CaseStatusPill status={caseData.status} perspective={perspective} />
       </div>
 
-      {caseData.description && (
-        <Card className="mb-4">
-          <p className="text-sm whitespace-pre-wrap">{caseData.description}</p>
-        </Card>
-      )}
+      <CaseProgress status={caseData.status} />
 
       <div className="mb-4 space-y-4">
         <CaseActionPanel
           caseId={caseId}
-          status={caseData.status}
+          caseData={caseData}
           can={can}
+          isOwner={isOwner}
           perspective={perspective}
-          rejectionReason={caseData.rejection_reason}
-          reviewFeeInr={pricing?.review_fee_inr}
+          pricing={pricing}
+          documents={documents ?? []}
+          latestDraft={latestDraft}
           confirmingPayment={justPaid}
           onChanged={refresh}
+          onOpenQuoteSheet={(mode) => setQuoteSheet(mode)}
         />
       </div>
 
@@ -170,107 +175,70 @@ export function CaseDetailPage() {
           the case is complete). Everyone else who can see the case never sees it. */}
       {user &&
         CHAT_STATUSES.includes(caseData.status) &&
-        (caseData.junior_lawyer_id === user.id || can(PERMISSIONS.CASE_MESSAGE)) && (
+        (isOwner || can(PERMISSIONS.CASE_MESSAGE)) && (
           <div className="mb-4">
             <ChatThread caseId={caseId} ownId={user.id} />
           </div>
         )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <h3 className="text-muted mb-3 text-sm font-semibold">Documents</h3>
-          {caseFiles.length > 0 ? (
-            <ul className="space-y-2">
-              {caseFiles.map((doc) => (
-                <li key={doc.id}>
-                  <DocumentRow
-                    filename={doc.original_filename}
-                    size={doc.size_bytes}
-                    documentId={doc.id}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted text-label">No documents uploaded.</p>
-          )}
-        </Card>
-        <Card>
-          <h3 className="text-muted mb-3 text-sm font-semibold">Payments</h3>
-          {payments && payments.length > 0 ? (
-            <ul className="space-y-2">
-              {payments.map((p) => (
-                <li key={p.id} className="text-label flex items-center justify-between">
-                  <span className="capitalize">{p.type} fee</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted">{formatCurrency(p.amount)}</span>
-                    <PaymentStatusPill status={p.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted text-label">No payments yet.</p>
-          )}
-        </Card>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="sm" onClick={() => setFilesOpen(true)}>
+          <FolderOpen className="size-4" /> Files
+          {caseFiles.length > 0 && <span className="text-muted">({caseFiles.length})</span>}
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => setDetailsOpen(true)}>
+          <Info className="size-4" /> Details
+        </Button>
       </div>
-    </div>
-  )
-}
 
-function DocumentRow({
-  filename,
-  size,
-  documentId,
-}: {
-  filename: string
-  size: number | null
-  documentId: string
-}) {
-  const { toast } = useToast()
-  return (
-    <button
-      onClick={async () => {
-        try {
-          const url = await getDownloadUrl(documentId)
-          window.open(url, '_blank')
-        } catch (err) {
-          toast({
-            variant: 'error',
-            title: 'Could not get download link',
-            description: getErrorMessage(err),
-          })
-        }
-      }}
-      className="text-label flex w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 text-left transition-colors hover:bg-black/[0.02]"
-    >
-      <FileText className="size-4 text-[var(--fg-muted)]" />
-      <span className="flex-1 truncate">{filename}</span>
-      {size !== null && <span className="text-muted text-caption">{formatBytes(size)}</span>}
-      <Download className="size-4 text-[var(--fg-muted)]" />
-    </button>
+      <FilesSheet open={filesOpen} onOpenChange={setFilesOpen} files={caseFiles} />
+      <DetailsSheet
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        caseData={caseData}
+        payments={payments ?? []}
+      />
+      {pricing && (
+        <QuoteSheet
+          caseId={caseId}
+          pricing={pricing}
+          open={quoteSheet !== 'closed'}
+          onOpenChange={(open) => setQuoteSheet(open ? quoteSheet : 'closed')}
+          replacing={quoteSheet === 'replace'}
+          onSent={refresh}
+        />
+      )}
+    </div>
   )
 }
 
 function CaseActionPanel({
   caseId,
-  status,
+  caseData,
   can,
+  isOwner,
   perspective,
-  rejectionReason,
-  reviewFeeInr,
+  pricing,
+  documents,
+  latestDraft,
   confirmingPayment,
   onChanged,
+  onOpenQuoteSheet,
 }: {
   caseId: string
-  status: CaseStatus
+  caseData: CaseOut
   can: CanFn
+  isOwner: boolean
   perspective: Perspective
-  rejectionReason: string | null
-  reviewFeeInr: number | undefined
+  pricing: Pricing | undefined
+  documents: DocumentOut[]
+  latestDraft: DocumentOut | undefined
   confirmingPayment: boolean
   onChanged: () => void
+  onOpenQuoteSheet: (mode: 'send' | 'replace') => void
 }) {
+  const { toast } = useToast()
+  const status = caseData.status
   // What the viewer sees when there is nothing for them to do.
   const meta = getStatusMeta(status, perspective)
   const waiting = (icon: LucideIcon) => (
@@ -284,7 +252,7 @@ function CaseActionPanel({
           createOrder={() => createReviewPayment(caseId)}
           title="Pay the review fee"
           description="Pay the review fee so the advocate can start reviewing your case."
-          amountInr={reviewFeeInr}
+          amountInr={pricing?.review_fee_inr}
           initiallyConfirming={confirmingPayment}
           onPaid={onChanged}
         />
@@ -305,12 +273,21 @@ function CaseActionPanel({
           icon={XCircle}
           tone="danger"
           title="Case rejected"
-          description={rejectionReason ?? 'No reason was provided.'}
+          description={caseData.rejection_reason ?? 'No reason was provided.'}
+          action={
+            isOwner && (
+              <Link
+                to="/cases/new"
+                state={{ prefill: { title: caseData.title, case_type: caseData.case_type } }}
+                className={buttonVariants({ size: 'sm', className: 'mt-3' })}
+              >
+                Start a new case
+              </Link>
+            )
+          }
         />
       )
 
-    // The draft-and-price, pay-to-unlock and new-version screens are built in
-    // phase 4 of the UX plan; until then these states show where the case is.
     case 'draft':
       return can(PERMISSIONS.CASE_SUBMIT) ? (
         <InfoPanel
@@ -331,13 +308,62 @@ function CaseActionPanel({
       )
 
     case 'accepted':
+      return can(PERMISSIONS.QUOTE_CREATE) ? (
+        <Card>
+          <div className="flex items-start gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+              <PenSquare className="size-5" strokeWidth={1.75} />
+            </div>
+            <div>
+              <h3 className="font-semibold">Send draft and quote</h3>
+              <p className="text-muted mt-0.5 text-sm">
+                Prepare the draft, then send it with its price. The lawyer pays that price to
+                unlock it.
+              </p>
+              <Button size="sm" className="mt-3" onClick={() => onOpenQuoteSheet('send')}>
+                Send draft and quote
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        waiting(Clock)
+      )
+
     case 'quoted':
-    case 'revision_requested':
-      return waiting(Clock)
+      if (isOwner) {
+        return <QuotedPaymentPanel caseId={caseId} documents={documents} onChanged={onChanged} />
+      }
+      return can(PERMISSIONS.QUOTE_CREATE) ? (
+        <InfoPanel
+          icon={Clock}
+          title={meta.label}
+          description={meta.next}
+          action={
+            <Button
+              size="sm"
+              variant="secondary"
+              className="mt-3"
+              onClick={() => onOpenQuoteSheet('replace')}
+            >
+              Replace draft or change amount
+            </Button>
+          }
+        />
+      ) : (
+        waiting(Clock)
+      )
 
     case 'delivered':
       return can(PERMISSIONS.CASE_APPROVE_FINAL) ? (
-        <DraftReviewPanel caseId={caseId} onChanged={onChanged} />
+        <DraftReviewPanel caseId={caseId} caseTitle={caseData.title} onChanged={onChanged} />
+      ) : (
+        waiting(Clock)
+      )
+
+    case 'revision_requested':
+      return can(PERMISSIONS.CASE_DRAFT) ? (
+        <UploadRevisionPanel caseId={caseId} onChanged={onChanged} />
       ) : (
         waiting(Clock)
       )
@@ -345,10 +371,31 @@ function CaseActionPanel({
     case 'completed':
       return (
         <InfoPanel
-          icon={Download}
+          icon={FolderOpen}
           tone="success"
           title="Filing complete"
           description="This case has been completed and the final filing delivered."
+          action={
+            latestDraft && (
+              <Button
+                size="sm"
+                className="mt-3"
+                onClick={async () => {
+                  try {
+                    await openDocument(latestDraft.id)
+                  } catch (err) {
+                    toast({
+                      variant: 'error',
+                      title: 'Could not open the draft',
+                      description: getErrorMessage(err),
+                    })
+                  }
+                }}
+              >
+                Download
+              </Button>
+            )
+          }
         />
       )
 

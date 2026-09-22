@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FolderOpen, Plus } from 'lucide-react'
+import { FolderOpen, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -14,6 +14,7 @@ import { CaseStatusPill } from '@/components/ui/status-pill'
 import { listCases } from '@/lib/api/cases'
 import { STATUS_META, perspectiveFor, type StatusGroup } from '@/lib/status-meta'
 import { formatDate } from '@/lib/utils'
+import type { CaseListItem } from '@/types/api'
 
 const FILTERS: Array<{ label: string; group: StatusGroup | null }> = [
   { label: 'All', group: null },
@@ -28,6 +29,7 @@ export function DashboardPage() {
   const viewsAll = can(PERMISSIONS.CASE_VIEW_ALL)
   const canSubmit = can(PERMISSIONS.CASE_SUBMIT)
   const [filterIndex, setFilterIndex] = useState(0)
+  const [query, setQuery] = useState('')
 
   const {
     data: cases,
@@ -45,10 +47,16 @@ export function DashboardPage() {
 
   const filtered = useMemo(() => {
     const group = FILTERS[filterIndex]?.group
-    if (!cases) return []
-    if (!group) return cases
-    return cases.filter((c) => STATUS_META[c.status].group === group)
-  }, [cases, filterIndex])
+    let list = cases ?? []
+    if (group) list = list.filter((c) => STATUS_META[c.status].group === group)
+    const q = query.trim().toLowerCase()
+    if (q) {
+      list = list.filter(
+        (c) => c.title.toLowerCase().includes(q) || c.junior_lawyer_name.toLowerCase().includes(q),
+      )
+    }
+    return list
+  }, [cases, filterIndex, query])
 
   return (
     <div>
@@ -70,21 +78,38 @@ export function DashboardPage() {
         )}
       </div>
 
-      <div className="mb-5 flex gap-1.5">
-        {FILTERS.map((f, i) => (
-          <button
-            key={f.label}
-            onClick={() => setFilterIndex(i)}
-            className={
-              'text-label rounded-full px-3.5 py-1.5 font-medium transition-colors ' +
-              (i === filterIndex
-                ? 'bg-[var(--color-accent)] text-white'
-                : 'bg-black/[0.04] text-[var(--fg-muted)] hover:bg-black/[0.07]')
-            }
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="flex gap-1.5">
+          {FILTERS.map((f, i) => (
+            <button
+              key={f.label}
+              onClick={() => setFilterIndex(i)}
+              className={
+                'text-label rounded-full px-3.5 py-1.5 font-medium transition-colors ' +
+                (i === filterIndex
+                  ? 'bg-[var(--color-accent)] text-white'
+                  : 'bg-black/[0.04] text-[var(--fg-muted)] hover:bg-black/[0.07]')
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {viewsAll && (
+          <div className="relative min-w-48 flex-1 sm:flex-none">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--fg-muted)]"
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title or lawyer"
+              aria-label="Search cases"
+              className="w-full rounded-full border border-[var(--border)] surface py-1.5 pr-3 pl-9 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/40"
+            />
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -105,7 +130,7 @@ export function DashboardPage() {
           title={hasCases ? 'Nothing in this filter' : 'No cases yet'}
           description={
             hasCases
-              ? 'Try another filter.'
+              ? 'Try another filter, or clear the search.'
               : canSubmit
                 ? 'Submit your first case to get started.'
                 : 'Cases will appear here once lawyers submit them.'
@@ -119,47 +144,116 @@ export function DashboardPage() {
             )
           }
         />
+      ) : viewsAll ? (
+        <AdvocateInbox cases={filtered} perspective={perspective} />
       ) : (
-        <div className="space-y-3">
-          {filtered.map((c) => (
-            <Link key={c.id} to={`/cases/${c.id}`}>
-              <Card className="flex items-center justify-between gap-4 transition-transform hover:-translate-y-0.5">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{c.title}</p>
-                  {c.last_message ? (
-                    <p
-                      className={
-                        c.unread_count > 0
-                          ? 'text-label mt-0.5 truncate font-medium'
-                          : 'text-muted text-label mt-0.5 truncate'
-                      }
-                    >
-                      {c.last_message.sender_name ? `${c.last_message.sender_name}: ` : ''}
-                      {c.last_message.preview}
-                    </p>
-                  ) : (
-                    <p className="text-muted text-label mt-0.5">
-                      {c.case_type} &middot; {c.status === 'draft' ? 'Started' : 'Submitted'}{' '}
-                      {formatDate(c.created_at)}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {c.unread_count > 0 && (
-                    <span
-                      aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}
-                      className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 font-medium text-white"
-                    >
-                      {c.unread_count}
-                    </span>
-                  )}
-                  <CaseStatusPill status={c.status} perspective={perspective} />
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <CaseList cases={filtered} perspective={perspective} showLawyer={false} />
       )}
+    </div>
+  )
+}
+
+function AdvocateInbox({
+  cases,
+  perspective,
+}: {
+  cases: CaseListItem[]
+  perspective: ReturnType<typeof perspectiveFor>
+}) {
+  const needsYou = cases.filter((c) => c.turn === 'you')
+  const waitingOnLawyer = cases.filter((c) => c.turn === 'them')
+  const done = cases.filter((c) => c.turn === 'none')
+
+  return (
+    <div className="space-y-8">
+      <CaseGroup title="Needs you" cases={needsYou} perspective={perspective} />
+      <CaseGroup title="Waiting on lawyer" cases={waitingOnLawyer} perspective={perspective} />
+      <CaseGroup title="Done" cases={done} perspective={perspective} />
+    </div>
+  )
+}
+
+function CaseGroup({
+  title,
+  cases,
+  perspective,
+}: {
+  title: string
+  cases: CaseListItem[]
+  perspective: ReturnType<typeof perspectiveFor>
+}) {
+  if (cases.length === 0) return null
+  return (
+    <div>
+      <h2 className="text-muted text-label mb-2.5 font-semibold tracking-wide uppercase">
+        {title} <span className="font-normal normal-case">({cases.length})</span>
+      </h2>
+      <CaseList cases={cases} perspective={perspective} showLawyer />
+    </div>
+  )
+}
+
+function CaseList({
+  cases,
+  perspective,
+  showLawyer,
+}: {
+  cases: CaseListItem[]
+  perspective: ReturnType<typeof perspectiveFor>
+  showLawyer: boolean
+}) {
+  return (
+    <div className="space-y-3">
+      {cases.map((c) => (
+        <Link key={c.id} to={`/cases/${c.id}`}>
+          <Card className="flex items-center justify-between gap-4 transition-transform hover:-translate-y-0.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="truncate font-medium">{c.title}</p>
+                {c.turn === 'you' && (
+                  <span className="text-caption inline-flex shrink-0 items-center rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 font-medium text-[var(--color-accent-ink)]">
+                    Your turn
+                  </span>
+                )}
+              </div>
+              {showLawyer && (
+                <p className="text-muted text-caption mt-0.5 truncate">
+                  {c.junior_lawyer_name}
+                  {c.junior_lawyer_bar_council_id && ` · Bar council ID: ${c.junior_lawyer_bar_council_id}`}
+                </p>
+              )}
+              {c.last_message ? (
+                <p
+                  className={
+                    c.unread_count > 0
+                      ? 'text-label mt-0.5 truncate font-medium'
+                      : 'text-muted text-label mt-0.5 truncate'
+                  }
+                >
+                  {c.last_message.sender_name ? `${c.last_message.sender_name}: ` : ''}
+                  {c.last_message.preview}
+                </p>
+              ) : (
+                <p className="text-muted text-label mt-0.5">
+                  {c.case_type} &middot; {c.status === 'draft' ? 'Started' : 'Submitted'}{' '}
+                  {formatDate(c.created_at)}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              {c.unread_count > 0 && (
+                <span
+                  aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}
+                  className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 font-medium text-white"
+                >
+                  {c.unread_count}
+                </span>
+              )}
+              <CaseStatusPill status={c.status} perspective={perspective} />
+            </div>
+          </Card>
+        </Link>
+      ))}
     </div>
   )
 }

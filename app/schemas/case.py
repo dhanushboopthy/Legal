@@ -67,3 +67,7 @@ class CaseListItem(CaseOut):
     last_message: LastMessageOut | None = None
     unread_count: int = 0
     turn: Turn = "none"
+    # For the advocate's grouped list (lawyer name, Bar Council ID); not shown
+    # to the lawyer looking at their own cases.
+    junior_lawyer_name: str = ""
+    junior_lawyer_bar_council_id: str | None = None

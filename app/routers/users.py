@@ -29,6 +29,16 @@ async def list_pending_users(db: AsyncSession = Depends(get_db)):
     return [UserOut.from_user(u) for u in users]
 
 
+@router.get("", response_model=list[UserOut], dependencies=[Depends(require_permission(USER_MANAGE))])
+async def list_users(db: AsyncSession = Depends(get_db)):
+    """Everyone: the People page. Pending approvals are just the rows with
+    is_active=False, not a separate list to reconcile against this one."""
+    result = await db.execute(
+        select(User).options(selectinload(User.role)).order_by(User.full_name)
+    )
+    return [UserOut.from_user(u) for u in result.scalars().all()]
+
+
 @router.patch("/{user_id}/approve", response_model=UserOut, dependencies=[Depends(require_permission(USER_MANAGE))])
 async def approve_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

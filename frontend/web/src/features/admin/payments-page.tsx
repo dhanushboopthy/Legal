@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Receipt } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,10 +13,12 @@ import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
 import { listAllPayments, refundPayment } from '@/lib/api/payments'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import type { PaymentListItem } from '@/types/api'
 
 export function PaymentsPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const [confirming, setConfirming] = useState<PaymentListItem | null>(null)
 
   const {
     data: payments,
@@ -28,6 +33,7 @@ export function PaymentsPage() {
   const refund = useMutation({
     mutationFn: refundPayment,
     onSuccess: () => {
+      setConfirming(null)
       toast({ variant: 'success', title: 'Refund initiated' })
       void queryClient.invalidateQueries({ queryKey: ['all-payments'] })
     },
@@ -58,6 +64,8 @@ export function PaymentsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted text-label border-b border-[var(--border)] text-left">
+                <th className="px-4 py-3 font-medium">Case</th>
+                <th className="px-4 py-3 font-medium">Lawyer</th>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Amount</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -68,7 +76,13 @@ export function PaymentsPage() {
             <tbody>
               {payments.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--border)] last:border-0">
-                  <td className="px-4 py-3 capitalize">{p.type}</td>
+                  <td className="max-w-48 truncate px-4 py-3">
+                    <Link to={`/cases/${p.case_id}`} className="text-accent-ink hover:underline">
+                      {p.case_title}
+                    </Link>
+                  </td>
+                  <td className="text-muted px-4 py-3">{p.junior_lawyer_name}</td>
+                  <td className="px-4 py-3 capitalize">{p.type} fee</td>
                   <td className="px-4 py-3">{formatCurrency(p.amount)}</td>
                   <td className="px-4 py-3">
                     <PaymentStatusPill status={p.status} />
@@ -78,12 +92,7 @@ export function PaymentsPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {p.status === 'paid' && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        loading={refund.isPending && refund.variables === p.id}
-                        onClick={() => refund.mutate(p.id)}
-                      >
+                      <Button size="sm" variant="secondary" onClick={() => setConfirming(p)}>
                         Refund
                       </Button>
                     )}
@@ -94,6 +103,17 @@ export function PaymentsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirming !== null}
+        onOpenChange={(open) => !open && setConfirming(null)}
+        title={`Refund ${confirming ? formatCurrency(confirming.amount) : ''} to ${confirming?.junior_lawyer_name}?`}
+        description={`For "${confirming?.case_title}". This can't be undone.`}
+        confirmLabel="Refund"
+        tone="danger"
+        loading={refund.isPending}
+        onConfirm={() => confirming && refund.mutate(confirming.id)}
+      />
     </div>
   )
 }
