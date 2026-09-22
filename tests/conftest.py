@@ -37,7 +37,8 @@ from app.services import payment_service, storage_service
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 _TABLES_TO_CLEAN = (
-    "audit_logs", "notifications", "revision_requests", "quotes",
+    "audit_logs", "notifications", "revision_requests", "message_attachments", "messages",
+    "case_reads", "quotes",
     "payments", "case_documents", "cases", "email_otps", "users",
 )
 

@@ -13,6 +13,7 @@ import { isAxiosError } from 'axios'
 import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { PERMISSIONS, type CanFn } from '@/auth/permissions'
+import { useAuth } from '@/auth/auth-context'
 import { usePermissions } from '@/auth/use-permissions'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card } from '@/components/ui/card'
@@ -22,6 +23,7 @@ import { useToast } from '@/components/ui/toast-context'
 import { ForbiddenPage } from '@/features/errors/forbidden-page'
 import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
+import { ChatThread } from '@/features/chat/chat-thread'
 import { DecisionPanel } from '@/features/cases/decision-panel'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
 import { InfoPanel } from '@/features/cases/info-panel'
@@ -36,9 +38,19 @@ import { formatBytes } from '@/lib/uploads'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { CaseStatus } from '@/types/api'
 
+// The statuses in which a case has a chat (docs/NEW_FLOW_SPEC.md D4).
+const CHAT_STATUSES: CaseStatus[] = [
+  'accepted',
+  'quoted',
+  'delivered',
+  'revision_requested',
+  'completed',
+]
+
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { can } = usePermissions()
+  const { user } = useAuth()
   const perspective = perspectiveFor(can)
   const queryClient = useQueryClient()
   // Set to the case's status right before a payment/action is kicked off;
@@ -152,6 +164,17 @@ export function CaseDetailPage() {
           onChanged={refresh}
         />
       </div>
+
+      {/* The chat is for the two people on the case: its owner and whoever holds
+          case:message. It exists from acceptance on (and stays, read-only, once
+          the case is complete). Everyone else who can see the case never sees it. */}
+      {user &&
+        CHAT_STATUSES.includes(caseData.status) &&
+        (caseData.junior_lawyer_id === user.id || can(PERMISSIONS.CASE_MESSAGE)) && (
+          <div className="mb-4">
+            <ChatThread caseId={caseId} ownId={user.id} />
+          </div>
+        )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

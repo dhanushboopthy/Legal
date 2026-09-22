@@ -18,11 +18,12 @@ from app.core.permissions import (
 )
 from app.models.case import Case, CaseStatus
 from app.models.document import CaseDocument
+from app.models.message import MessageKind
 from app.models.quote import QuoteStatus
 from app.models.revision import RevisionRequest, RevisionStatus
 from app.models.user import User
 from app.schemas.case import CaseCreate, CaseUpdate
-from app.services import audit_service, document_service, notification_service, storage_service
+from app.services import audit_service, document_service, message_service, notification_service, storage_service
 
 
 class Actor(str, enum.Enum):
@@ -269,6 +270,12 @@ async def decide_case(
         db, user_id=case.junior_lawyer_id, message=message,
         case_id=case.id, kind="case_accepted" if accept else "case_rejected",
     )
+    if accept:
+        # The first line of the chat, which opens with acceptance.
+        await message_service.post_event(
+            db, case=case, kind=MessageKind.SYSTEM, actor=admin, meta={"event": "accepted"},
+            body="The advocate accepted this case. You can discuss the details here.",
+        )
     return case
 
 
@@ -302,6 +309,13 @@ async def deliver_revised_draft(
         db, user_id=admin.id, action="case.draft_revised",
         entity_type="case", entity_id=str(case.id), metadata={"version": doc.version},
     )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.DRAFT, actor=admin, body=f"New draft version: v{doc.version}",
+        meta={
+            "document_id": str(doc.id), "version": doc.version, "filename": doc.original_filename,
+            "page_count": doc.page_count, "size_bytes": doc.size_bytes,
+        },
+    )
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id,
         message=f"A new version of the draft for '{case.title}' is ready to download.",
@@ -323,6 +337,10 @@ async def request_revision(
         db, user_id=junior_lawyer.id, action="case.revision_requested",
         entity_type="case", entity_id=str(case.id), metadata={"reason": reason},
     )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM, actor=junior_lawyer,
+        body=f"Changes requested: {reason}", meta={"event": "changes_requested"},
+    )
     await notification_service.notify_reviewers(
         db, message=f"Changes requested on '{case.title}': {reason}",
         case_id=case.id, kind="revision_requested",
@@ -336,5 +354,9 @@ async def approve_case(db: AsyncSession, *, case: Case, junior_lawyer: User) -> 
     await audit_service.log_action(
         db, user_id=junior_lawyer.id, action="case.completed",
         entity_type="case", entity_id=str(case.id),
+    )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM, actor=junior_lawyer, meta={"event": "completed"},
+        body="The lawyer approved the draft. This case is complete and the chat is now read-only.",
     )
     return case

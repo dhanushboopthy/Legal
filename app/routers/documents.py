@@ -14,7 +14,7 @@ from app.models.document import CaseDocument, DocumentType
 from app.models.user import User
 from app.schemas.document import DocumentOut, UploadUrlRequest, UploadUrlResponse
 from app.schemas.upload import ConfirmBatchRequest, ConfirmBatchResponse, UploadUrlsRequest, UploadUrlsResponse
-from app.services import audit_service, case_service, document_service, storage_service
+from app.services import audit_service, case_service, document_service, message_service, storage_service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -136,9 +136,13 @@ async def list_case_documents(
     case = await case_service.get_case_or_404(db, case_id)
     case_service.authorize_case_access(case, current_user)
     drafts_open = case_service.can_open_drafts(case, current_user)
+    in_chat = message_service.is_participant(case, current_user)
     return [
         DocumentOut.of(doc, locked=doc.type == DocumentType.DRAFT and not drafts_open)
         for doc in case.documents
+        # Files shared in the chat are for the people in it, not everyone who can
+        # see the case exists (a clerk).
+        if doc.type != DocumentType.SUPPORTING or in_chat
     ]
 
 
@@ -159,6 +163,9 @@ async def get_download_url(
     # Enforced here, not only in the UI: an unpaid draft has no download link.
     if document.type == DocumentType.DRAFT and not case_service.can_open_drafts(case, current_user):
         raise ForbiddenError("payment_required")
+
+    if document.type == DocumentType.SUPPORTING and not message_service.is_participant(case, current_user):
+        raise ForbiddenError("Only the people in this case's chat can open its shared files")
 
     url = storage_service.generate_presigned_download_url(document.storage_key)
     return {"download_url": url, "expires_in_seconds": settings.s3_presigned_url_expire_seconds}

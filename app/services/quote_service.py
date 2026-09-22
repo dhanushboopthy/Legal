@@ -8,9 +8,10 @@ from app.config import settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.core.money import format_inr
 from app.models.case import Case, CaseStatus
+from app.models.message import MessageKind
 from app.models.quote import Quote, QuoteStatus
 from app.models.user import User
-from app.services import audit_service, case_service, document_service, notification_service
+from app.services import audit_service, case_service, document_service, message_service, notification_service
 
 
 def price_in_paise(amount_inr: int) -> int:
@@ -81,6 +82,18 @@ async def send_quote(
         db, user_id=admin.id, action="quote.replaced" if replaced else "quote.sent",
         entity_type="quote", entity_id=str(quote.id),
         metadata={"case_id": str(case.id), "version": quote.version, "amount_paise": amount_paise},
+    )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.QUOTE, actor=admin,
+        body=f"Quote {'updated' if replaced else 'sent'}: {price}",
+        meta={
+            "quote_id": str(quote.id), "version": quote.version, "updated": replaced is not None,
+            "amount_inr": amount_inr, "amount_paise": amount_paise, "note": note,
+            "draft": {
+                "document_id": str(draft.id), "filename": draft.original_filename,
+                "page_count": draft.page_count, "size_bytes": draft.size_bytes,
+            },
+        },
     )
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id, case_id=case.id, kind="quote_sent",

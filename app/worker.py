@@ -21,6 +21,10 @@ async def run_once() -> None:
         purged = await maintenance_service.purge_stale_drafts(db)
     if purged:
         logger.info("stale_drafts_purged", count=purged)
+    async with AsyncSessionLocal() as db:
+        emailed = await maintenance_service.email_unread_messages(db)
+    if emailed:
+        logger.info("chat_emails_sent", count=emailed)
 
 
 async def main() -> None:

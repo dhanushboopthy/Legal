@@ -9,6 +9,8 @@ export const PERMISSIONS = {
   CASE_DRAFT: 'case:draft',
   CASE_REQUEST_REVISION: 'case:request_revision',
   CASE_APPROVE_FINAL: 'case:approve_final',
+  CASE_MESSAGE: 'case:message',
+  QUOTE_CREATE: 'quote:create',
   PAYMENT_INITIATE: 'payment:initiate',
   PAYMENT_VIEW_OWN: 'payment:view_own',
   PAYMENT_VIEW_ALL: 'payment:view_all',

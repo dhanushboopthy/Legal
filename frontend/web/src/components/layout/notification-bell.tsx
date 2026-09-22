@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import { cn, formatDate } from '@/lib/utils'
 
 export function NotificationBell() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const {
     data: notifications,
     isLoading,
@@ -67,13 +69,14 @@ export function NotificationBell() {
                   'flex-col items-start gap-0.5',
                   !n.is_read && 'bg-[var(--color-accent)]/5',
                 )}
-                onSelect={(e) => {
-                  e.preventDefault()
+                onSelect={() => {
                   if (!n.is_read) {
-                    markNotificationRead(n.id).then(() =>
+                    void markNotificationRead(n.id).then(() =>
                       queryClient.invalidateQueries({ queryKey: ['notifications'] }),
                     )
                   }
+                  // A notification takes you to what it is about (F-16).
+                  if (n.case_id) navigate(`/cases/${n.case_id}`)
                 }}
               >
                 <p className="text-label leading-snug">{n.message}</p>

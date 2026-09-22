@@ -24,4 +24,13 @@ def rate_limit_key(request: Request) -> str:
     return get_remote_address(request)
 
 
-limiter = Limiter(key_func=rate_limit_key, default_limits=["100/minute"])
+# Counted in Redis so the limit is shared by all of the api's worker processes
+# (in memory, each of the 4 gunicorn workers would allow its own 100 a minute).
+# If Redis is unreachable the limiter falls back to counting in memory rather
+# than failing requests. Tests count in memory: CI has no Redis.
+limiter = Limiter(
+    key_func=rate_limit_key,
+    default_limits=["100/minute"],
+    storage_uri="memory://" if settings.environment == "test" else settings.redis_url,
+    in_memory_fallback_enabled=True,
+)

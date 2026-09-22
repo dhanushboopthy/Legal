@@ -24,6 +24,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // /api/ws is the event socket.
+        ws: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
       },
       '/bff': {

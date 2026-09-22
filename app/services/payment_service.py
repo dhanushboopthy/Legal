@@ -13,11 +13,12 @@ from app.config import settings
 from app.core.exceptions import ConflictError, NotFoundError
 from app.core.money import format_inr, paise_from_rupees
 from app.models.case import Case, CaseStatus
+from app.models.message import MessageKind
 from app.models.payment import Payment, PaymentStatus, PaymentType
 from app.models.quote import Quote, QuoteStatus
 from app.models.user import User
 from app.schemas.payment import PaymentOrderResponse
-from app.services import audit_service, case_service, notification_service
+from app.services import audit_service, case_service, message_service, notification_service
 
 logger = structlog.get_logger()
 
@@ -269,6 +270,11 @@ async def _quote_paid(db: AsyncSession, *, case: Case, payment: Payment, quote: 
         db, user_id=None, action="quote.paid", entity_type="quote", entity_id=str(quote.id),
         metadata={"case_id": str(case.id), "version": quote.version, "amount_paise": quote.amount_paise},
     )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM,
+        body=f"Payment of {price} received. The draft is unlocked.",
+        meta={"event": "quote_paid", "quote_id": str(quote.id), "amount_paise": quote.amount_paise},
+    )
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id, case_id=case.id, kind="quote_paid",
         message=f"Payment of {price} received. Your draft for '{case.title}' is unlocked.",
@@ -303,6 +309,11 @@ async def _auto_refund(db: AsyncSession, *, case: Case, payment: Payment, reason
     await audit_service.log_action(
         db, user_id=None, action="payment.auto_refund_initiated",
         entity_type="payment", entity_id=str(payment.id), metadata={"reason": reason},
+    )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM,
+        body=f"A payment of {price} for an earlier price was refunded automatically. Please pay the updated price.",
+        meta={"event": "payment_auto_refunded", "reason": reason},
     )
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id, case_id=case.id, kind="payment_refunded",
@@ -381,6 +392,14 @@ async def handle_refund_processed(db: AsyncSession, *, gateway_payment_id: str) 
         ).scalar_one()
         if quote.status == QuoteStatus.PAID:
             quote.status = QuoteStatus.REFUNDED  # access to the draft is revoked
+            await message_service.post_event(
+                db, case=case, kind=MessageKind.SYSTEM,
+                body=(
+                    f"Payment of {format_inr(paise_from_rupees(payment.amount))} was refunded. "
+                    "The draft is locked again."
+                ),
+                meta={"event": "quote_refunded", "quote_id": str(quote.id)},
+            )
 
     await audit_service.log_action(
         db, user_id=None, action="payment.refunded",

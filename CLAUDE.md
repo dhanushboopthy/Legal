@@ -114,6 +114,30 @@ frontend/
   `GET /config/uploads` and `GET /config/pricing`.
 - **Background work goes in the `worker` service**, not in request handlers:
   one asyncio loop, idempotent sweeps (`maintenance_service`), safe to run twice.
+- **A case's chat (`message_service.py`) is participant-only**: its owner and
+  anyone holding `case:message`, never everyone who can merely list the case
+  (`case:view_all`). It exists only while the case is being worked on
+  (`accepted` through `revision_requested`), stays read-only once `completed`,
+  and doesn't exist before acceptance or after a rejection — check
+  `is_participant`/`assert_open`/`assert_visible`, don't reimplement them.
+  Sending is serialised per case (`pg_advisory_xact_lock` in `_lock_thread`)
+  and idempotent on a browser-made `client_id`, so a retry can't duplicate or
+  interleave with another sender's message. A status change writes its own
+  line into the same chat, in the same transaction, via
+  `message_service.post_event` — see the calls in `case_service.py`,
+  `quote_service.py`, `payment_service.py` for the pattern; don't notify
+  without also writing the line, or the other way round.
+- **Realtime (`app/services/realtime.py`) is an accelerator, never a source of
+  truth.** An event carries ids only ("case `X` has a new message"), never
+  content; the browser then fetches through the normal, authorised endpoint.
+  Events queue on the DB session and are only published `after_commit` (never
+  `after_flush`), so a client can always fetch what it was just told about.
+  Every screen still polls (3 s in an open thread, 30 s elsewhere) regardless
+  of the socket, so a Redis outage degrades, it doesn't break anything.
+  `WS /ws` authenticates with a single-use ticket from `POST /ws/ticket`
+  (never a token in the URL); `ENVIRONMENT=test` swaps Redis pub/sub for an
+  in-process stand-in (`MemoryBackend`) so tests need no Redis, and
+  `realtime.enabled` is off in tests unless a test turns it on.
 
 ## Commands
 

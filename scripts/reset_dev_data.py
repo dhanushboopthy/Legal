@@ -4,7 +4,7 @@ Wipe case data from a DEVELOPMENT database, keeping users and roles:
     python -m scripts.reset_dev_data --yes
 
 Removes cases and everything hanging off them (documents, payments, quotes,
-revision requests, notifications, audit log). Needed once before migration
+chat messages, revision requests, notifications, audit log). Needed once before migration
 0004, which retires case statuses and refuses to run over rows that use them.
 Files already uploaded to the object store are left behind.
 
@@ -21,6 +21,7 @@ from app.database import engine
 # Children before parents; tables that don't exist yet (e.g. quotes before
 # migration 0004) are skipped.
 _TABLES = (
+    "message_attachments", "messages", "case_reads",
     "quotes", "payments", "case_documents", "revision_requests",
     "notifications", "audit_logs", "cases",
 )

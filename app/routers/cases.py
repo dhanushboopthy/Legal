@@ -19,11 +19,11 @@ from app.dependencies import get_current_user, require_permission
 from app.models.case import Case
 from app.models.revision import RevisionRequest
 from app.models.user import User
-from app.schemas.case import CaseCreate, CaseDecision, CaseOut, CaseUpdate, RevisionCreate, RevisionOut
+from app.schemas.case import CaseCreate, CaseDecision, CaseListItem, CaseOut, CaseUpdate, RevisionCreate, RevisionOut
 from app.schemas.document import DocumentOut
 from app.schemas.payment import PaymentOrderResponse
 from app.schemas.quote import DraftUpload, QuoteCreate, QuoteOut
-from app.services import case_service, payment_service, quote_service
+from app.services import case_service, message_service, payment_service, quote_service
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -40,10 +40,18 @@ async def create_case(
     return case
 
 
-@router.get("", response_model=list[CaseOut])
+@router.get("", response_model=list[CaseListItem])
 async def list_cases(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(case_service.visible_cases_query(current_user).order_by(Case.created_at.desc()))
-    return list(result.scalars().all())
+    cases = list(result.scalars().all())
+    chat = await message_service.summaries(db, user=current_user, cases=cases)
+    return [
+        CaseListItem.model_validate(case).model_copy(update={
+            "last_message": chat[case.id][0], "unread_count": chat[case.id][1],
+            "turn": case_service.turn_for(case, current_user),
+        })
+        for case in cases
+    ]
 
 
 @router.get("/{case_id}", response_model=CaseOut)

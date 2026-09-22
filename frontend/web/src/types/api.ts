@@ -51,6 +51,54 @@ export interface CaseOut {
   updated_at: string
 }
 
+export type MessageKind = 'text' | 'file' | 'system' | 'quote' | 'draft'
+
+export interface AttachmentOut {
+  document_id: string
+  filename: string
+  size_bytes: number | null
+  content_type: string | null
+}
+
+export interface MessageOut {
+  id: number
+  case_id: string
+  sender_id: string | null
+  sender_name: string | null
+  kind: MessageKind
+  body: string | null
+  // What a card or system line needs (amounts, filenames, the event name).
+  meta: Record<string, unknown>
+  attachments: AttachmentOut[]
+  client_id: string | null
+  created_at: string
+}
+
+export interface MessagePage {
+  messages: MessageOut[] // oldest first
+  has_more: boolean
+  my_last_read_id: number
+  other_last_read_id: number
+  // False once the case is complete: readable, but nothing can be added.
+  open: boolean
+}
+
+export interface LastMessage {
+  preview: string
+  at: string
+  sender_name: string | null
+  kind: MessageKind
+}
+
+export type Turn = 'you' | 'them' | 'none'
+
+// A case as the list returns it, with what the list says about its chat.
+export interface CaseListItem extends CaseOut {
+  last_message: LastMessage | null
+  unread_count: number
+  turn: Turn
+}
+
 export interface PaymentOrderResponse {
   payment_id: string
   razorpay_order_id: string

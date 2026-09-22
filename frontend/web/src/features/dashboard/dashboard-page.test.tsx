@@ -11,9 +11,9 @@ import {
   makeUser,
   renderWithProviders,
 } from '@/test/render-helpers'
-import type { CaseOut } from '@/types/api'
+import type { CaseListItem } from '@/types/api'
 
-const aCase = (over: Partial<CaseOut> = {}): CaseOut => ({
+const aCase = (over: Partial<CaseListItem> = {}): CaseListItem => ({
   id: 'c1',
   junior_lawyer_id: 'u1',
   title: 'Bail petition',
@@ -26,6 +26,9 @@ const aCase = (over: Partial<CaseOut> = {}): CaseOut => ({
   revision_count: 0,
   created_at: '2026-09-15T10:00:00Z',
   updated_at: '2026-09-15T10:00:00Z',
+  last_message: null,
+  unread_count: 0,
+  turn: 'none',
   ...over,
 })
 
@@ -95,5 +98,27 @@ describe('DashboardPage states', () => {
 
     renderWithProviders(<DashboardPage />, { user: makeUser(ADVOCATE_PERMISSIONS) })
     expect(await screen.findByText('Needs your decision')).toBeInTheDocument()
+  })
+
+  it('shows the last message and how many are unread on a case with a chat', async () => {
+    mock.onGet('/cases').reply(200, [
+      aCase({
+        status: 'accepted',
+        unread_count: 3,
+        last_message: {
+          preview: 'Please share the FIR copy',
+          at: '2026-09-15T11:00:00Z',
+          sender_name: 'Adv. Rao',
+          kind: 'text',
+        },
+      }),
+      aCase({ id: 'c2', title: 'Quiet case' }),
+    ])
+    renderWithProviders(<DashboardPage />, { user: makeUser(LAWYER_PERMISSIONS) })
+
+    expect(await screen.findByText('Adv. Rao: Please share the FIR copy')).toBeInTheDocument()
+    expect(screen.getByLabelText('3 unread messages')).toBeInTheDocument()
+    // A case with nothing unread carries no badge.
+    expect(screen.getAllByLabelText(/unread/)).toHaveLength(1)
   })
 })

@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client'
-import type { CaseOut, PaymentOrderResponse } from '@/types/api'
+import type { CaseListItem, CaseOut, PaymentOrderResponse } from '@/types/api'
 
 export interface CreateCasePayload {
   title: string
@@ -7,8 +7,8 @@ export interface CreateCasePayload {
   note?: string
 }
 
-export async function listCases(): Promise<CaseOut[]> {
-  const { data } = await apiClient.get<CaseOut[]>('/cases')
+export async function listCases(): Promise<CaseListItem[]> {
+  const { data } = await apiClient.get<CaseListItem[]>('/cases')
   return data
 }
 

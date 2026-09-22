@@ -29,6 +29,15 @@ def _send_sync(to_email: str, subject: str, text_body: str, html_body: str) -> N
         client.sendmail(message["From"], [to_email], message.as_string())
 
 
+async def send_email(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    """Send one email. Raises if SMTP isn't configured or the server refuses."""
+    await asyncio.to_thread(_send_sync, to_email, subject, text_body, html_body)
+
+
+def is_configured() -> bool:
+    return bool(settings.smtp_host)
+
+
 async def send_otp_email(to_email: str, code: str) -> None:
     # Dev convenience only: with real SMTP unconfigured (or even configured,
     # if you just want to watch the flow) the code is visible in logs — but

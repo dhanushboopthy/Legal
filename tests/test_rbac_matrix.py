@@ -5,6 +5,7 @@ is valid — the right people succeed and everyone else is refused with 403.
 Matrix B: for every action, every case status — only the valid status
 succeeds, and a refused action leaves the case exactly as it was.
 """
+import uuid
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -109,6 +110,13 @@ ENDPOINTS = [
     Endpoint("check payment status", "POST", lambda w: f"/payments/{w.quote_payment_id}/reconcile", CaseStatus.QUOTED, ("owner", "advocate", "clerk"), needs_razorpay=True),
     Endpoint("all payments", "GET", lambda w: "/payments", CaseStatus.QUOTED, ("advocate", "accountant")),
     Endpoint("refund", "POST", lambda w: f"/payments/{w.paid_payment_id}/refund", CaseStatus.DELIVERED, ("advocate",), needs_razorpay=True),
+    Endpoint("read chat", "GET", lambda w: _case(w) + "/messages", CaseStatus.ACCEPTED, ("owner", "advocate")),
+    Endpoint("send chat message", "POST", lambda w: _case(w) + "/messages", CaseStatus.ACCEPTED, ("owner", "advocate"),
+             lambda w: {"client_id": str(uuid.uuid4()), "body": "hello"}),
+    Endpoint("mark chat read", "POST", lambda w: _case(w) + "/read", CaseStatus.ACCEPTED, ("owner", "advocate"),
+             lambda w: {"last_read_message_id": 1}),
+    Endpoint("chat file urls", "POST", lambda w: _case(w) + "/attachments/upload-urls", CaseStatus.ACCEPTED, ("owner", "advocate"),
+             lambda w: {"files": [{"filename": "a.pdf", "content_type": "application/pdf", "size": 100}]}),
     Endpoint("upload url: draft", "POST", lambda w: "/documents/upload-url", CaseStatus.ACCEPTED, ("advocate",),
              lambda w: {"case_id": str(w.case.id), "filename": "d.pdf"}),
     Endpoint("upload urls", "POST", lambda w: "/documents/upload-urls", CaseStatus.DRAFT, ("owner",),
@@ -166,6 +174,9 @@ ACTIONS = [
     Action("upload revised draft", "advocate", {CaseStatus.REVISION_REQUESTED}, _endpoint("upload revised draft")),
     Action("request changes", "owner", {CaseStatus.DELIVERED}, _endpoint("request changes")),
     Action("approve", "owner", {CaseStatus.DELIVERED}, _endpoint("approve")),
+    Action("send chat message", "advocate",
+           {CaseStatus.ACCEPTED, CaseStatus.QUOTED, CaseStatus.DELIVERED, CaseStatus.REVISION_REQUESTED},
+           _endpoint("send chat message")),
     Action("submit", "owner", {CaseStatus.DRAFT}, _endpoint("submit")),
     Action("edit draft", "owner", {CaseStatus.DRAFT}, _endpoint("edit draft")),
     Action("discard draft", "owner", {CaseStatus.DRAFT}, _endpoint("discard draft")),

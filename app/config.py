@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     draft_retention_days: int = 7
     worker_interval_seconds: int = 60
 
+    # Where the web app lives, for links in emails ("open the case").
+    app_base_url: str = "http://localhost:3100"
+    # An unread chat message is emailed after this long, at most once per case
+    # per this many minutes, and never with the message text in it.
+    chat_email_after_minutes: int = 10
+    chat_email_min_gap_minutes: int = 60
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

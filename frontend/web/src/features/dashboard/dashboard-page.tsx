@@ -34,7 +34,13 @@ export function DashboardPage() {
     isLoading,
     error,
     refetch,
-  } = useQuery({ queryKey: ['cases'], queryFn: listCases })
+  } = useQuery({
+    queryKey: ['cases'],
+    queryFn: listCases,
+    // Unread counts and last messages change without anyone opening the list; the
+    // socket refreshes it at once when connected, this is the fallback.
+    refetchInterval: 30_000,
+  })
   const hasCases = (cases?.length ?? 0) > 0
 
   const filtered = useMemo(() => {
@@ -120,11 +126,35 @@ export function DashboardPage() {
               <Card className="flex items-center justify-between gap-4 transition-transform hover:-translate-y-0.5">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{c.title}</p>
-                  <p className="text-muted text-label mt-0.5">
-                    {c.case_type} &middot; Submitted {formatDate(c.created_at)}
-                  </p>
+                  {c.last_message ? (
+                    <p
+                      className={
+                        c.unread_count > 0
+                          ? 'text-label mt-0.5 truncate font-medium'
+                          : 'text-muted text-label mt-0.5 truncate'
+                      }
+                    >
+                      {c.last_message.sender_name ? `${c.last_message.sender_name}: ` : ''}
+                      {c.last_message.preview}
+                    </p>
+                  ) : (
+                    <p className="text-muted text-label mt-0.5">
+                      {c.case_type} &middot; {c.status === 'draft' ? 'Started' : 'Submitted'}{' '}
+                      {formatDate(c.created_at)}
+                    </p>
+                  )}
                 </div>
-                <CaseStatusPill status={c.status} perspective={perspective} />
+                <div className="flex shrink-0 items-center gap-3">
+                  {c.unread_count > 0 && (
+                    <span
+                      aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}
+                      className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 font-medium text-white"
+                    >
+                      {c.unread_count}
+                    </span>
+                  )}
+                  <CaseStatusPill status={c.status} perspective={perspective} />
+                </div>
               </Card>
             </Link>
           ))}

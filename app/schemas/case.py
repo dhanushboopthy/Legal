@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.case import CaseStatus
 from app.models.revision import RevisionStatus
+from app.schemas.message import LastMessageOut, Turn
 
 
 class CaseCreate(BaseModel):
@@ -58,3 +59,11 @@ class RevisionOut(BaseModel):
     reason: str
     status: RevisionStatus
     created_at: datetime
+
+
+class CaseListItem(CaseOut):
+    """A case in the list, with what the list needs to say about its chat."""
+
+    last_message: LastMessageOut | None = None
+    unread_count: int = 0
+    turn: Turn = "none"

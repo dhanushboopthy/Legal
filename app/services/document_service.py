@@ -257,6 +257,51 @@ async def register_originals(
     )
 
 
+# --- chat attachments -----------------------------------------------------
+
+MAX_ATTACHMENTS_PER_MESSAGE = 5
+
+
+async def create_attachment_targets(
+    db: AsyncSession, *, case: Case, specs: list[UploadFileSpec],
+) -> list[UploadTarget]:
+    """Signed uploads for a chat message's files: same type and size rules as
+    the case files, at most 5 per message, and the case's chat files share the
+    same total-size cap."""
+    if len(specs) > MAX_ATTACHMENTS_PER_MESSAGE:
+        raise ValidationAppError(f"A message can have at most {MAX_ATTACHMENTS_PER_MESSAGE} files")
+    for spec in specs:
+        _check_spec(spec)
+    existing = await _documents_of(db, case.id, DocumentType.SUPPORTING)
+    total = sum(d.size_bytes or 0 for d in existing) + sum(s.size for s in specs)
+    if total > _mb(settings.max_case_size_mb):
+        raise ValidationAppError(f"A case's chat files can total at most {settings.max_case_size_mb} MB")
+    return _sign(case, specs)
+
+
+async def register_attachments(
+    db: AsyncSession, *, case: Case, uploader: User, files: list[ConfirmFileSpec],
+) -> list[CaseDocument]:
+    """Verify and file a message's attachments, all or nothing: a message never
+    goes out with some of its files missing. Objects that passed but belong to a
+    message that isn't sent are deleted again."""
+    if len(files) > MAX_ATTACHMENTS_PER_MESSAGE:
+        raise ValidationAppError(f"A message can have at most {MAX_ATTACHMENTS_PER_MESSAGE} files")
+    existing = await _documents_of(db, case.id, DocumentType.SUPPORTING)
+    existing_keys = {d.storage_key for d in existing}
+    confirmed, rejected = await _register_files(
+        db, case=case, uploader=uploader, files=files, doc_type=DocumentType.SUPPORTING,
+        existing=existing, max_files=None,
+    )
+    if rejected:
+        for doc in confirmed:
+            if doc.storage_key not in existing_keys:
+                await storage_service.delete_object(doc.storage_key)
+        first = rejected[0]
+        raise ValidationAppError(f"'{first.original_filename}': {first.reason}")
+    return confirmed
+
+
 async def remove_original(db: AsyncSession, *, case: Case, document: CaseDocument) -> None:
     """Take a file off a case that hasn't been reviewed yet. A submitted case
     keeps at least one file, so it can't be left with nothing to review."""
