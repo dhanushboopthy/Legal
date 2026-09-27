@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { AlertTriangle, CreditCard } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { useAuth } from '@/auth/auth-context'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,9 @@ interface Props {
   // new-case page), so start out waiting for it to be confirmed.
   initiallyConfirming?: boolean
   onPaid: () => void
+  // What is being paid for (e.g. the locked draft's details), shown above the button.
+  children?: ReactNode
+  buttonLabel?: (amount: string) => string
 }
 
 export function PaymentActionCard({
@@ -36,6 +39,8 @@ export function PaymentActionCard({
   amountInr,
   initiallyConfirming = false,
   onPaid,
+  children,
+  buttonLabel = (amount) => `Pay ${amount}`,
 }: Props) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -116,16 +121,16 @@ export function PaymentActionCard({
         <div className="flex-1">
           <h3 className="font-semibold">{title}</h3>
           <p className="text-muted mt-0.5 text-sm">{description}</p>
+          {children}
 
           {state === 'idle' && (
             <Button
-              className="mt-3"
-              size="sm"
+              className="mt-4"
               loading={isPending}
               disabled={amountInr === undefined}
               onClick={() => mutate()}
             >
-              {amountInr === undefined ? 'Pay' : `Pay ${formatCurrency(amountInr)}`}
+              {amountInr === undefined ? 'Pay' : buttonLabel(formatCurrency(amountInr))}
             </Button>
           )}
 

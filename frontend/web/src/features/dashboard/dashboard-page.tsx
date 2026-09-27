@@ -1,36 +1,33 @@
 import { useQuery } from '@tanstack/react-query'
-import { FolderOpen, Plus, Search } from 'lucide-react'
+import { ChevronDown, FolderOpen, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useAuth } from '@/auth/auth-context'
 import { PERMISSIONS } from '@/auth/permissions'
 import { usePermissions } from '@/auth/use-permissions'
 import { buttonVariants } from '@/components/ui/button-variants'
-import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
+import { List, ListRow } from '@/components/ui/list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CaseStatusPill } from '@/components/ui/status-pill'
-import { listCases } from '@/lib/api/cases'
-import { STATUS_META, perspectiveFor, type StatusGroup } from '@/lib/status-meta'
-import { formatDate } from '@/lib/utils'
-import type { CaseListItem } from '@/types/api'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { listCases } from '@/lib/api/cases'
+import { perspectiveFor, type Perspective } from '@/lib/status-meta'
+import { shortTime } from '@/lib/time'
+import type { CaseListItem } from '@/types/api'
 
-const FILTERS: Array<{ label: string; group: StatusGroup | null }> = [
-  { label: 'All', group: null },
-  { label: 'Active', group: 'active' },
-  { label: 'Completed', group: 'completed' },
-  { label: 'Rejected', group: 'rejected' },
-]
+// A lawyer rarely has enough cases to need search; it appears once they do.
+const SEARCH_FROM = 8
 
 export function DashboardPage() {
   usePageTitle('Cases')
   const { can } = usePermissions()
+  const { user } = useAuth()
   const perspective = perspectiveFor(can)
   const viewsAll = can(PERMISSIONS.CASE_VIEW_ALL)
   const canSubmit = can(PERMISSIONS.CASE_SUBMIT)
-  const [filterIndex, setFilterIndex] = useState(0)
   const [query, setQuery] = useState('')
 
   const {
@@ -46,78 +43,58 @@ export function DashboardPage() {
     refetchInterval: 30_000,
   })
   const hasCases = (cases?.length ?? 0) > 0
+  const showSearch = viewsAll || (cases?.length ?? 0) > SEARCH_FROM
 
-  const filtered = useMemo(() => {
-    const group = FILTERS[filterIndex]?.group
-    let list = cases ?? []
-    if (group) list = list.filter((c) => STATUS_META[c.status].group === group)
+  const matching = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (q) {
-      list = list.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.junior_lawyer_name.toLowerCase().includes(q) ||
-          c.case_number?.toLowerCase().includes(q),
-      )
-    }
-    return list
-  }, [cases, filterIndex, query])
+    if (!q) return cases ?? []
+    return (cases ?? []).filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.junior_lawyer_name.toLowerCase().includes(q) ||
+        c.case_number?.toLowerCase().includes(q),
+    )
+  }, [cases, query])
+
+  // Grouped by whose turn it is; the groups replace filter buttons.
+  const groups =
+    perspective === 'reviewer'
+      ? { you: 'Needs you', them: 'Waiting on the lawyer', none: 'Finished' }
+      : { you: 'Your turn', them: 'With the advocate', none: 'Finished' }
 
   return (
     <div>
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {viewsAll ? 'All cases' : 'My cases'}
-          </h1>
+          <h1 className="lg:text-title text-2xl font-semibold">Cases</h1>
           <p className="text-muted mt-1 text-sm">
-            {viewsAll
-              ? 'Every case submitted across the practice.'
-              : 'Track the cases you have submitted for filing.'}
+            {viewsAll ? 'Every case filed with the practice.' : 'The cases you have filed.'}
           </p>
         </div>
-        {canSubmit && (
-          <Link to="/cases/new" className={buttonVariants({ variant: 'primary', size: 'md' })}>
-            <Plus className="size-4" /> New case
+        {/* One "New case" per screen: the empty state carries its own. */}
+        {canSubmit && hasCases && (
+          <Link to="/cases/new" className={buttonVariants()}>
+            <Plus className="size-5" aria-hidden /> New case
           </Link>
         )}
       </div>
 
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f, i) => (
-            <button
-              key={f.label}
-              type="button"
-              aria-pressed={i === filterIndex}
-              onClick={() => setFilterIndex(i)}
-              className={
-                'min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ' +
-                (i === filterIndex
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'bg-black/[0.06] text-[var(--fg)] hover:bg-black/[0.1]')
-              }
-            >
-              {f.label}
-            </button>
-          ))}
+      {showSearch && hasCases && (
+        <div className="relative mb-8">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[var(--fg-muted)]"
+            aria-hidden
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={viewsAll ? 'Search by title, lawyer or case number' : 'Search by title or case number'}
+            aria-label="Search cases"
+            className="text-lead min-h-12 w-full rounded-[var(--radius-control)] border-0 bg-black/[0.06] py-2 pr-4 pl-12 placeholder:text-[var(--fg-muted)] focus:bg-white focus:ring-1 focus:ring-[var(--border-strong)]"
+          />
         </div>
-        {viewsAll && (
-          <div className="relative w-full min-w-48 sm:w-auto sm:flex-1">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[var(--fg-muted)]"
-              aria-hidden
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title, lawyer or case number"
-              aria-label="Search cases"
-              className="surface text-lead min-h-12 w-full rounded-full border border-[var(--border-strong)] py-2 pr-4 pl-11 focus:border-[var(--color-accent)]"
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-3">
@@ -131,51 +108,53 @@ export function DashboardPage() {
           title={viewsAll ? "Couldn't load cases" : "Couldn't load your cases"}
           onRetry={() => void refetch()}
         />
-      ) : filtered.length === 0 ? (
+      ) : !hasCases ? (
         <EmptyState
           icon={FolderOpen}
-          title={hasCases ? 'Nothing in this filter' : 'No cases yet'}
+          title="No cases yet"
           description={
-            hasCases
-              ? 'Try another filter, or clear the search.'
-              : canSubmit
-                ? 'Submit your first case to get started.'
-                : 'Cases will appear here once lawyers submit them.'
+            canSubmit
+              ? 'Submit your first case to get started.'
+              : 'Cases will appear here once lawyers submit them.'
           }
           action={
-            !hasCases &&
             canSubmit && (
-              <Link to="/cases/new" className={buttonVariants({ variant: 'primary', size: 'sm' })}>
+              <Link to="/cases/new" className={buttonVariants()}>
                 New case
               </Link>
             )
           }
         />
-      ) : viewsAll ? (
-        <AdvocateInbox cases={filtered} perspective={perspective} />
+      ) : matching.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No cases match your search"
+          description="Check the spelling, or search by case number."
+        />
       ) : (
-        <CaseList cases={filtered} perspective={perspective} showLawyer={false} />
+        <div className="space-y-8">
+          <CaseGroup
+            title={groups.you}
+            cases={matching.filter((c) => c.turn === 'you')}
+            perspective={perspective}
+            ownId={user?.id}
+          />
+          <CaseGroup
+            title={groups.them}
+            cases={matching.filter((c) => c.turn === 'them')}
+            perspective={perspective}
+            ownId={user?.id}
+          />
+          <CaseGroup
+            title={groups.none}
+            cases={matching.filter((c) => c.turn === 'none')}
+            perspective={perspective}
+            ownId={user?.id}
+            // Tucked away only when there is active work above it to look at.
+            collapsible={!query && matching.some((c) => c.turn !== 'none')}
+          />
+        </div>
       )}
-    </div>
-  )
-}
-
-function AdvocateInbox({
-  cases,
-  perspective,
-}: {
-  cases: CaseListItem[]
-  perspective: ReturnType<typeof perspectiveFor>
-}) {
-  const needsYou = cases.filter((c) => c.turn === 'you')
-  const waitingOnLawyer = cases.filter((c) => c.turn === 'them')
-  const done = cases.filter((c) => c.turn === 'none')
-
-  return (
-    <div className="space-y-8">
-      <CaseGroup title="Needs you" cases={needsYou} perspective={perspective} />
-      <CaseGroup title="Waiting on lawyer" cases={waitingOnLawyer} perspective={perspective} />
-      <CaseGroup title="Done" cases={done} perspective={perspective} />
     </div>
   )
 }
@@ -184,86 +163,82 @@ function CaseGroup({
   title,
   cases,
   perspective,
+  ownId,
+  collapsible = false,
 }: {
   title: string
   cases: CaseListItem[]
-  perspective: ReturnType<typeof perspectiveFor>
+  perspective: Perspective
+  ownId?: string
+  collapsible?: boolean
 }) {
+  const [open, setOpen] = useState(!collapsible)
   if (cases.length === 0) return null
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        aria-expanded={false}
+        onClick={() => setOpen(true)}
+        className="text-accent-ink inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium hover:bg-[var(--color-accent)]/[0.08]"
+      >
+        <ChevronDown className="size-5" aria-hidden />
+        Show {cases.length} finished {cases.length === 1 ? 'case' : 'cases'}
+      </button>
+    )
+  }
+
   return (
-    <div>
-      <h2 className="text-muted text-label mb-2.5 font-semibold tracking-wide uppercase">
-        {title} <span className="font-normal normal-case">({cases.length})</span>
-      </h2>
-      <CaseList cases={cases} perspective={perspective} showLawyer />
-    </div>
+    <List heading={`${title} (${cases.length})`}>
+      {cases.map((c) => (
+        <CaseRow key={c.id} c={c} perspective={perspective} ownId={ownId} />
+      ))}
+    </List>
   )
 }
 
-function CaseList({
-  cases,
-  perspective,
-  showLawyer,
-}: {
-  cases: CaseListItem[]
-  perspective: ReturnType<typeof perspectiveFor>
-  showLawyer: boolean
-}) {
+function CaseRow({ c, perspective, ownId }: { c: CaseListItem; perspective: Perspective; ownId?: string }) {
+  const last = c.last_message
+  const sender = last && (last.sender_id && last.sender_id === ownId ? 'You' : last.sender_name)
+  const subtitle = (
+    <>
+      <span className="block">
+        {[c.case_number, perspective === 'reviewer' ? c.junior_lawyer_name : c.case_type]
+          .filter(Boolean)
+          .join(' · ')}
+      </span>
+      {last && (
+        <span className={c.unread_count > 0 ? 'mt-0.5 block text-[var(--fg)]' : 'mt-0.5 block'}>
+          <span className="line-clamp-1">
+            {sender ? `${sender}: ` : ''}
+            {last.preview}
+          </span>
+          <span className="text-caption">{shortTime(last.at)}</span>
+        </span>
+      )}
+    </>
+  )
+
   return (
-    <div className="space-y-3">
-      {cases.map((c) => (
-        <Link key={c.id} to={`/cases/${c.id}`}>
-          <Card className="flex flex-col gap-3 transition-transform hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="min-w-0 flex-1">
-              {c.case_number && (
-                <p className="text-muted text-caption font-medium">{c.case_number}</p>
-              )}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <p className="line-clamp-2 font-semibold">{c.title}</p>
-                {c.turn === 'you' && (
-                  <span className="text-caption inline-flex shrink-0 items-center rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 font-medium text-[var(--color-accent-ink)]">
-                    Your turn
-                  </span>
-                )}
-              </div>
-              {showLawyer && (
-                <p className="text-muted text-caption mt-0.5 truncate">
-                  {c.junior_lawyer_name}
-                  {c.junior_lawyer_bar_council_id && ` · Bar Council no. ${c.junior_lawyer_bar_council_id}`}
-                </p>
-              )}
-              {c.last_message ? (
-                <p
-                  className={
-                    c.unread_count > 0
-                      ? 'text-label mt-0.5 truncate font-medium'
-                      : 'text-muted text-label mt-0.5 truncate'
-                  }
-                >
-                  {c.last_message.sender_name ? `${c.last_message.sender_name}: ` : ''}
-                  {c.last_message.preview}
-                </p>
-              ) : (
-                <p className="text-muted text-label mt-0.5">
-                  {c.case_type} &middot; {c.status === 'draft' ? 'Started' : 'Submitted'}{' '}
-                  {formatDate(c.created_at)}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-              {c.unread_count > 0 && (
-                <span
-                  aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}
-                  className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 font-medium text-white"
-                >
-                  {c.unread_count}
-                </span>
-              )}
-              <CaseStatusPill status={c.status} perspective={perspective} />
-            </div>
-          </Card>
-        </Link>
-      ))}
-    </div>
+    <ListRow
+      to={`/cases/${c.id}`}
+      stack
+      title={<span className="line-clamp-2">{c.title}</span>}
+      subtitle={subtitle}
+      trailing={
+        <>
+          {c.unread_count > 0 && (
+            <span
+              aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}
+              className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 font-semibold text-white"
+            >
+              {c.unread_count}
+            </span>
+          )}
+          <CaseStatusPill status={c.status} perspective={perspective} />
+        </>
+      }
+    />
   )
 }

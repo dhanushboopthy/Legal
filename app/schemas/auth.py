@@ -8,7 +8,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     phone: str | None = None
     password: str = Field(max_length=128)
-    bar_council_id: str | None = None
+    bar_council_id: str | None = Field(default=None, max_length=100)
 
     @model_validator(mode="after")
     def _strong_password(self) -> "UserRegister":

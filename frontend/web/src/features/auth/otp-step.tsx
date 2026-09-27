@@ -2,8 +2,8 @@ import { MailCheck } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 
 import { useAuth } from '@/auth/auth-context'
+import { AuthLayout } from '@/components/layout/auth-layout'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Input, Label } from '@/components/ui/input'
 import { resendOtp } from '@/lib/api/auth'
 import { getErrorMessage } from '@/lib/errors'
@@ -106,62 +106,52 @@ export function OtpStep({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-[var(--color-accent)] text-white">
-            <MailCheck className="size-6" strokeWidth={1.75} />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
-          <p className="text-muted text-center text-sm">
-            We sent a 6-digit code to <span className="font-medium text-[var(--fg)]">{email}</span>
-          </p>
-        </div>
-
-        <Card>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="otp">Verification code</Label>
-              <Input
-                id="otp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-                className="text-center text-lg tracking-[0.5em]"
-                value={code}
-                disabled={verifying}
-                onChange={(e) => onCodeChange(e.target.value)}
-              />
-            </div>
-            {error && (
-              <p role="alert" className="text-label text-danger-ink">
-                {error}
-              </p>
-            )}
-            <Button
-              type="submit"
-              className="w-full"
-              loading={verifying}
-              disabled={code.length !== 6}
-            >
-              Verify
-            </Button>
-          </form>
-        </Card>
-
-        <p className="text-muted mt-6 text-center text-sm">
-          Didn't get it?{' '}
+    <AuthLayout
+      icon={MailCheck}
+      title="Check your email"
+      subtitle={
+        <>
+          We sent a 6-digit code to <span className="font-medium text-[var(--fg)] break-all">{email}</span>
+        </>
+      }
+      footer={
+        <p>
+          Didn&rsquo;t get it?{' '}
           <button
             type="button"
             onClick={onResend}
             disabled={resending || cooldown > 0}
-            className="text-accent-ink font-medium disabled:opacity-50"
+            className="text-accent-ink inline-flex min-h-11 items-center font-medium disabled:opacity-60"
           >
-            {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+            {cooldown > 0 ? `Resend in ${cooldown} seconds` : 'Resend code'}
           </button>
         </p>
-      </div>
-    </div>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div>
+          <Label htmlFor="otp">6-digit code</Label>
+          <Input
+            id="otp"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="000000"
+            className="text-center text-2xl tracking-[0.4em] tabular-nums"
+            value={code}
+            disabled={verifying}
+            onChange={(e) => onCodeChange(e.target.value)}
+          />
+        </div>
+        {error && (
+          <p role="alert" className="text-danger-ink text-sm font-medium">
+            {error}
+          </p>
+        )}
+        <Button type="submit" size="lg" className="w-full" loading={verifying} disabled={code.length !== 6}>
+          Verify
+        </Button>
+      </form>
+    </AuthLayout>
   )
 }

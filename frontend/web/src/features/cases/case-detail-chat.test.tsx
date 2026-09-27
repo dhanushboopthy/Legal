@@ -79,12 +79,10 @@ describe('who gets the chat on a case', () => {
     },
   )
 
-  it('offers to open the chat in its own window, in Messages', async () => {
+  it('keeps the chat on the case page, with no second inbox to look in', async () => {
     open('accepted', makeUser(LAWYER_PERMISSIONS, { id: OWNER }))
-    const link = await screen.findByRole('link', { name: /Open in new window/ })
-    expect(link).toHaveAttribute('href', '/messages/c1')
-    expect(link).toHaveAttribute('target', '_blank')
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    await screen.findByRole('region', { name: 'Case chat' })
+    expect(screen.queryByRole('link', { name: /Open in new window/ })).toBeNull()
   })
 
   it('gives it to the advocate, who holds case:message', async () => {

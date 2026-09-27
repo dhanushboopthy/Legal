@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { List, ListRow } from '@/components/ui/list'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
@@ -51,8 +52,8 @@ export function PaymentsPage() {
   return (
     <div>
       <BackLink to="/">All cases</BackLink>
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Payments</h1>
-      <p className="text-muted mb-6 text-sm">Every payment across the practice.</p>
+      <h1 className="lg:text-title text-2xl font-semibold">Payments</h1>
+      <p className="text-muted mt-1 mb-8 text-sm">Every payment across the practice.</p>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -64,58 +65,45 @@ export function PaymentsPage() {
       ) : !payments || payments.length === 0 ? (
         <EmptyState icon={Receipt} title="No payments yet" />
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--border)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-muted text-label border-b border-[var(--border)] text-left">
-                <th className="px-4 py-3 font-medium">Case</th>
-                <th className="px-4 py-3 font-medium">Lawyer</th>
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Paid at</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p) => (
-                <tr key={p.id} className="border-b border-[var(--border)] last:border-0">
-                  <td className="max-w-48 truncate px-4 py-3">
-                    <Link to={`/cases/${p.case_id}`} className="text-accent-ink hover:underline">
-                      {p.case_title}
-                    </Link>
-                    {p.case_number && (
-                      <p className="text-muted text-caption">{p.case_number}</p>
-                    )}
-                  </td>
-                  <td className="text-muted px-4 py-3">{p.junior_lawyer_name}</td>
-                  <td className="px-4 py-3 capitalize">{p.type} fee</td>
-                  <td className="px-4 py-3">{formatCurrency(p.amount)}</td>
-                  <td className="px-4 py-3">
-                    <PaymentStatusPill status={p.status} />
-                  </td>
-                  <td className="text-muted px-4 py-3">
-                    {p.paid_at ? formatDate(p.paid_at) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {p.status === 'paid' && (
-                      <Button size="sm" variant="secondary" onClick={() => setConfirming(p)}>
-                        Refund
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <List>
+          {payments.map((p) => (
+            <ListRow
+              key={p.id}
+              stack
+              title={
+                <Link to={`/cases/${p.case_id}`} className="text-accent-ink hover:underline">
+                  {p.case_title}
+                </Link>
+              }
+              subtitle={[
+                p.case_number,
+                p.junior_lawyer_name,
+                p.type === 'review' ? 'Review fee' : 'Draft',
+                p.paid_at ? formatDate(p.paid_at) : 'Not paid',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              trailing={
+                <>
+                  <span className="font-medium tabular-nums">{formatCurrency(p.amount)}</span>
+                  <PaymentStatusPill status={p.status} />
+                  {p.status === 'paid' && (
+                    <Button size="sm" variant="secondary" onClick={() => setConfirming(p)}>
+                      Refund
+                    </Button>
+                  )}
+                </>
+              }
+            />
+          ))}
+        </List>
       )}
 
       <ConfirmDialog
         open={confirming !== null}
         onOpenChange={(open) => !open && setConfirming(null)}
         title={`Refund ${confirming ? formatCurrency(confirming.amount) : ''} to ${confirming?.junior_lawyer_name}?`}
-        description={`For "${confirming?.case_title}". This can't be undone.`}
+        description={`For “${confirming?.case_title}”. This can’t be undone.`}
         confirmLabel="Refund"
         tone="danger"
         loading={refund.isPending}

@@ -23,7 +23,14 @@ interface Props {
   onSent: () => void
 }
 
-export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = false, onSent }: Props) {
+export function QuoteSheet({
+  caseId,
+  pricing,
+  open,
+  onOpenChange,
+  replacing = false,
+  onSent,
+}: Props) {
   const { toast } = useToast()
   const [file, setFile] = useState<File | null>(null)
   const [fileStatus, setFileStatus] = useState<FileRowStatus>('queued')
@@ -31,8 +38,11 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState<string | undefined>()
+  // Set once the form checks out: one confirmation that names the amount.
+  const [confirmAmount, setConfirmAmount] = useState<number | null>(null)
 
   const reset = () => {
+    setConfirmAmount(null)
     setFile(null)
     setFileStatus('queued')
     setProgress(0)
@@ -84,6 +94,7 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
     onError: (err) => {
       setFileStatus(file ? 'failed' : 'queued')
       setError(getErrorMessage(err))
+      setConfirmAmount(null)
     },
   })
 
@@ -99,7 +110,7 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
     >
       <div className="space-y-4">
         <div>
-          <p className="text-label mb-1.5 font-medium text-[var(--fg-muted)]">Draft (PDF)</p>
+          <p className="mb-2 text-sm font-medium">Draft (PDF)</p>
           {file ? (
             <FileRow
               name={file.name}
@@ -119,7 +130,11 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
           )}
         </div>
 
-        <Field id="quote-amount" label="Price" hint={`Between ${formatCurrency(pricing.quote_min_inr)} and ${formatCurrency(pricing.quote_max_inr)}`}>
+        <Field
+          id="quote-amount"
+          label="Price"
+          hint={`Between ${formatCurrency(pricing.quote_min_inr)} and ${formatCurrency(pricing.quote_max_inr)}`}
+        >
           {(control) => (
             <div className="relative">
               <span className="text-muted pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm">
@@ -135,7 +150,7 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
                 disabled={submit.isPending}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="2500"
-                className="w-full rounded-[var(--radius-control)] border border-[var(--border)] surface py-2.5 pr-3.5 pl-7 text-lead text-[var(--fg)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/40"
+                className="surface text-lead min-h-12 w-full rounded-[var(--radius-control)] border border-[var(--border-strong)] py-2.5 pr-4 pl-8 text-[var(--fg)] tabular-nums focus:border-[var(--color-accent)]"
               />
             </div>
           )}
@@ -159,29 +174,58 @@ export function QuoteSheet({ caseId, pricing, open, onOpenChange, replacing = fa
           </p>
         )}
 
-        <Button
-          className="w-full"
-          loading={submit.isPending}
-          disabled={!file || !amount}
-          onClick={() => {
-            if (!file) return
-            const amountInr = Number(amount)
-            if (
-              !Number.isInteger(amountInr) ||
-              amountInr < pricing.quote_min_inr ||
-              amountInr > pricing.quote_max_inr
-            ) {
-              setError(
-                `Enter a whole-rupee amount between ${formatCurrency(pricing.quote_min_inr)} and ${formatCurrency(pricing.quote_max_inr)}.`,
-              )
-              return
-            }
-            setError(undefined)
-            submit.mutate({ file, amountInr })
-          }}
-        >
-          {replacing ? 'Send updated draft and price' : 'Send draft and quote'}
-        </Button>
+        {confirmAmount !== null && file ? (
+          <div
+            role="group"
+            aria-label="Confirm"
+            className="rounded-[var(--radius-control)] bg-black/[0.04] p-4"
+          >
+            <p className="text-sm font-medium">
+              {replacing
+                ? `Replace the draft and ask the lawyer to pay ${formatCurrency(confirmAmount)}?`
+                : `Send this draft and ask the lawyer to pay ${formatCurrency(confirmAmount)}?`}
+            </p>
+            <p className="text-muted text-label mt-1 break-words">{file.name}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                loading={submit.isPending}
+                onClick={() => submit.mutate({ file, amountInr: confirmAmount })}
+              >
+                {replacing ? 'Yes, replace' : 'Yes, send'}
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={submit.isPending}
+                onClick={() => setConfirmAmount(null)}
+              >
+                Go back
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            className="w-full"
+            disabled={!file || !amount}
+            onClick={() => {
+              if (!file) return
+              const amountInr = Number(amount)
+              if (
+                !Number.isInteger(amountInr) ||
+                amountInr < pricing.quote_min_inr ||
+                amountInr > pricing.quote_max_inr
+              ) {
+                setError(
+                  `Enter a whole-rupee amount between ${formatCurrency(pricing.quote_min_inr)} and ${formatCurrency(pricing.quote_max_inr)}.`,
+                )
+                return
+              }
+              setError(undefined)
+              setConfirmAmount(amountInr)
+            }}
+          >
+            {replacing ? 'Send updated draft and price' : 'Send draft and quote'}
+          </Button>
+        )}
       </div>
     </Sheet>
   )

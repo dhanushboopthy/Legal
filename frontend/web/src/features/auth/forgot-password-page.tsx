@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/auth-context'
+import { AuthLayout } from '@/components/layout/auth-layout'
 import { destinationFor } from '@/auth/destination'
 import { Button } from '@/components/ui/button'
 import { Field, Input, PasswordInput } from '@/components/ui/input'
@@ -22,33 +23,26 @@ export function ForgotPasswordPage() {
   const [step, setStep] = useState<'email' | 'code'>('email')
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-[var(--color-accent)] text-white">
-            <KeyRound className="size-7" strokeWidth={1.75} aria-hidden />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Reset your password</h1>
-          <p className="text-muted text-sm">
-            {step === 'email'
-              ? "Enter the email you use for this account. We'll email you a 6-digit code."
-              : `We sent a 6-digit code to ${email}. It works for 10 minutes.`}
-          </p>
-        </div>
-
-        {step === 'email' ? (
-          <EmailStep email={email} onEmail={setEmail} onSent={() => setStep('code')} />
-        ) : (
-          <CodeStep email={email} onChangeEmail={() => setStep('email')} />
-        )}
-
-        <p className="mt-8 text-center text-sm">
-          <Link to="/login" className="text-accent-ink font-semibold hover:underline">
-            Back to sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthLayout
+      icon={KeyRound}
+      title="Reset your password"
+      subtitle={
+        step === 'email'
+          ? "Enter the email you use for this account. We'll email you a 6-digit code."
+          : `We sent a 6-digit code to ${email}. It works for 10 minutes.`
+      }
+      footer={
+        <Link to="/login" className="text-accent-ink font-medium hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
+      {step === 'email' ? (
+        <EmailStep email={email} onEmail={setEmail} onSent={() => setStep('code')} />
+      ) : (
+        <CodeStep email={email} onChangeEmail={() => setStep('email')} />
+      )}
+    </AuthLayout>
   )
 }
 

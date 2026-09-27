@@ -253,7 +253,7 @@ function NewCaseForm({
   return (
     <div className="mx-auto max-w-xl">
       <BackLink to="/">All cases</BackLink>
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight">New case</h1>
+      <h1 className="lg:text-title mb-1 text-2xl font-semibold">New case</h1>
       <p className="text-muted mb-6 text-sm">
         Add your files, then send the case to the advocate for review. The review fee is {fee}.
       </p>
@@ -277,7 +277,7 @@ function NewCaseForm({
           className="space-y-5"
         >
           <section aria-labelledby="files-heading" className="space-y-3">
-            <h2 id="files-heading" className="text-label font-medium text-[var(--fg-muted)]">
+            <h2 id="files-heading" className="text-sm font-medium">
               Files
             </h2>
             <Dropzone

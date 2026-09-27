@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input } from '@/components/ui/input'
+import { List, ListRow } from '@/components/ui/list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TextSizeControl } from '@/components/ui/text-size-control'
 import { useToast } from '@/components/ui/toast-context'
@@ -40,40 +41,24 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-xl">
       <BackLink to="/">All cases</BackLink>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Your profile</h1>
-      <Card>
-        <dl className="divide-y divide-[var(--border)]">
-          <Row label="Full name" value={user.full_name} />
-          <Row label="Email" value={user.email} />
-          <Row label="Role" value={roleLabel(user.role_name)} />
-          <Row label="Status" value={user.is_active ? 'Active' : 'Pending approval'} />
-        </dl>
-      </Card>
-      <div className="mt-4">
+      <h1 className="lg:text-title mb-8 text-2xl font-semibold">Your profile</h1>
+      <div className="space-y-8">
+        <List heading="Account">
+          <ListRow title="Name" subtitle={user.full_name} />
+          <ListRow title="Email" subtitle={<span className="break-all">{user.email}</span>} />
+        </List>
         <EditableFields user={user} />
+        <section id="text-size" className="scroll-mt-24">
+          <Card>
+            <TextSizeControl />
+            <p className="text-muted mt-3 text-sm">
+              Makes all text and buttons bigger on this device. You can change it at any time.
+            </p>
+          </Card>
+        </section>
       </div>
-      <Card className="mt-4">
-        <div id="text-size" className="scroll-mt-24">
-          <TextSizeControl />
-          <p className="text-muted mt-3 text-sm">
-            Makes all text and buttons bigger on this device. You can change it at any time.
-          </p>
-        </div>
-      </Card>
     </div>
   )
-}
-
-// Display only, never used to decide what someone may do.
-const ROLE_LABELS: Record<string, string> = {
-  junior_lawyer: 'Lawyer',
-  super_admin: 'Advocate',
-  clerk: 'Clerk',
-  accountant: 'Accountant',
-}
-
-function roleLabel(roleName: string): string {
-  return ROLE_LABELS[roleName] ?? roleName.replace(/_/g, ' ')
 }
 
 function EditableFields({ user }: { user: UserOut }) {
@@ -109,14 +94,17 @@ function EditableFields({ user }: { user: UserOut }) {
 
   if (!editing) {
     return (
-      <Card>
-        <dl className="divide-y divide-[var(--border)]">
-          <Row label="Bar Council enrolment number" value={user.bar_council_id ?? 'Not added yet'} />
-        </dl>
-        <Button variant="secondary" size="sm" className="mt-4" onClick={() => setEditing(true)}>
-          <Pencil className="size-4" aria-hidden /> Edit enrolment number
-        </Button>
-      </Card>
+      <List heading="Bar Council">
+        <ListRow
+          title="Enrolment number"
+          subtitle={user.bar_council_id ?? 'Not added yet'}
+          trailing={
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              <Pencil className="size-4" aria-hidden /> Edit
+            </Button>
+          }
+        />
+      </List>
     )
   }
 
@@ -134,14 +122,13 @@ function EditableFields({ user }: { user: UserOut }) {
         >
           {(control) => <Input {...control} {...register('bar_council_id')} />}
         </Field>
-        <div className="flex gap-2">
-          <Button type="submit" size="sm" loading={save.isPending}>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" loading={save.isPending}>
             Save
           </Button>
           <Button
             type="button"
             variant="secondary"
-            size="sm"
             disabled={save.isPending}
             onClick={() => {
               reset()
@@ -153,14 +140,5 @@ function EditableFields({ user }: { user: UserOut }) {
         </div>
       </form>
     </Card>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0">
-      <dt className="text-muted text-sm">{label}</dt>
-      <dd className="text-sm font-semibold break-all">{value}</dd>
-    </div>
   )
 }

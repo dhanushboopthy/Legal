@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { shortTime } from '@/features/messages/short-time'
+import { shortTime } from '@/lib/time'
 
 // Local times, so "today" and "yesterday" don't depend on the runner's zone.
 const now = new Date(2026, 8, 27, 18, 0)

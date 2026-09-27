@@ -11,7 +11,7 @@ import {
 import { listMyNotifications, markNotificationRead } from '@/lib/api/notifications'
 import { cn, formatDate } from '@/lib/utils'
 
-export function NotificationBell() {
+export function NotificationBell({ variant = 'icon' }: { variant?: 'icon' | 'row' }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const {
@@ -27,27 +27,40 @@ export function NotificationBell() {
 
   const list = notifications ?? []
   const unreadCount = list.filter((n) => !n.is_read).length
+  const label = unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
+  const count = unreadCount > 0 && (
+    <span
+      aria-hidden
+      className="flex min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-caption font-semibold text-white"
+    >
+      {unreadCount > 9 ? '9+' : unreadCount}
+    </span>
+  )
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="relative flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2 text-sm font-semibold transition-colors hover:bg-black/[0.06] lg:px-3"
-          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-        >
-          <Bell className="size-6" strokeWidth={1.75} aria-hidden />
-          <span aria-hidden className="hidden lg:inline">
-            Alerts
-          </span>
-          {unreadCount > 0 && (
-            <span
-              aria-hidden
-              className="absolute -top-0.5 left-6 flex min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-caption font-bold text-white"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
+        {variant === 'row' ? (
+          // A sidebar row, styled like the navigation items around it.
+          <button
+            aria-label={label}
+            className="flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm font-medium transition-colors hover:bg-black/[0.05]"
+          >
+            <Bell className="size-5" strokeWidth={1.75} aria-hidden />
+            <span aria-hidden className="flex-1 text-left">
+              Notifications
             </span>
-          )}
-        </button>
+            {count}
+          </button>
+        ) : (
+          <button
+            aria-label={label}
+            className="relative flex size-11 items-center justify-center rounded-full transition-colors hover:bg-black/[0.06]"
+          >
+            <Bell className="size-6" strokeWidth={1.75} aria-hidden />
+            {count && <span className="absolute -top-0.5 left-6">{count}</span>}
+          </button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[26rem] max-w-[calc(100vw-2rem)] p-0">
         <div className="border-b border-[var(--border)] px-4 py-3">

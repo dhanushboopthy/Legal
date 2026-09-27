@@ -1,10 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Clock,
-  ExternalLink,
   FolderOpen,
   Hourglass,
-  Info,
   Pencil,
   PenSquare,
   XCircle,
@@ -21,19 +19,18 @@ import { BackLink } from '@/components/layout/back-link'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card } from '@/components/ui/card'
+import { List, ListRow } from '@/components/ui/list'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CaseStatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast-context'
 import { ForbiddenPage } from '@/features/errors/forbidden-page'
 import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
 import { hasChat } from '@/features/chat/chat-access'
 import { ChatThread } from '@/features/chat/chat-thread'
-import { CaseProgress } from '@/features/cases/case-progress'
+import { CaseDetailsSheet } from '@/features/cases/case-details-sheet'
+import { stepLine } from '@/features/cases/case-steps'
 import { DecisionPanel } from '@/features/cases/decision-panel'
-import { DetailsSheet } from '@/features/cases/details-sheet'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
-import { FilesSheet } from '@/features/cases/files-sheet'
 import { InfoPanel } from '@/features/cases/info-panel'
 import { QuotedPaymentPanel } from '@/features/cases/quoted-payment-panel'
 import { QuoteSheet } from '@/features/cases/quote-sheet'
@@ -67,7 +64,6 @@ export function CaseDetailPage() {
   const [awaitingStatus, setAwaitingStatus] = useState<CaseStatus | null>(
     justPaid ? 'submitted' : null,
   )
-  const [filesOpen, setFilesOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [quoteSheet, setQuoteSheet] = useState<'closed' | 'send' | 'replace'>('closed')
 
@@ -111,9 +107,8 @@ export function CaseDetailPage() {
     void queryClient.invalidateQueries({ queryKey: ['quote', caseId] })
   }
 
-  // What the lawyer submitted. Drafts are the advocate's work and get their own
-  // card once a quote exists.
   const caseFiles = documents?.filter((d) => d.type !== 'draft') ?? []
+  const draftCount = (documents?.length ?? 0) - caseFiles.length
   const latestDraft = documents?.filter((d) => d.type === 'draft').at(-1)
 
   if (caseError) {
@@ -142,29 +137,34 @@ export function CaseDetailPage() {
   }
 
   const isOwner = user?.id === caseData.junior_lawyer_id
+  const step = stepLine(caseData.status)
+  const detailsSummary = [
+    `${caseFiles.length} ${caseFiles.length === 1 ? 'file' : 'files'}`,
+    draftCount > 0 && `${draftCount} ${draftCount === 1 ? 'draft' : 'drafts'}`,
+    (payments?.length ?? 0) > 0 &&
+      `${payments!.length} ${payments!.length === 1 ? 'payment' : 'payments'}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div className="mx-auto max-w-2xl">
       <BackLink to="/">All cases</BackLink>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          {caseData.case_number && (
-            <p className="text-muted text-label font-medium">{caseData.case_number}</p>
-          )}
-          <h1 className="text-2xl font-semibold tracking-tight">{caseData.title}</h1>
-          <p className="text-muted mt-1 text-sm">
-            {caseData.case_type}
-            {caseData.court && ` · ${caseData.court}`} ·{' '}
-            {caseData.status === 'draft' ? 'Started' : 'Submitted'}{' '}
-            {formatDate(caseData.created_at)}
-          </p>
-        </div>
-        <CaseStatusPill status={caseData.status} perspective={perspective} />
-      </div>
+      <header className="mb-8">
+        {caseData.case_number && (
+          <p className="text-muted text-sm font-medium tabular-nums">{caseData.case_number}</p>
+        )}
+        <h1 className="lg:text-title mt-1 text-2xl font-semibold break-words">{caseData.title}</h1>
+        <p className="text-muted mt-2 text-sm">
+          {caseData.case_type}
+          {caseData.court && ` · ${caseData.court}`} ·{' '}
+          {caseData.status === 'draft' ? 'Started' : 'Submitted'} {formatDate(caseData.created_at)}
+        </p>
+      </header>
 
-      <CaseProgress status={caseData.status} />
-
-      <div className="mb-4 space-y-4">
+      {/* One card says where the case is and what to do next. */}
+      <section aria-label="Next step" className="mb-8">
+        {step && <p className="text-muted mb-2 px-1 text-sm font-medium">{step}</p>}
         <CaseActionPanel
           caseId={caseId}
           caseData={caseData}
@@ -178,48 +178,39 @@ export function CaseDetailPage() {
           onChanged={refresh}
           onOpenQuoteSheet={(mode) => setQuoteSheet(mode)}
         />
-      </div>
+      </section>
 
       {/* The chat is for the two people on the case: its owner and whoever holds
           case:message. It exists from acceptance on (and stays, read-only, once
           the case is complete). Everyone else who can see the case never sees it. */}
       {user && hasChat(caseData, user.id, can) && (
-        <div className="mb-4">
+        <div className="mb-8">
           <ChatThread
             caseId={caseId}
             ownId={user.id}
             header={
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-1.5">
-                <h2 className="text-base font-semibold">Chat</h2>
-                <a
-                  href={`/messages/${caseId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent-ink text-label inline-flex min-h-11 items-center gap-1.5 font-medium sm:min-h-9"
-                >
-                  <ExternalLink className="size-4" aria-hidden /> Open in new window
-                </a>
+              <div className="border-b border-[var(--border)] px-5 py-3">
+                <h2 className="text-base font-semibold">Messages</h2>
               </div>
             }
           />
         </div>
       )}
 
-      <div className="flex gap-2">
-        <Button variant="secondary" size="sm" onClick={() => setFilesOpen(true)}>
-          <FolderOpen className="size-4" /> Files
-          {caseFiles.length > 0 && <span className="text-muted">({caseFiles.length})</span>}
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => setDetailsOpen(true)}>
-          <Info className="size-4" /> Details
-        </Button>
-      </div>
+      <List>
+        <ListRow
+          icon={FolderOpen}
+          title="Case details"
+          subtitle={detailsSummary}
+          onClick={() => setDetailsOpen(true)}
+        />
+      </List>
 
-      <FilesSheet open={filesOpen} onOpenChange={setFilesOpen} files={caseFiles} />
-      <DetailsSheet
+      <CaseDetailsSheet
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
         caseData={caseData}
+        documents={documents ?? []}
         payments={payments ?? []}
       />
       {pricing && (
@@ -303,7 +294,7 @@ function CaseActionPanel({
               <Link
                 to="/cases/new"
                 state={{ prefill: { title: caseData.title, case_type: caseData.case_type } }}
-                className={buttonVariants({ size: 'sm', className: 'mt-3' })}
+                className={buttonVariants({ className: 'mt-4' })}
               >
                 Start a new case
               </Link>
@@ -321,7 +312,7 @@ function CaseActionPanel({
           action={
             <Link
               to={`/cases/new?draft=${caseId}`}
-              className={buttonVariants({ size: 'sm', className: 'mt-3' })}
+              className={buttonVariants({ className: 'mt-4' })}
             >
               Continue your draft
             </Link>
@@ -335,7 +326,7 @@ function CaseActionPanel({
       return can(PERMISSIONS.QUOTE_CREATE) ? (
         <Card>
           <div className="flex items-start gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
               <PenSquare className="size-5" strokeWidth={1.75} />
             </div>
             <div>
@@ -344,7 +335,7 @@ function CaseActionPanel({
                 Prepare the draft, then send it with its price. The lawyer pays that price to
                 unlock it.
               </p>
-              <Button size="sm" className="mt-3" onClick={() => onOpenQuoteSheet('send')}>
+              <Button className="mt-4" onClick={() => onOpenQuoteSheet('send')}>
                 Send draft and quote
               </Button>
             </div>
@@ -365,9 +356,8 @@ function CaseActionPanel({
           description={meta.next}
           action={
             <Button
-              size="sm"
               variant="secondary"
-              className="mt-3"
+              className="mt-4"
               onClick={() => onOpenQuoteSheet('replace')}
             >
               Replace draft or change amount
@@ -402,8 +392,7 @@ function CaseActionPanel({
           action={
             latestDraft && (
               <Button
-                size="sm"
-                className="mt-3"
+                className="mt-4"
                 onClick={async () => {
                   try {
                     await openDocument(latestDraft.id)

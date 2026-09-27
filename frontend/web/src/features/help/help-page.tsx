@@ -18,7 +18,7 @@ export function HelpPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <BackLink to="/">All cases</BackLink>
-      <h1 className="text-2xl font-semibold tracking-tight">Help</h1>
+      <h1 className="lg:text-title text-2xl font-semibold">Help</h1>
       <p className="text-muted mt-2 mb-6 text-sm">
         Short answers to common questions. Tap a question to open it.
       </p>
@@ -105,7 +105,7 @@ export function HelpPage() {
 function Question({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="group surface rounded-[var(--radius-control)] border border-[var(--border)]">
-      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 text-base font-semibold [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
         {title}
         <ChevronDown
           className="size-6 shrink-0 transition-transform group-open:rotate-180"

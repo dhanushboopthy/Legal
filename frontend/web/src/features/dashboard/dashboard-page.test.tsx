@@ -80,14 +80,30 @@ describe('DashboardPage states', () => {
     expect(screen.queryByRole('link', { name: /new case/i })).toBeNull()
   })
 
-  it('does not call an empty filter "no cases yet"', async () => {
-    mock.onGet('/cases').reply(200, [aCase()])
+  it('groups cases by whose turn it is, with finished ones tucked away', async () => {
+    mock.onGet('/cases').reply(200, [
+      aCase({ id: 'a', title: 'Needs paying', status: 'submitted', turn: 'you' }),
+      aCase({ id: 'b', title: 'Being reviewed', turn: 'them' }),
+      aCase({ id: 'c', title: 'All done', status: 'completed', turn: 'none' }),
+    ])
     renderWithProviders(<DashboardPage />, { user: makeUser(LAWYER_PERMISSIONS) })
 
-    await screen.findByText('Bail petition')
-    await userEvent.click(screen.getByRole('button', { name: 'Rejected' }))
+    expect(await screen.findByRole('heading', { name: 'Your turn (1)' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'With the advocate (1)' })).toBeInTheDocument()
+    expect(screen.queryByText('All done')).toBeNull()
 
-    await waitFor(() => expect(screen.getByText('Nothing in this filter')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Show 1 finished case' }))
+    expect(screen.getByText('All done')).toBeInTheDocument()
+  })
+
+  it('says when a search finds nothing, not that there are no cases', async () => {
+    mock.onGet('/cases').reply(200, [aCase()])
+    renderWithProviders(<DashboardPage />, { user: makeUser(ADVOCATE_PERMISSIONS) })
+
+    await screen.findByText('Bail petition')
+    await userEvent.type(screen.getByLabelText('Search cases'), 'zzz')
+
+    await waitFor(() => expect(screen.getByText('No cases match your search')).toBeInTheDocument())
     expect(screen.queryByText('No cases yet')).toBeNull()
   })
 

@@ -68,7 +68,9 @@ describe('accessibility', () => {
     )
     expect(screen.getByRole('link', { name: 'Skip to main content' })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Cases' })[0]).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
+    // Sign out lives in one place: the account menu.
+    expect(screen.getAllByRole('button', { name: /^Account:/ }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Sign out' })).toBeNull()
     expect(await axe(container)).toHaveNoViolations()
   })
 

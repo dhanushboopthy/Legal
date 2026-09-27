@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Lock } from 'lucide-react'
 
-import { Card } from '@/components/ui/card'
 import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
@@ -10,9 +9,9 @@ import { formatBytes } from '@/lib/uploads'
 import { formatDate } from '@/lib/utils'
 import type { DocumentOut } from '@/types/api'
 
-// The locked draft card (docs/NEW_FLOW_SPEC.md): what the lawyer sees before
-// paying — the file's name, size and page count, when it was sent, and
-// whatever the advocate noted, but never the file itself.
+// One card (docs/NEW_FLOW_SPEC.md): what the draft is — name, size, pages,
+// when it was sent, the advocate's note, never the file itself — and the one
+// button that unlocks it, with the price on it.
 export function QuotedPaymentPanel({
   caseId,
   documents,
@@ -24,56 +23,49 @@ export function QuotedPaymentPanel({
 }) {
   const quote = useQuery({ queryKey: ['quote', caseId], queryFn: () => getQuote(caseId) })
 
-  if (quote.isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24" />
-        <Skeleton className="h-20" />
-      </div>
-    )
-  }
+  if (quote.isLoading) return <Skeleton className="h-48" />
   if (quote.error || !quote.data) {
     return (
       <ErrorState
         error={quote.error}
-        title="Couldn't load the quote"
+        title="Couldn't load the price"
         onRetry={() => void quote.refetch()}
       />
     )
   }
 
   const draft = documents.find((d) => d.id === quote.data.draft_document_id)
+  const meta = [
+    draft?.page_count != null ? `${draft.page_count} pages` : null,
+    draft?.size_bytes != null ? formatBytes(draft.size_bytes) : null,
+    `sent ${formatDate(quote.data.created_at)}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
-    <div className="space-y-4">
-      <Card>
+    <PaymentActionCard
+      createOrder={() => payQuote(caseId)}
+      title="Your draft is ready"
+      description="Pay the price below to open and download it."
+      amountInr={quote.data.amount_inr}
+      buttonLabel={(amount) => `Pay ${amount} to unlock`}
+      onPaid={onChanged}
+    >
+      <div className="mt-4 rounded-[var(--radius-control)] bg-black/[0.04] p-4">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[var(--fg-muted)]">
-            <Lock className="size-5" strokeWidth={1.75} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{draft?.original_filename ?? 'Draft'}</p>
-            <p className="text-muted text-label mt-0.5">
-              {draft?.page_count != null && `${draft.page_count} pages · `}
-              {draft?.size_bytes != null && `${formatBytes(draft.size_bytes)} · `}
-              sent {formatDate(quote.data.created_at)}
-            </p>
-            {quote.data.note && (
-              <p className="mt-3 border-t border-[var(--border)] pt-3 text-sm whitespace-pre-wrap">
-                {quote.data.note}
-              </p>
-            )}
+          <Lock className="mt-0.5 size-5 shrink-0 text-[var(--fg-muted)]" strokeWidth={1.75} aria-hidden />
+          <div className="min-w-0">
+            <p className="font-medium break-words">{draft?.original_filename ?? 'Draft'}</p>
+            <p className="text-muted text-label mt-0.5">{meta}</p>
           </div>
         </div>
-      </Card>
-
-      <PaymentActionCard
-        createOrder={() => payQuote(caseId)}
-        title="Pay to unlock the draft"
-        description="Pay the quoted amount to download this draft."
-        amountInr={quote.data.amount_inr}
-        onPaid={onChanged}
-      />
-    </div>
+        {quote.data.note && (
+          <p className="mt-3 border-t border-[var(--border)] pt-3 text-sm whitespace-pre-wrap">
+            {quote.data.note}
+          </p>
+        )}
+      </div>
+    </PaymentActionCard>
   )
 }

@@ -238,7 +238,7 @@ export function QuoteCard({ message }: { message: MessageOut }) {
   const note = asString(message.meta.note)
   const draft = message.meta.draft as DraftInfo | undefined
   return (
-    <div className="surface shadow-card w-full rounded-[var(--radius-card)] border border-[var(--border)] p-4">
+    <div className="surface w-full rounded-[var(--radius-card)] border border-[var(--border)] p-4">
       <div className="flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)]">
           <Tag className="size-4" aria-hidden />
@@ -256,29 +256,21 @@ export function QuoteCard({ message }: { message: MessageOut }) {
   )
 }
 
+// Says a new version arrived. Downloading lives in one place, the case's
+// action card at the top, so this card only points there.
 export function DraftCard({ message }: { message: MessageOut }) {
-  const open = useOpenDocument()
-  const documentId = asString(message.meta.document_id)
   return (
-    <div className="surface shadow-card w-full rounded-[var(--radius-card)] border border-[var(--border)] p-4">
+    <div className="surface w-full rounded-[var(--radius-card)] border border-[var(--border)] p-4">
       <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
           <FileText className="size-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-muted text-caption">{message.body ?? 'New draft version'}</p>
+          <p className="text-sm font-medium">{message.body ?? 'New draft version'}</p>
           <p className="text-muted text-label mt-0.5 break-words">
             {draftSummary(message.meta as DraftInfo)}
           </p>
-          {documentId && (
-            <button
-              type="button"
-              onClick={() => void open(documentId)}
-              className="text-accent-ink text-label mt-2 inline-flex min-h-8 items-center font-medium underline"
-            >
-              Download
-            </button>
-          )}
+          <p className="text-muted text-label mt-1">Open it from the top of this case.</p>
         </div>
       </div>
     </div>

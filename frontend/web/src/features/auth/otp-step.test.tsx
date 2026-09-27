@@ -42,7 +42,7 @@ describe('OtpStep', () => {
       authOverrides: { verifyEmail },
     })
 
-    await user.type(screen.getByLabelText('Verification code'), '123456')
+    await user.type(screen.getByLabelText('6-digit code'), '123456')
 
     await waitFor(() => expect(verifyEmail).toHaveBeenCalledWith('new@example.com', '123456'))
     await waitFor(() => expect(onVerified).toHaveBeenCalledWith(verifiedUser))
@@ -59,7 +59,7 @@ describe('OtpStep', () => {
       authOverrides: { verifyEmail },
     })
 
-    await user.type(screen.getByLabelText('Verification code'), '000000')
+    await user.type(screen.getByLabelText('6-digit code'), '000000')
 
     expect(await screen.findByText('Invalid or expired code')).toBeInTheDocument()
   })
@@ -70,11 +70,11 @@ describe('OtpStep', () => {
 
     const first = renderWithProviders(<OtpStep email="new@example.com" onVerified={vi.fn()} />)
     await user.click(screen.getByRole('button', { name: 'Resend code' }))
-    expect(await screen.findByRole('button', { name: /Resend in \d+s/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Resend in \d+ seconds/ })).toBeInTheDocument()
     first.unmount()
 
     renderWithProviders(<OtpStep email="new@example.com" onVerified={vi.fn()} />)
     // Still cooling down — a fresh mount didn't reset it to "Resend code".
-    expect(screen.getByRole('button', { name: /Resend in \d+s/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Resend in \d+ seconds/ })).toBeInTheDocument()
   })
 })

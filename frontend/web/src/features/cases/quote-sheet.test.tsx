@@ -66,6 +66,10 @@ describe('QuoteSheet', () => {
     await user.upload(screen.getByTestId('file-input'), pdf())
     await user.type(screen.getByPlaceholderText('2500'), '2500')
     await user.click(screen.getByRole('button', { name: 'Send draft and quote' }))
+    // One confirmation that names the amount, before anything is sent.
+    expect(screen.getByText('Send this draft and ask the lawyer to pay ₹2,500?')).toBeInTheDocument()
+    expect(onSent).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Yes, send' }))
 
     await waitFor(() => expect(onSent).toHaveBeenCalledTimes(1))
   })

@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Briefcase } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Navigate, useNavigate } from 'react-router-dom'
@@ -7,8 +6,8 @@ import { z } from 'zod'
 
 import { useAuth } from '@/auth/auth-context'
 import { destinationFor } from '@/auth/destination'
+import { AuthLayout } from '@/components/layout/auth-layout'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Field, Input } from '@/components/ui/input'
 import { PageSpinner } from '@/components/ui/page-spinner'
 import { updateMe } from '@/lib/api/users'
@@ -16,7 +15,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { usePageTitle } from '@/hooks/use-page-title'
 
 const schema = z.object({
-  bar_council_id: z.string().trim().min(3, 'Enter your Bar Council ID'),
+  bar_council_id: z.string().trim().min(3, 'Enter your Bar Council enrolment number'),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -51,40 +50,28 @@ export function CompleteProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-[var(--color-accent)] text-white">
-            <Briefcase className="size-6" strokeWidth={1.75} />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">One more thing</h1>
-          <p className="text-muted text-center text-sm">
-            Your Bar Council ID, so the advocate reviewing your cases can verify you.
+    <AuthLayout
+      title="One more thing"
+      subtitle="Your Bar Council enrolment number, so the advocate can verify you."
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <Field
+          id="bar_council_id"
+          label="Bar Council enrolment number"
+          hint="As printed on your enrolment certificate, for example MAH/1234/2015."
+          error={errors.bar_council_id?.message}
+        >
+          {(control) => <Input autoComplete="off" {...control} {...register('bar_council_id')} />}
+        </Field>
+        {error && (
+          <p role="alert" className="text-danger-ink text-sm font-medium">
+            {error}
           </p>
-        </div>
-
-        <Card>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Field
-              id="bar_council_id"
-              label="Bar Council ID"
-              error={errors.bar_council_id?.message}
-            >
-              {(control) => (
-                <Input autoComplete="off" {...control} {...register('bar_council_id')} />
-              )}
-            </Field>
-            {error && (
-              <p role="alert" className="text-label text-danger-ink">
-                {error}
-              </p>
-            )}
-            <Button type="submit" className="w-full" loading={isSubmitting}>
-              Continue
-            </Button>
-          </form>
-        </Card>
-      </div>
-    </div>
+        )}
+        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+          Continue
+        </Button>
+      </form>
+    </AuthLayout>
   )
 }

@@ -36,33 +36,43 @@ describe('DecisionPanel', () => {
     )
   })
 
-  it('requires a reason before a rejection can be confirmed', async () => {
+  it('needs a reason before a case can be declined', async () => {
     renderWithProviders(<DecisionPanel caseId="c1" onDecided={vi.fn()} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Reject case' }))
-    const confirm = screen.getByRole('button', { name: 'Confirm rejection' })
+    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    const confirm = screen.getByRole('button', { name: 'Decline case' })
     expect(confirm).toBeDisabled()
 
-    await userEvent.type(
-      screen.getByLabelText('Reason for rejection'),
-      "Doesn't have a case",
-    )
+    await userEvent.click(screen.getByRole('button', { name: 'Conflict of interest' }))
     expect(confirm).toBeEnabled()
   })
 
-  it('rejects with the typed reason', async () => {
+  it('"Another reason" needs the reason written out', async () => {
+    renderWithProviders(<DecisionPanel caseId="c1" onDecided={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Another reason' }))
+    const confirm = screen.getByRole('button', { name: 'Decline case' })
+    expect(confirm).toBeDisabled()
+
+    await userEvent.type(screen.getByLabelText('Your reason'), "Doesn't have a case")
+    expect(confirm).toBeEnabled()
+  })
+
+  it('declines with the chosen reason and the note', async () => {
     api.onPatch('/cases/c1/decision').reply(200, { id: 'c1', status: 'rejected' })
     const onDecided = vi.fn()
     renderWithProviders(<DecisionPanel caseId="c1" onDecided={onDecided} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Reject case' }))
-    await userEvent.type(screen.getByLabelText('Reason for rejection'), 'Out of scope')
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm rejection' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Outside my practice area' }))
+    await userEvent.type(screen.getByLabelText(/Note for the lawyer/), 'Try a tax specialist')
+    await userEvent.click(screen.getByRole('button', { name: 'Decline case' }))
 
     await vi.waitFor(() => expect(onDecided).toHaveBeenCalledOnce())
     expect(JSON.parse(api.history.patch[0]?.data as string)).toEqual({
       accept: false,
-      rejection_reason: 'Out of scope',
+      rejection_reason: 'Outside my practice area. Try a tax specialist',
     })
   })
 
