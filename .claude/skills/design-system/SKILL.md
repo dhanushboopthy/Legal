@@ -30,11 +30,11 @@ Pills: `bg-{tone}/10` fill with `text-{tone}-ink`. Status colours always come fr
 
 ## Type scale (named, min 14 px)
 
-Sized for older readers. Named steps, all in rem: `text-caption` 14, `text-label` 15, `text-sm` 17 (**body**, redefined from Tailwind's 14), `text-lead` 18, `text-base` 20 (card title, semibold), `text-lg` 22, `text-xl` 24, `text-2xl` 28 (page title, semibold, tracking-tight). Never arbitrary `text-[Npx]`. `cn()` knows the custom steps (tailwind-merge is extended in `lib/utils.ts`); add any new step there too. The Text size setting (`html[data-text-size]`, `lib/preferences.ts`) scales the root to 112.5% / 125%, so size in rem, never px. Font: system stack, no unloaded webfont: `system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif`.
+Sized for older readers. Named steps, all in rem: `text-caption` 14, `text-label` 15, `text-sm` 17 (**body**, redefined from Tailwind's 14), `text-lead` 18, `text-base` 20 (card title, semibold), `text-lg` 22, `text-xl` 24, `text-2xl` 28 (page title on phones), `text-title` 34 (page title from `lg`, Apple's "Large Title"). Never arbitrary `text-[Npx]`. `cn()` knows the custom steps (tailwind-merge is extended in `lib/utils.ts`); add any new step there too. The Text size setting (`html[data-text-size]`, `lib/preferences.ts`) scales the root to 112.5% / 125%, so size in rem, never px. Font: **Inter**, bundled (`@fontsource-variable/inter`, imported in `main.tsx`), so it is identical on every device; never load a font from a CDN (the CSP is `'self'`). Weights: 400 body, 500 (`font-medium`) for controls and labels, `font-semibold` (580) for titles only; avoid `font-bold`. Headings get `letter-spacing: -0.02em` globally.
 
 ## Layout
 
-Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, forms `max-w-xl`, case `max-w-2xl`, lists `max-w-5xl`. Radii: card `1.25rem`, control `0.75rem`. Targets ≥44 px on every screen, not just mobile: button `sm` `min-h-11`, `md` `min-h-12`, `lg` `min-h-14`; inputs `min-h-12`. One global `:focus-visible` outline (3 px accent) — don't remove it with `outline-none`. Bottom tab bar on mobile, top bar from `sm`. Page transitions ≤150 ms or none.
+Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, forms `max-w-xl`, case `max-w-2xl`, lists `max-w-5xl`. Radii: card `1.25rem`, control `0.75rem`, sheet/dialog `1.5rem`, buttons fully rounded. **Surfaces are flat**: cards are white with a hairline border and no shadow; only floating things (menus, dialogs, sheets, toasts) use `shadow-overlay`. Bars (sidebar, top bar, tab bar) use `bar-translucent`. Targets ≥44 px on every screen, not just mobile: button `sm` `min-h-11`, `md` `min-h-12`, `lg` `min-h-14`; inputs `min-h-12`. One global `:focus-visible` outline (3 px accent) — don't remove it with `outline-none`. Navigation: a left sidebar from `lg` (`app-shell.tsx`); below `lg` a slim top bar, plus a bottom tab bar only when there is more than one destination. Sign out lives only in the account menu. Page transitions ≤150 ms or none.
 
 ## Components and when to use which
 
@@ -53,6 +53,8 @@ Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, form
 | Secondary detail (files, case details) | `Sheet` (bottom on mobile, right on desktop) |
 | Filters | `Tabs`, not hand-styled buttons |
 | Upload | `Dropzone` (one shared component; not raw dashed buttons) |
+| Any list of things (cases, people, payments, settings, details) | `List` + `ListRow` (inset grouped, like iOS Settings); `stack` on rows with pills so titles keep their width on phones |
+| Signed-out screens | `AuthLayout` |
 | Error text from an API failure | `getErrorMessage(err)` — server `detail`, FastAPI 422 arrays, network failure, fallback |
 
 Every query-backed view designs **loading (skeleton) / empty / error / success**.

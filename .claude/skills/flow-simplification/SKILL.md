@@ -5,7 +5,7 @@ description: Information architecture, case lifecycle and the single primary act
 
 > **Draft, review me.** Distilled from `docs/NEW_FLOW_SPEC.md` §3 and `docs/UX_REDESIGN_PLAN.md` §2.
 
-**A case is a conversation.** The case page is a header, one pinned action card, and the chat. Files and details are sheets, not sections. Navigation is a top bar on desktop and a bottom tab bar on mobile (Cases; advocate also People and Payments).
+**A case is a conversation.** The case page is a header, one pinned action card, and the chat. Files, drafts and payments live in one "Case details" sheet. Chat lives only on the case page (there is no separate inbox). Each thing has exactly one home: status in the action card (with its "Step N of 6" line), download on the action card only. Navigation is a sidebar on desktop and, below `lg`, a bottom tab bar only when there is more than one destination (Cases; advocate also People and Payments).
 
 ## Rules
 
