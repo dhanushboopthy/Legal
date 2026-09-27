@@ -22,7 +22,6 @@ export interface UserOut {
   id: string
   full_name: string
   email: string
-  phone: string | null
   bar_council_id: string | null
   role_name: string
   permissions: string[]

@@ -15,7 +15,6 @@ import { getMe, updateMe } from '@/lib/api/users'
 import type { UserOut } from '@/types/api'
 
 const schema = z.object({
-  phone: z.string().trim().max(20).optional().or(z.literal('')),
   bar_council_id: z.string().trim().max(100).optional().or(z.literal('')),
 })
 type FormValues = z.infer<typeof schema>
@@ -55,15 +54,12 @@ function EditableFields({ user }: { user: UserOut }) {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    values: { phone: user.phone ?? '', bar_council_id: user.bar_council_id ?? '' },
+    values: { bar_council_id: user.bar_council_id ?? '' },
   })
 
   const save = useMutation({
     mutationFn: (values: FormValues) =>
-      updateMe({
-        phone: values.phone || undefined,
-        bar_council_id: values.bar_council_id || undefined,
-      }),
+      updateMe({ bar_council_id: values.bar_council_id || undefined }),
     onSuccess: () => {
       toast({ variant: 'success', title: 'Profile updated' })
       void queryClient.invalidateQueries({ queryKey: ['me'] })
@@ -81,7 +77,6 @@ function EditableFields({ user }: { user: UserOut }) {
     return (
       <Card>
         <dl className="divide-y divide-[var(--border)]">
-          <Row label="Phone" value={user.phone ?? '—'} />
           <Row label="Bar council ID" value={user.bar_council_id ?? '—'} />
         </dl>
         <Button variant="secondary" size="sm" className="mt-4" onClick={() => setEditing(true)}>
@@ -97,9 +92,6 @@ function EditableFields({ user }: { user: UserOut }) {
         onSubmit={handleSubmit((values) => save.mutate(values))}
         className="space-y-4"
       >
-        <Field id="phone" label="Phone" error={errors.phone?.message}>
-          {(control) => <Input type="tel" {...control} {...register('phone')} />}
-        </Field>
         <Field id="bar_council_id" label="Bar council ID" error={errors.bar_council_id?.message}>
           {(control) => <Input {...control} {...register('bar_council_id')} />}
         </Field>

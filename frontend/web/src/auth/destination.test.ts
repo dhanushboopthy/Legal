@@ -7,7 +7,6 @@ const base: UserOut = {
   id: 'u1',
   full_name: 'Test User',
   email: 'test@example.com',
-  phone: null,
   bar_council_id: 'BAR-0001',
   role_name: 'junior_lawyer',
   permissions: [],

@@ -29,7 +29,6 @@ export function makeUser(permissions: string[], overrides: Partial<UserOut> = {}
     id: 'u1',
     full_name: 'Test User',
     email: 'test@example.com',
-    phone: null,
     // A fully onboarded test user by default — RequireAuth otherwise routes
     // straight to /complete-profile. Pass `bar_council_id: null` to test that.
     bar_council_id: 'BAR-TEST-0001',

@@ -7,7 +7,6 @@ export async function getMe(): Promise<UserOut> {
 }
 
 export interface UpdateMePayload {
-  phone?: string
   bar_council_id?: string
 }
 

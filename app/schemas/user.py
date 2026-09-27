@@ -41,5 +41,4 @@ class UserOut(BaseModel):
 class UserUpdate(BaseModel):
     """Self-service profile edits. Only what is sent changes."""
 
-    phone: str | None = Field(default=None, max_length=20)
     bar_council_id: str | None = Field(default=None, max_length=100)
