@@ -26,6 +26,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import ROLE_PERMISSIONS
+from app.core.rate_limit import limiter
 from app.core.security import create_access_token
 from app.database import AsyncSessionLocal, engine
 from app.main import app
@@ -39,7 +40,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TABLES_TO_CLEAN = (
     "audit_logs", "notifications", "revision_requests", "message_attachments", "messages",
     "case_reads", "quotes",
-    "payments", "case_documents", "cases", "email_otps", "users",
+    "payments", "case_documents", "cases", "email_otps", "refresh_tokens", "users",
 )
 
 
@@ -73,6 +74,14 @@ async def db_session():
     async with engine.begin() as conn:
         for table in _TABLES_TO_CLEAN:
             await conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """Every test client shares one address, so without this the per-IP auth
+    limits would add up across the whole session."""
+    limiter.reset()
+    yield
 
 
 @pytest_asyncio.fixture

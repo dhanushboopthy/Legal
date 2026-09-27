@@ -7,7 +7,9 @@ import {
   getMe,
   login,
   loginWithGoogle,
+  logout as logoutBackend,
   refresh as refreshBackend,
+  resetPassword as resetPasswordBackend,
   verifyEmail as verifyEmailBackend,
   type TokenPair,
 } from '../backend-client.js'
@@ -49,7 +51,7 @@ authRouter.post('/login', credentialsLimiter, async (req, res) => {
   }
 
   try {
-    await completeLogin(res, await login(email, password))
+    await completeLogin(res, await login(email, password, req.ip))
   } catch (err) {
     respondToAuthError(res, err)
   }
@@ -63,7 +65,7 @@ authRouter.post('/login/google', credentialsLimiter, async (req, res) => {
   }
 
   try {
-    await completeLogin(res, await loginWithGoogle(idToken))
+    await completeLogin(res, await loginWithGoogle(idToken, req.ip))
   } catch (err) {
     respondToAuthError(res, err)
   }
@@ -77,7 +79,23 @@ authRouter.post('/verify-email', credentialsLimiter, async (req, res) => {
   }
 
   try {
-    await completeLogin(res, await verifyEmailBackend(email, code))
+    await completeLogin(res, await verifyEmailBackend(email, code, req.ip))
+  } catch (err) {
+    respondToAuthError(res, err)
+  }
+})
+
+authRouter.post('/reset-password', credentialsLimiter, async (req, res) => {
+  const { email, code, new_password: newPassword } = req.body as {
+    email?: string; code?: string; new_password?: string
+  }
+  if (!email || !code || !newPassword) {
+    res.status(400).json({ detail: 'email, code and new_password are required' })
+    return
+  }
+
+  try {
+    await completeLogin(res, await resetPasswordBackend(email, code, newPassword, req.ip))
   } catch (err) {
     respondToAuthError(res, err)
   }
@@ -91,14 +109,22 @@ authRouter.post('/refresh', refreshLimiter, async (req, res) => {
   }
 
   try {
-    await completeLogin(res, await refreshBackend(refreshToken))
+    await completeLogin(res, await refreshBackend(refreshToken, req.ip))
   } catch (err) {
     clearRefreshCookie(res)
     respondToAuthError(res, err)
   }
 })
 
-authRouter.post('/logout', (_req, res) => {
+// Revoke the session on the api too, so a copied cookie stops working; the
+// browser is signed out either way, even if the api can't be reached.
+authRouter.post('/logout', async (req, res) => {
+  const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined
+  if (refreshToken) {
+    await logoutBackend(refreshToken).catch((err: unknown) => {
+      console.warn('logout: could not revoke session on the api', err)
+    })
+  }
   clearRefreshCookie(res)
   res.status(204).end()
 })

@@ -6,6 +6,7 @@ from app.models.message import CaseRead, Message, MessageAttachment, MessageKind
 from app.models.notification import Notification
 from app.models.payment import Payment, PaymentStatus, PaymentType
 from app.models.quote import Quote, QuoteStatus
+from app.models.refresh_token import RefreshToken
 from app.models.revision import RevisionRequest, RevisionStatus
 from app.models.role import Role
 from app.models.user import User
@@ -14,5 +15,6 @@ __all__ = [
     "AuditLog", "Case", "CaseRead", "CaseStatus", "CaseDocument", "DocumentType",
     "Message", "MessageAttachment", "MessageKind",
     "EmailOtp", "Notification", "Payment", "PaymentStatus", "PaymentType", "Quote", "QuoteStatus",
+    "RefreshToken",
     "RevisionRequest", "RevisionStatus", "Role", "User",
 ]

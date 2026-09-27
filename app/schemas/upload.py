@@ -60,6 +60,12 @@ class UploadRulesOut(BaseModel):
     accepted: dict[str, str]
 
 
+class SupportOut(BaseModel):
+    email: str | None
+    phone: str | None
+    hours: str | None
+
+
 class PricingOut(BaseModel):
     review_fee_inr: int
     quote_min_inr: int

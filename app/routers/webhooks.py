@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Header, Request
+import structlog
+from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
 
 from app.core.exceptions import UnauthorizedError, ValidationAppError
 from app.core.rate_limit import limiter
@@ -8,6 +8,10 @@ from app.database import get_db
 from app.services import payment_service
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+logger = structlog.get_logger()
+
+# Razorpay's events are a few KB; anything much bigger isn't from Razorpay.
+MAX_BODY_BYTES = 64 * 1024
 
 
 @router.post("/razorpay")
@@ -17,7 +21,11 @@ async def razorpay_webhook(
     x_razorpay_signature: str = Header(...),
     db: AsyncSession = Depends(get_db),
 ):
+    if int(request.headers.get("content-length") or 0) > MAX_BODY_BYTES:
+        raise ValidationAppError("Webhook body too large")
     raw_body = await request.body()
+    if len(raw_body) > MAX_BODY_BYTES:
+        raise ValidationAppError("Webhook body too large")
 
     if not payment_service.verify_webhook_signature(raw_body, x_razorpay_signature):
         raise UnauthorizedError("Invalid webhook signature")
@@ -45,7 +53,9 @@ async def razorpay_webhook(
             db, gateway_payment_id=entity["payment_id"],
         )
         await db.commit()
-    # Other events (order.paid, ...) can be added here following the same
-    # pattern — look them up, act, commit.
+    else:
+        # Acknowledged so Razorpay stops retrying; add a branch above to act
+        # on a new event type (look it up, act, commit).
+        logger.info("webhook_event_ignored", event=event)
 
     return {"status": "ok"}

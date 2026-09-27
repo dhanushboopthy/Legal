@@ -7,12 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import NotFoundError
+from app.core.logging import mask_email
 from app.core.permissions import USER_MANAGE
 from app.database import get_db
 from app.dependencies import get_current_user, get_current_user_or_pending, require_permission
 from app.models.user import User
 from app.schemas.user import UserOut, UserUpdate
-from app.services import email_service
+from app.services import audit_service, email_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 logger = structlog.get_logger()
@@ -45,7 +46,11 @@ async def list_users(db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/{user_id}/approve", response_model=UserOut, dependencies=[Depends(require_permission(USER_MANAGE))])
-async def approve_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def approve_user(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
         select(User).options(selectinload(User.role)).where(User.id == user_id)
     )
@@ -55,6 +60,9 @@ async def approve_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
     user.is_active = True
     user.is_verified = True
+    await audit_service.log_action(
+        db, user_id=current_user.id, action="user.approved", entity_type="user", entity_id=str(user.id),
+    )
     await db.commit()
     await db.refresh(user)
 
@@ -66,6 +74,6 @@ async def approve_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
             "You can now sign in and submit cases.</p>",
         )
     except Exception as exc:  # noqa: BLE001 - a flaky mail server shouldn't fail the approval
-        logger.warning("approval_email_send_failed", email=user.email, error=str(exc))
+        logger.warning("approval_email_send_failed", email=mask_email(user.email), error=str(exc))
 
     return UserOut.from_user(user)

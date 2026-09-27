@@ -1,6 +1,9 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_PLACEHOLDER_SECRETS = {"change-this-to-a-random-64-char-secret"}
 
 
 class Settings(BaseSettings):
@@ -60,6 +63,12 @@ class Settings(BaseSettings):
     draft_retention_days: int = 7
     worker_interval_seconds: int = 60
 
+    # Who a lawyer contacts for help, shown on the Help page and sign-in.
+    # Empty values are simply not shown.
+    support_email: str = ""
+    support_phone: str = ""
+    support_hours: str = ""
+
     # Where the web app lives, for links in emails ("open the case").
     app_base_url: str = "http://localhost:3100"
     # An unread chat message is emailed after this long, at most once per case
@@ -80,6 +89,28 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() == "production"
+
+    @model_validator(mode="after")
+    def _refuse_unsafe_production(self) -> "Settings":
+        """Fail at start-up, not at the first forged webhook."""
+        if not self.is_production:
+            return self
+        problems = []
+        if len(self.secret_key) < 32 or self.secret_key in _PLACEHOLDER_SECRETS:
+            problems.append("SECRET_KEY must be a random value of at least 32 characters")
+        if not self.razorpay_webhook_secret:
+            problems.append("RAZORPAY_WEBHOOK_SECRET must be set")
+        if self.debug:
+            problems.append("DEBUG must be false")
+        if any(o == "*" or "localhost" in o or "127.0.0.1" in o for o in self.cors_origin_list):
+            problems.append("CORS_ORIGINS must not contain '*' or localhost")
+        if self.s3_endpoint_url and not self.s3_endpoint_url.startswith("https://"):
+            problems.append("S3_ENDPOINT_URL must be https")
+        if not self.app_base_url.startswith("https://"):
+            problems.append("APP_BASE_URL must be https")
+        if problems:
+            raise ValueError("Unsafe production settings: " + "; ".join(problems))
+        return self
 
 
 @lru_cache

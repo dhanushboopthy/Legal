@@ -11,6 +11,8 @@ vi.mock('../backend-client.js', async () => {
     login: vi.fn(),
     loginWithGoogle: vi.fn(),
     refresh: vi.fn(),
+    logout: vi.fn(),
+    resetPassword: vi.fn(),
     verifyEmail: vi.fn(),
     getMe: vi.fn(),
   }
@@ -100,7 +102,7 @@ describe('POST /login/google', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.access_token).toBe('access-g')
-    expect(backendClient.loginWithGoogle).toHaveBeenCalledWith('raw-google-jwt')
+    expect(backendClient.loginWithGoogle).toHaveBeenCalledWith('raw-google-jwt', expect.anything())
     const setCookie = res.headers['set-cookie']?.[0] ?? ''
     expect(setCookie).toContain('refresh_token=refresh-g')
   })
@@ -188,5 +190,60 @@ describe('POST /logout', () => {
     expect(res.status).toBe(204)
     const setCookie = res.headers['set-cookie']?.[0] ?? ''
     expect(setCookie).toContain('refresh_token=;')
+  })
+})
+
+describe('POST /logout revokes the session', () => {
+  it('asks the api to revoke the refresh token before clearing the cookie', async () => {
+    vi.mocked(backendClient.logout).mockResolvedValue()
+    const res = await request(app).post('/logout').set('Cookie', 'refresh_token=refresh-9')
+    expect(res.status).toBe(204)
+    expect(backendClient.logout).toHaveBeenCalledWith('refresh-9')
+  })
+
+  it('still signs the browser out when the api is unreachable', async () => {
+    vi.mocked(backendClient.logout).mockRejectedValue(new Error('down'))
+    const res = await request(app).post('/logout').set('Cookie', 'refresh_token=refresh-9')
+    expect(res.status).toBe(204)
+    expect(res.headers['set-cookie']?.[0] ?? '').toContain('refresh_token=;')
+  })
+})
+
+describe('POST /reset-password', () => {
+  it('signs the user in with a strict, httpOnly cookie', async () => {
+    vi.mocked(backendClient.resetPassword).mockResolvedValue({
+      access_token: 'access-r', refresh_token: 'refresh-r', token_type: 'bearer',
+    })
+    vi.mocked(backendClient.getMe).mockResolvedValue({
+      id: 'u1', full_name: 'Jane Lawyer', email: 'jane@example.com', phone: null,
+      bar_council_id: null, role_name: 'junior_lawyer', permissions: [],
+      is_active: true, is_verified: true,
+    })
+    const res = await request(app)
+      .post('/reset-password')
+      .send({ email: 'jane@example.com', code: '123456', new_password: 'a long new phrase' })
+    expect(res.status).toBe(200)
+    expect(res.body.access_token).toBe('access-r')
+    const cookie = res.headers['set-cookie']?.[0] ?? ''
+    expect(cookie).toContain('refresh_token=refresh-r')
+    expect(cookie).toContain('HttpOnly')
+    expect(cookie).toContain('SameSite=Strict')
+  })
+})
+
+describe('Origin check', () => {
+  it('refuses a sign-in posted from another site', async () => {
+    vi.mocked(backendClient.login).mockClear()
+    const res = await request(app)
+      .post('/login')
+      .set('Origin', 'https://evil.example')
+      .send({ email: 'jane@example.com', password: 'x' })
+    expect(res.status).toBe(403)
+    expect(backendClient.login).not.toHaveBeenCalled()
+  })
+
+  it('allows a request from the same host', async () => {
+    const res = await request(app).post('/refresh').set('Origin', 'http://127.0.0.1:3100')
+    expect(res.status).toBe(401) // got past the check; no cookie
   })
 })

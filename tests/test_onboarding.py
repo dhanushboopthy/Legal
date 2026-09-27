@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.core.security import create_refresh_token, hash_password
-from app.services import email_service, maintenance_service
+from app.core.security import hash_password
+from app.services import email_service, maintenance_service, token_service
 from tests.conftest import AsyncSessionLocal, auth_header, make_user
 
 
@@ -36,9 +36,10 @@ async def test_login_succeeds_before_approval_but_stays_limited(client, db_sessi
 async def test_refresh_keeps_working_for_a_pending_account(client, db_session):
     user = await make_user(db_session, is_active=False)
     user.is_verified = True
+    pair = await token_service.issue_tokens(db_session, user.id)
     await db_session.commit()
 
-    resp = await client.post("/auth/refresh", json={"refresh_token": create_refresh_token(user.id)})
+    resp = await client.post("/auth/refresh", json={"refresh_token": pair.refresh_token})
     assert resp.status_code == 200
     assert "access_token" in resp.json()
 
@@ -46,9 +47,10 @@ async def test_refresh_keeps_working_for_a_pending_account(client, db_session):
 async def test_refresh_rejects_an_unverified_account(client, db_session):
     user = await make_user(db_session, is_active=False)
     user.is_verified = False
+    pair = await token_service.issue_tokens(db_session, user.id)
     await db_session.commit()
 
-    resp = await client.post("/auth/refresh", json={"refresh_token": create_refresh_token(user.id)})
+    resp = await client.post("/auth/refresh", json={"refresh_token": pair.refresh_token})
     assert resp.status_code == 401
 
 

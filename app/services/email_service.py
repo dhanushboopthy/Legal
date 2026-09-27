@@ -52,3 +52,22 @@ async def send_otp_email(to_email: str, code: str) -> None:
         "<p>It expires in 10 minutes.</p>"
     )
     await asyncio.to_thread(_send_sync, to_email, subject, text_body, html_body)
+
+
+async def send_password_reset_email(to_email: str, code: str) -> None:
+    if settings.debug:
+        logger.info("password_reset_code_debug", email=to_email, code=code)
+
+    subject = "Your password reset code"
+    text_body = (
+        f"Your password reset code is {code}. It expires in 10 minutes.\n\n"
+        "If you did not ask to reset your password, ignore this email. "
+        "Your password has not changed."
+    )
+    html_body = (
+        f"<p>Your password reset code is <strong>{code}</strong>.</p>"
+        "<p>It expires in 10 minutes.</p>"
+        "<p>If you did not ask to reset your password, ignore this email. "
+        "Your password has not changed.</p>"
+    )
+    await asyncio.to_thread(_send_sync, to_email, subject, text_body, html_body)

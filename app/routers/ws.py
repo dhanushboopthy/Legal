@@ -3,8 +3,9 @@ import json
 from collections import Counter
 
 import structlog
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
 
+from app.core.rate_limit import limiter
 from app.database import AsyncSessionLocal
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -20,7 +21,8 @@ _open: Counter = Counter()
 
 
 @router.post("/ws/ticket", response_model=TicketOut)
-async def issue_ticket(current_user: User = Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def issue_ticket(request: Request, current_user: User = Depends(get_current_user)):
     """A single-use ticket, good for 30 seconds, for opening the socket. A
     browser can't set an Authorization header on a WebSocket, and a token in the
     URL would end up in logs; this ticket is worthless once used."""

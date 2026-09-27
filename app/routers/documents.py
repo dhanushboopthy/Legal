@@ -74,7 +74,9 @@ async def confirm_batch(
 
 
 @router.post("/upload-url", response_model=UploadUrlResponse)
+@limiter.limit("30/minute")
 async def get_draft_upload_url(
+    request: Request,
     payload: UploadUrlRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -4,7 +4,7 @@ from app.config import settings
 from app.core import uploads
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.upload import PricingOut, UploadRulesOut
+from app.schemas.upload import PricingOut, SupportOut, UploadRulesOut
 
 router = APIRouter(prefix="/config", tags=["config"])
 
@@ -17,6 +17,16 @@ async def get_pricing(current_user: User = Depends(get_current_user)):
         review_fee_inr=settings.review_fee_inr,
         quote_min_inr=settings.quote_min_inr,
         quote_max_inr=settings.quote_max_inr,
+    )
+
+
+@router.get("/support", response_model=SupportOut)
+async def get_support():
+    """Public: someone who can't sign in is who most needs a phone number."""
+    return SupportOut(
+        email=settings.support_email or None,
+        phone=settings.support_phone or None,
+        hours=settings.support_hours or None,
     )
 
 

@@ -1,4 +1,4 @@
-fastapi==0.115.0
+fastapi==0.115.14
 uvicorn[standard]==0.30.6
 gunicorn==23.0.0
 sqlalchemy==2.0.35
@@ -7,13 +7,12 @@ alembic==1.13.2
 pydantic==2.9.2
 pydantic-settings==2.5.2
 email-validator==2.2.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-bcrypt==3.2.2  # passlib 1.7.4's bcrypt backend detection breaks on bcrypt>=4 (no more __about__)
-python-multipart==0.0.9
+PyJWT==2.15.0
+bcrypt==5.0.0
+python-multipart==0.0.32
 boto3==1.35.24
 razorpay==1.4.2
-setuptools==70.3.0  # razorpay imports pkg_resources at runtime; not implicit on Python 3.12+, and setuptools>=81 dropped it
+setuptools==80.9.0  # razorpay imports pkg_resources at runtime; not implicit on Python 3.12+, and setuptools>=81 dropped it
 slowapi==0.1.9
 redis==5.0.8
 structlog==24.4.0

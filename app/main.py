@@ -4,15 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 
 from app.config import settings
 from app.core.exceptions import AppError
+from app.core.logging import configure_logging
 from app.core.rate_limit import limiter
 from app.database import engine
 from app.middleware import RequestContextMiddleware
 from app.routers import auth, cases, config, documents, messages, notifications, payments, users, webhooks, ws
 
+configure_logging(production=settings.is_production)
 logger = structlog.get_logger()
 
 app = FastAPI(
@@ -21,10 +24,13 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
+    openapi_url="/openapi.json" if not settings.is_production else None,
 )
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Applies the limiter's default limit to every route without its own.
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,13 +44,13 @@ app.add_middleware(RequestContextMiddleware)
 
 @app.exception_handler(AppError)
 async def app_error_handler(request: Request, exc: AppError):
-    logger.warning("app_error", path=str(request.url), status=exc.status_code, detail=exc.detail)
+    logger.warning("app_error", path=request.url.path, status=exc.status_code, detail=exc.detail)
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    logger.error("unhandled_exception", path=str(request.url), error=str(exc))
+    logger.error("unhandled_exception", path=request.url.path, error=str(exc))
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "An unexpected error occurred"},
@@ -52,6 +58,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/health", tags=["health"])
+@limiter.exempt
 async def health():
     """Readiness probe: verifies the database is actually reachable rather
     than just returning a static 200, matching docker-compose's own

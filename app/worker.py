@@ -10,9 +10,11 @@ import signal
 import structlog
 
 from app.config import settings
+from app.core.logging import configure_logging
 from app.database import AsyncSessionLocal
 from app.services import maintenance_service
 
+configure_logging(production=settings.is_production)
 logger = structlog.get_logger()
 
 
