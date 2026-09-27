@@ -109,3 +109,34 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Known-vulnerable dependencies and committed secrets fail the build.
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # scan the whole history for secrets, not just the tip
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Python dependencies (pip-audit)
+        run: pip install pip-audit && pip-audit -r requirements.txt
+
+      - name: Web dependencies (npm audit)
+        working-directory: frontend/web
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: BFF dependencies (npm audit)
+        working-directory: frontend/bff
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Secrets (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --no-banner --redact

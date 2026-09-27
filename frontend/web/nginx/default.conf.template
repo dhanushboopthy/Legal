@@ -1,8 +1,27 @@
+# Rendered by the nginx image at start-up (envsubst over /etc/nginx/templates),
+# so ${CSP_S3_ORIGIN} comes from the container's environment. Only defined
+# env vars are substituted; nginx's own $variables are left alone.
+
+# TLS terminates in front of this container. Send HSTS only when that proxy
+# says the request arrived over https, so plain-http local dev isn't pinned.
+map $http_x_forwarded_proto $hsts {
+    https   "max-age=31536000; includeSubDomains";
+    default "";
+}
+
+server_tokens off;
+
 server {
     listen 80;
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+
+    # Scripts: our bundle, Google sign-in, Razorpay checkout. Images and
+    # uploads go straight to object storage via presigned URLs.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: ${CSP_S3_ORIGIN} https://*.razorpay.com; connect-src 'self' ${CSP_S3_ORIGIN} https://accounts.google.com/gsi/ https://lumberjack.razorpay.com https://api.razorpay.com; frame-src https://accounts.google.com/gsi/ https://api.razorpay.com https://checkout.razorpay.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.razorpay.com; frame-ancestors 'none'" always;
+    add_header X-Frame-Options "DENY" always;
+    include /etc/nginx/snippets/security-headers.conf;
 
     # Same-origin for everything, in production as in dev, so the BFF's
     # refresh-token cookie is always first-party and the browser never needs
@@ -42,6 +61,7 @@ server {
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
     }
 
     location / {
