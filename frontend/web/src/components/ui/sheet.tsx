@@ -22,7 +22,7 @@ export function Sheet({
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <RadixDialog.Content className="surface shadow-card fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-[var(--radius-card)] focus:outline-none sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[32rem] sm:rounded-t-none sm:rounded-l-[var(--radius-card)]">
+        <RadixDialog.Content className="surface shadow-overlay fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-[var(--radius-sheet)] focus:outline-none sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[32rem] sm:rounded-t-none sm:rounded-l-[var(--radius-sheet)]">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-4">
             <div>
               <RadixDialog.Title className="text-lg font-semibold">{title}</RadixDialog.Title>

@@ -30,7 +30,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               if (!open) remove(item.id)
             }}
             className={cn(
-              'surface shadow-card flex items-start gap-3 rounded-[var(--radius-control)] border border-[var(--border)] p-4 pr-5 data-[state=open]:animate-[toast-in_180ms_ease-out] data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]',
+              'surface shadow-overlay flex items-start gap-3 rounded-[var(--radius-control)] border border-[var(--border)] p-4 pr-5 data-[state=open]:animate-[toast-in_180ms_ease-out] data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]',
             )}
           >
             {item.variant === 'success' ? (

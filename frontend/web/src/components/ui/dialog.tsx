@@ -23,7 +23,7 @@ export function DialogContent({
       <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
       <RadixDialog.Content
         className={cn(
-          'surface shadow-card fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-card)] p-6 focus:outline-none',
+          'surface shadow-overlay fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-sheet)] p-6 focus:outline-none',
           className,
         )}
       >

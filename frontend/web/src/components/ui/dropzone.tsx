@@ -56,18 +56,17 @@ export function Dropzone({
         onClick={() => inputRef.current?.click()}
         className={cn(
           'flex min-h-32 w-full flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border border-dashed px-4 py-6 text-center transition-colors',
-          'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/40 focus-visible:outline-none',
           dragging
             ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
-            : 'border-[var(--border)] hover:bg-black/[0.02]',
+            : 'border-[var(--border-strong)] bg-black/[0.02] hover:bg-black/[0.04]',
           disabled && 'opacity-50',
         )}
       >
-        <UploadCloud className="size-6 text-[var(--fg-muted)]" strokeWidth={1.5} />
+        <UploadCloud className="size-7 text-[var(--color-accent-ink)]" strokeWidth={1.5} aria-hidden />
         <span className="text-sm font-medium">
           Drop files here or <span className="text-accent-ink">choose files</span>
         </span>
-        <span className="text-muted text-caption">{hint}</span>
+        <span className="text-muted text-label">{hint}</span>
       </button>
     </div>
   )

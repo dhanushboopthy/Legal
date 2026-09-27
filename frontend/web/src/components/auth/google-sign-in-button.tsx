@@ -29,7 +29,9 @@ export function GoogleSignInButton({
           type: 'standard',
           theme: 'outline',
           size: 'large',
-          width: 320,
+          shape: 'pill',
+          // Fill the card: Google accepts 200-400px and won't reflow later.
+          width: Math.max(200, Math.min(400, containerRef.current.offsetWidth)),
           text: 'continue_with',
         })
       })

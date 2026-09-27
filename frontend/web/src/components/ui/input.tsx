@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 
 const fieldClassName =
-  'w-full min-h-12 rounded-[var(--radius-control)] border border-[var(--border-strong)] surface px-4 py-2.5 text-lead text-[var(--fg)] placeholder:text-[var(--fg-muted)] transition-shadow duration-150 focus:border-[var(--color-accent)] aria-[invalid=true]:border-[var(--color-danger)] disabled:opacity-60'
+  'w-full min-h-12 rounded-[var(--radius-control)] border border-[var(--border-strong)] surface px-4 py-2.5 text-lead text-[var(--fg)] placeholder:text-[var(--fg-muted)] transition-colors duration-150 focus:border-[var(--color-accent)] aria-[invalid=true]:border-[var(--color-danger)] disabled:opacity-60'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
@@ -70,7 +70,7 @@ Select.displayName = 'Select'
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('mb-2 block text-sm font-semibold text-[var(--fg)]', className)}
+      className={cn('mb-2 block text-sm font-medium text-[var(--fg)]', className)}
       {...props}
     />
   )

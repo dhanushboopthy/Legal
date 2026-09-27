@@ -1,10 +1,17 @@
 @import 'tailwindcss';
 
 @theme {
-  /* System stack only: nothing loads a webfont, so naming one would only ever
-     apply if it happened to be installed. */
-  --font-sans:
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  /* Inter, bundled (src/main.tsx imports @fontsource-variable/inter), so the
+     app looks the same on every Windows, Android, Mac and Linux machine. It is
+     the closest freely licensed match to Apple's SF Pro. */
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Apple-like restraint: Inter is variable, so "semibold" and "bold" are set
+     a notch lighter than Tailwind's 600/700. Hierarchy comes from size and
+     space, not heavy strokes. */
+  --font-weight-medium: 500;
+  --font-weight-semibold: 580;
+  --font-weight-bold: 650;
 
   /* Fill colours are for backgrounds, borders and icons. Text set on a tint of
      a fill uses its -ink twin, which clears WCAG AA (4.5:1) on white, on the
@@ -41,9 +48,13 @@
   --text-xl--line-height: 2rem;
   --text-2xl: 1.75rem;
   --text-2xl--line-height: 2.25rem;
+  /* The large page title (Apple's "Large Title"), from lg up. */
+  --text-title: 2.125rem;
+  --text-title--line-height: 2.5rem;
 
   --radius-card: 1.25rem;
   --radius-control: 0.75rem;
+  --radius-sheet: 1.5rem;
 }
 
 :root {
@@ -52,12 +63,14 @@
   --fg: #1d1d1f;
   /* Secondary text still has to be read easily: ~9:1 on the page background. */
   --fg-muted: #48484a;
-  /* Card and divider edges: visible, not decorative-faint. */
-  --border: rgba(0, 0, 0, 0.14);
+  /* Hairline card and divider edges. */
+  --border: rgba(0, 0, 0, 0.1);
   /* Form-control edges: 3:1 against white (WCAG 1.4.11), so a field is
      recognisably a field. */
   --border-strong: #86868b;
-  --shadow-color: rgba(0, 0, 0, 0.08);
+  --shadow-color: rgba(0, 0, 0, 0.12);
+  --ease-in: cubic-bezier(0, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.4, 0, 1, 1);
 }
 
 * {
@@ -84,9 +97,17 @@ body {
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-feature-settings: 'cv11';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 /* One clearly visible keyboard-focus ring everywhere, including links and
@@ -139,9 +160,23 @@ body {
   .text-muted {
     color: var(--fg-muted);
   }
+  /* Surfaces are flat; only things floating above the page (menus, dialogs,
+     sheets, toasts) cast a shadow. */
   .shadow-card {
-    box-shadow:
-      0 1px 2px var(--shadow-color),
-      0 8px 24px -8px var(--shadow-color);
+    box-shadow: none;
+  }
+  .shadow-overlay {
+    box-shadow: 0 8px 30px var(--shadow-color);
+  }
+  /* Translucent bars (sidebar, top bar); solid when transparency is unwanted. */
+  .bar-translucent {
+    background-color: rgb(255 255 255 / 0.8);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .bar-translucent {
+      background-color: #fff;
+      backdrop-filter: none;
+    }
   }
 }

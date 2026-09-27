@@ -19,7 +19,7 @@ const PAYMENT_STATUS_TONE: Record<PaymentStatus, Tone> = {
 }
 
 const TONE_CLASSES: Record<Tone, string> = {
-  neutral: 'bg-black/[0.04] text-[var(--fg)] border border-[var(--border-strong)]',
+  neutral: 'bg-black/[0.06] text-[var(--fg)]',
   info: 'bg-accent/10 text-accent-ink',
   success: 'bg-success/10 text-success-ink',
   warning: 'bg-warning/10 text-warning-ink',
@@ -40,7 +40,7 @@ function Pill({ tone, children }: { tone: Tone; children: string }) {
   return (
     <span
       className={cn(
-        'text-label inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold',
+        'text-label inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-medium whitespace-nowrap',
         TONE_CLASSES[tone],
       )}
     >

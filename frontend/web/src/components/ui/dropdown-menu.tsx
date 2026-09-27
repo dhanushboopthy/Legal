@@ -21,7 +21,7 @@ export function DropdownMenuContent({
         align={align}
         sideOffset={8}
         className={cn(
-          'surface shadow-card z-50 min-w-56 rounded-[var(--radius-control)] border border-[var(--border)] p-1.5',
+          'surface shadow-overlay z-50 min-w-56 rounded-[var(--radius-control)] border border-[var(--border)] p-1.5',
           className,
         )}
       >

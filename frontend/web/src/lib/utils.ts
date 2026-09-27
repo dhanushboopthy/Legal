@@ -4,7 +4,7 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // Our named type steps (index.css @theme). Without this, tailwind-merge takes
 // `text-label` for a colour and drops it next to a real colour class.
 const twMerge = extendTailwindMerge({
-  extend: { classGroups: { 'font-size': [{ text: ['caption', 'label', 'lead'] }] } },
+  extend: { classGroups: { 'font-size': [{ text: ['caption', 'label', 'lead', 'title'] }] } },
 })
 
 export function cn(...inputs: ClassValue[]) {

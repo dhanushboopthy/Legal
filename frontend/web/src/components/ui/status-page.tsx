@@ -35,7 +35,7 @@ export function StatusPage({
         <Icon className="size-7 text-[var(--fg-muted)]" strokeWidth={1.5} />
       </div>
       {code && <p className="text-muted text-label font-medium tracking-widest">{code}</p>}
-      <h1 className="-mt-2 text-2xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="-mt-2 text-2xl font-semibold">{title}</h1>
       <p className="text-muted max-w-sm text-sm">{description}</p>
       {actions && (
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">{actions}</div>
