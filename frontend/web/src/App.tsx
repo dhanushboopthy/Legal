@@ -48,6 +48,12 @@ const MessagesPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/features/errors/not-found-page').then((m) => ({ default: m.NotFoundPage })),
 )
+const ForgotPasswordPage = lazy(() =>
+  import('@/features/auth/forgot-password-page').then((m) => ({ default: m.ForgotPasswordPage })),
+)
+const HelpPage = lazy(() =>
+  import('@/features/help/help-page').then((m) => ({ default: m.HelpPage })),
+)
 const ProfilePage = lazy(() =>
   import('@/features/profile/profile-page').then((m) => ({ default: m.ProfilePage })),
 )
@@ -61,6 +67,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/pending-approval" element={<PendingApprovalPage />} />
@@ -69,6 +76,7 @@ function AppRoutes() {
             <Route element={<AppShell />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="/cases/:id" element={<CaseDetailPage />} />
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/messages/:caseId" element={<MessagesPage />} />

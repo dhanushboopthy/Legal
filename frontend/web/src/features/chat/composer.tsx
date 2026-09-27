@@ -86,9 +86,9 @@ export function Composer({
                 type="button"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => setFiles((all) => all.filter((f) => f !== file))}
-                className="inline-flex size-7 items-center justify-center rounded-full hover:bg-black/[0.08]"
+                className="inline-flex size-10 items-center justify-center rounded-full hover:bg-black/[0.08]"
               >
-                <X className="size-3.5" aria-hidden />
+                <X className="size-4" aria-hidden />
               </button>
             </li>
           ))}
@@ -112,9 +112,12 @@ export function Composer({
           aria-label="Attach files"
           disabled={files.length >= MAX_ATTACHMENTS}
           onClick={() => picker.current?.click()}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--fg-muted)] hover:bg-black/[0.05] disabled:opacity-40"
+          className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[var(--border-strong)] text-sm font-semibold hover:bg-black/[0.05] disabled:opacity-60 sm:px-4"
         >
           <Paperclip className="size-5" aria-hidden />
+          <span aria-hidden className="hidden sm:inline">
+            Attach
+          </span>
         </button>
         <div className="min-w-0 flex-1">
           <textarea
@@ -126,7 +129,7 @@ export function Composer({
             placeholder="Message"
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={onKeyDown}
-            className="surface text-lead block max-h-32 w-full resize-none rounded-[var(--radius-control)] border border-[var(--border)] px-3.5 py-2 outline-none placeholder:text-[var(--fg-muted)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/40"
+            className="surface text-lead block max-h-40 min-h-12 w-full resize-none rounded-[var(--radius-control)] border border-[var(--border-strong)] px-4 py-2.5 placeholder:text-[var(--fg-muted)] focus:border-[var(--color-accent)]"
           />
           {body.length >= COUNTER_FROM && (
             <p className="text-muted text-caption mt-1 text-right" aria-live="polite">
@@ -139,9 +142,10 @@ export function Composer({
           aria-label="Send message"
           disabled={!canSend}
           onClick={submit}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+          className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
         >
-          <Send className="size-[18px]" aria-hidden />
+          <Send className="size-5" aria-hidden />
+          <span aria-hidden>Send</span>
         </button>
       </div>
     </div>

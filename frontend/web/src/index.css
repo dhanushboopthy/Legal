@@ -21,13 +21,26 @@
   --color-danger: #dc2626;
   --color-danger-ink: #b91c1c;
 
-  /* Named steps below the Tailwind defaults; nothing smaller than 12px. */
-  --text-caption: 0.75rem;
-  --text-caption--line-height: 1rem;
-  --text-label: 0.8125rem;
-  --text-label--line-height: 1.25rem;
-  --text-lead: 0.9375rem;
-  --text-lead--line-height: 1.5rem;
+  /* Sized for older readers: body text is 17px and nothing is under 14px.
+     `text-sm` is redefined as the body step (it is what most of the app uses
+     for body text), so the whole app grew with it. Everything is in rem, so
+     the Text size setting (html[data-text-size]) scales it all together. */
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.35rem;
+  --text-label: 0.9375rem;
+  --text-label--line-height: 1.45rem;
+  --text-sm: 1.0625rem;
+  --text-sm--line-height: 1.7rem;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.75rem;
+  --text-base: 1.25rem;
+  --text-base--line-height: 1.8rem;
+  --text-lg: 1.375rem;
+  --text-lg--line-height: 1.9rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.25rem;
 
   --radius-card: 1.25rem;
   --radius-control: 0.75rem;
@@ -37,8 +50,13 @@
   --bg: #f5f5f7;
   --bg-elevated: #ffffff;
   --fg: #1d1d1f;
-  --fg-muted: #636366;
-  --border: rgba(0, 0, 0, 0.08);
+  /* Secondary text still has to be read easily: ~9:1 on the page background. */
+  --fg-muted: #48484a;
+  /* Card and divider edges: visible, not decorative-faint. */
+  --border: rgba(0, 0, 0, 0.14);
+  /* Form-control edges: 3:1 against white (WCAG 1.4.11), so a field is
+     recognisably a field. */
+  --border-strong: #86868b;
   --shadow-color: rgba(0, 0, 0, 0.08);
 }
 
@@ -52,12 +70,40 @@ body,
   height: 100%;
 }
 
+/* Text size setting (src/lib/preferences.ts). Scales every rem: text,
+   spacing and touch targets together, like browser zoom. */
+html[data-text-size='large'] {
+  font-size: 112.5%;
+}
+html[data-text-size='xlarge'] {
+  font-size: 125%;
+}
+
 body {
   background-color: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* One clearly visible keyboard-focus ring everywhere, including links and
+   tabs that had none. */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 100;
+}
+.skip-link:focus {
+  top: 1rem;
 }
 
 ::selection {

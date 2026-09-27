@@ -18,6 +18,7 @@ import { listCases } from '@/lib/api/cases'
 import { getStatusMeta, perspectiveFor, type Perspective } from '@/lib/status-meta'
 import { cn, formatDate } from '@/lib/utils'
 import type { CaseListItem } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const WIDE = '(min-width: 640px)'
 
@@ -39,6 +40,7 @@ const latestAt = (c: CaseListItem) => Date.parse(c.last_message?.at ?? c.updated
 // open conversation on the right, or one at a time on a phone, where an open
 // conversation takes the whole screen (see AppShell's immersive layout).
 export function MessagesPage() {
+  usePageTitle('Messages')
   const { caseId } = useParams<{ caseId?: string }>()
   const { user } = useAuth()
   const { can } = usePermissions()
@@ -253,14 +255,15 @@ function Conversation({
         <Link
           to="/messages"
           aria-label="Back to conversations"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-black/[0.05] sm:hidden"
+          className="text-accent-ink inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-sm font-semibold hover:bg-black/[0.05] sm:hidden"
         >
           <ArrowLeft className="size-5" aria-hidden />
+          <span aria-hidden>Back</span>
         </Link>
         <Avatar name={nameFor(c, perspective)} className="size-10" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold">{c.title}</h2>
-          <p className="text-muted text-caption truncate">{subtitle}</p>
+          <p className="text-muted text-label truncate">{subtitle}</p>
         </div>
         <Link
           to={`/cases/${c.id}`}

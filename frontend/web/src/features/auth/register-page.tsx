@@ -6,18 +6,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/input'
+import { Field, Input, PasswordInput } from '@/components/ui/input'
 import { register as registerAccount } from '@/lib/api/auth'
 import { getErrorMessage } from '@/lib/errors'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Enter your full name').max(150),
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(8, 'At least 8 characters').max(128),
+  password: z.string().min(10, 'Use at least 10 characters.').max(72, 'Use at most 72 characters.'),
 })
 type FormValues = z.infer<typeof schema>
 
 export function RegisterPage() {
+  usePageTitle('Create an account')
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
 
@@ -57,18 +59,18 @@ export function RegisterPage() {
               <Input type="email" autoComplete="email" {...control} {...register('email')} />
             )}
           </Field>
-          <Field id="password" label="Password" error={errors.password?.message}>
+          <Field
+            id="password"
+            label="Password"
+            hint="At least 10 characters. A short phrase of three or four words you will remember works well."
+            error={errors.password?.message}
+          >
             {(control) => (
-              <Input
-                type="password"
-                autoComplete="new-password"
-                {...control}
-                {...register('password')}
-              />
+              <PasswordInput autoComplete="new-password" {...control} {...register('password')} />
             )}
           </Field>
           {error && (
-            <p role="alert" className="text-label text-danger-ink">
+            <p role="alert" className="text-danger-ink text-sm font-medium">
               {error}
             </p>
           )}

@@ -5,12 +5,13 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
+  useState,
 } from 'react'
 
 import { cn } from '@/lib/utils'
 
 const fieldClassName =
-  'w-full rounded-[var(--radius-control)] border border-[var(--border)] surface px-3.5 py-2.5 text-lead text-[var(--fg)] placeholder:text-[var(--fg-muted)] transition-shadow duration-150 outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 focus:border-[var(--color-accent)] disabled:opacity-50'
+  'w-full min-h-12 rounded-[var(--radius-control)] border border-[var(--border-strong)] surface px-4 py-2.5 text-lead text-[var(--fg)] placeholder:text-[var(--fg-muted)] transition-shadow duration-150 focus:border-[var(--color-accent)] aria-[invalid=true]:border-[var(--color-danger)] disabled:opacity-60'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
@@ -27,6 +28,35 @@ export const Textarea = forwardRef<
 ))
 Textarea.displayName = 'Textarea'
 
+/** A password field with a visible Show/Hide button, so a mistyped password
+ * can be checked instead of guessed at. */
+export const PasswordInput = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
+>(({ className, ...props }, ref) => {
+  const [visible, setVisible] = useState(false)
+  return (
+    <div className="relative">
+      <input
+        ref={ref}
+        type={visible ? 'text' : 'password'}
+        className={cn(fieldClassName, 'pr-24', className)}
+        {...props}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-pressed={visible}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        className="absolute inset-y-1 right-1 min-w-20 rounded-[calc(var(--radius-control)-4px)] px-3 text-sm font-semibold text-[var(--color-accent-ink)] hover:bg-black/[0.05]"
+      >
+        {visible ? 'Hide' : 'Show'}
+      </button>
+    </div>
+  )
+})
+PasswordInput.displayName = 'PasswordInput'
+
 // A native select: on a phone it opens the OS picker, which beats any custom list.
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => (
@@ -40,7 +70,7 @@ Select.displayName = 'Select'
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('text-label mb-1.5 block font-medium text-[var(--fg-muted)]', className)}
+      className={cn('mb-2 block text-sm font-semibold text-[var(--fg)]', className)}
       {...props}
     />
   )
@@ -49,7 +79,7 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
 export function FieldError({ id, children }: { id?: string; children?: string }) {
   if (!children) return null
   return (
-    <p id={id} role="alert" className="text-label text-danger-ink mt-1.5">
+    <p id={id} role="alert" className="text-danger-ink mt-2 text-sm font-medium">
       {children}
     </p>
   )
@@ -93,7 +123,7 @@ export function Field({
         'aria-describedby': describedBy || undefined,
       })}
       {hint && (
-        <p id={hintId} className="text-muted text-label mt-1.5">
+        <p id={hintId} className="text-muted mt-2 text-sm">
           {hint}
         </p>
       )}

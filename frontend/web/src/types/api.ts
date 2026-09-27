@@ -203,6 +203,12 @@ export interface UploadRules {
   accepted: Record<string, string>
 }
 
+export interface SupportContact {
+  email: string | null
+  phone: string | null
+  hours: string | null
+}
+
 export interface Pricing {
   review_fee_inr: number
   quote_min_inr: number

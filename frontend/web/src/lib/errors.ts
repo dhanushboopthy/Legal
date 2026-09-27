@@ -10,6 +10,8 @@ interface ValidationIssue {
 // FastAPI's 422 body is `{detail: [{loc: ['body', 'title'], msg: '…'}]}`.
 function describeIssue(issue: ValidationIssue): string | null {
   if (!issue.msg) return null
+  // A model-level check (e.g. the password rules) reads as a plain sentence.
+  if (issue.msg.startsWith('Value error, ')) return issue.msg.slice('Value error, '.length)
   const field = [...(issue.loc ?? [])]
     .reverse()
     .find((part) => typeof part === 'string' && part !== 'body' && part !== 'query')

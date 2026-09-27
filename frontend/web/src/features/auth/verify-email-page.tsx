@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { destinationFor } from '@/auth/destination'
 import { OtpStep } from '@/features/auth/otp-step'
 import type { UserOut } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const EMAIL_KEY = 'verify-email:address'
 
@@ -14,6 +15,7 @@ interface VerifyState {
 }
 
 export function VerifyEmailPage() {
+  usePageTitle('Verify your email')
   const navigate = useNavigate()
   const state = useLocation().state as VerifyState | null
 

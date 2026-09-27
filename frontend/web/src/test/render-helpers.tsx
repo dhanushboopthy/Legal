@@ -55,6 +55,7 @@ export function renderWithProviders(
     login: vi.fn(),
     loginWithGoogle: vi.fn(),
     verifyEmail: vi.fn(),
+    resetPassword: vi.fn(),
     logout: vi.fn(),
     refreshUser: vi.fn(),
     ...authOverrides,

@@ -26,13 +26,16 @@
   I'm not stuck in limbo.* Today `PaymentStatus.REFUNDED` exists as an enum
   value but nothing sets it — no refund endpoint or Razorpay refund-webhook
   handling yet.
-- **Rate limits on payment/webhook endpoints specifically.** The global
-  100/min limit isn't tuned for `/webhooks/razorpay` (should be generous,
-  keyed differently) vs. `/cases/{id}/*-payment` (should be tighter, keyed
-  per-user to prevent order-creation spam).
+- ~~**Rate limits on payment/webhook endpoints specifically.**~~ Done
+  (2026-09-27): the webhook is exempt, payment orders are 10/min per user,
+  auth routes are limited per client address, and a 300/min default covers
+  the rest (see CLAUDE.md, "Rate limits").
 - **Secrets management for production.** `.env` works for dev; production
   needs `SECRET_KEY`, DB credentials, and the Razorpay/AWS keys out of a
-  proper secret store, not a file.
+  proper secret store, not a file. Partly addressed (2026-09-27): the api
+  refuses to start in production with a weak or placeholder `SECRET_KEY` or
+  an empty webhook secret, `.env` is kept out of Docker images, and Postgres
+  and Redis credentials now come from env. A real secret store is still open.
 
 ## P1 — near-term
 
@@ -64,9 +67,8 @@
   permissions (`case:view_all`, `payment:view_all` respectively) but today
   they just reuse existing endpoints gated by that permission — no
   clerk-specific workflows (e.g. uploading on the admin's behalf) exist yet.
-- **CI pipeline** (GitHub Actions or equivalent) running `alembic upgrade
-  head` + `pytest` against a service-container Postgres on every PR — not
-  included in this repo.
+- ~~**CI pipeline**~~ Done: `.github/workflows/ci.yml` runs the tests, plus
+  pip-audit, npm audit and a gitleaks secret scan; Dependabot updates weekly.
 - **Horizontal scale-out specifics**: read replicas, connection pooling at
   the infra layer (PgBouncer), CDN in front of S3 for download URLs — all
   deferred until there's real traffic to justify them.

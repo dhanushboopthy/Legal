@@ -23,7 +23,7 @@ export function DialogContent({
       <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
       <RadixDialog.Content
         className={cn(
-          'surface shadow-card fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-card)] p-6 focus:outline-none',
+          'surface shadow-card fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-card)] p-6 focus:outline-none',
           className,
         )}
       >
@@ -37,10 +37,10 @@ export function DialogContent({
             )}
           </div>
           <RadixDialog.Close
-            aria-label="Close"
-            className="rounded-full p-1.5 text-[var(--fg-muted)] transition-colors hover:bg-black/[0.05]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold transition-colors hover:bg-black/[0.05]"
           >
-            <X className="size-4" />
+            <X className="size-5" aria-hidden />
+            Close
           </RadixDialog.Close>
         </div>
         {children}

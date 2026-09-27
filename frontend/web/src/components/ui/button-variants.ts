@@ -1,22 +1,22 @@
 import { cva } from 'class-variance-authority'
 
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] text-sm font-medium transition-all duration-150 ease-out disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] text-sm font-semibold transition-all duration-150 ease-out disabled:pointer-events-none disabled:opacity-60 active:scale-[0.98]',
   {
     variants: {
       variant: {
         primary:
           'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] active:bg-[var(--color-accent-active)] shadow-sm',
-        secondary: 'surface text-[var(--fg)] border border-[var(--border)] hover:bg-black/[0.03]',
-        ghost: 'text-[var(--fg)] hover:bg-black/[0.05]',
+        secondary: 'surface text-[var(--fg)] border border-[var(--border-strong)] hover:bg-black/[0.04]',
+        ghost: 'text-[var(--fg)] hover:bg-black/[0.06]',
         danger: 'bg-[var(--color-danger)] text-white hover:opacity-90',
       },
       size: {
-        // 44px minimum touch target on mobile; the visual height shrinks
-        // back to the desktop-designed size from `sm` up.
-        sm: 'h-11 sm:h-8 px-3 text-[13px]',
-        md: 'h-11 sm:h-10 px-4',
-        lg: 'h-12 px-6 text-[15px]',
+        // Large on every screen: older hands on a mouse miss small targets
+        // as easily as fingers on a phone do.
+        sm: 'min-h-11 px-4',
+        md: 'min-h-12 px-5',
+        lg: 'min-h-14 px-7 text-lg',
       },
     },
     defaultVariants: { variant: 'primary', size: 'md' },

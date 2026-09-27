@@ -112,7 +112,7 @@ export function Bubble({
       className={cn('flex flex-col', own ? 'items-end' : 'items-start', !startsGroup && '-mt-1')}
     >
       {!own && startsGroup && message.sender_name && (
-        <span className="text-muted text-caption mb-0.5 px-1">{message.sender_name}</span>
+        <span className="text-muted text-label mb-0.5 font-semibold px-1">{message.sender_name}</span>
       )}
       <div
         className={cn(
@@ -130,7 +130,7 @@ export function Bubble({
         {message.attachments.length > 0 && <Attachments items={message.attachments} own={own} />}
       </div>
       {endsGroup && (
-        <span className="text-muted text-caption mt-0.5 px-1">{timeOf(message.created_at)}</span>
+        <span className="text-muted text-label mt-0.5 px-1">{timeOf(message.created_at)}</span>
       )}
     </div>
   )
@@ -176,7 +176,7 @@ export function OutgoingBubble({
       {failed ? (
         <div
           role="alert"
-          className="text-danger-ink text-caption mt-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-1"
+          className="text-danger-ink text-label mt-1 font-semibold flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-1"
         >
           <span className="inline-flex items-center gap-1">
             <AlertCircle className="size-3.5" aria-hidden /> Not sent. {entry.error}
@@ -193,7 +193,7 @@ export function OutgoingBubble({
           </button>
         </div>
       ) : (
-        <span className="text-muted text-caption mt-0.5 inline-flex items-center gap-1 px-1">
+        <span className="text-muted text-label mt-0.5 inline-flex items-center gap-1 px-1">
           <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden />{' '}
           Sending…
         </span>

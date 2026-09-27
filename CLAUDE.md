@@ -57,7 +57,7 @@ frontend/
     src/features/    pages, grouped by domain (auth, cases, admin, ...)
   bff/               Node + Express BFF — only /login, /refresh, /logout;
                      everything else the SPA calls directly on the FastAPI
-                     API (proxied same-origin, see nginx.conf / vite.config.ts)
+                     API (proxied same-origin, see nginx/default.conf.template / vite.config.ts)
 ```
 
 ## Conventions
@@ -158,6 +158,40 @@ frontend/
   never recomputed, never derived from `id`.** It's nullable at the DB level
   only so a test fixture that builds a `Case` directly doesn't need one; every
   case created through the API has one.
+- **Refresh tokens are rows, not just JWTs** (`refresh_tokens`,
+  `token_service.py`). Issue them only through `token_service.issue_tokens`;
+  `/auth/refresh` rotates (revokes the old, issues the next in the same
+  family), and presenting an already-rotated token revokes the whole family —
+  except within `REUSE_GRACE` (30 s) of its rotation, so two tabs refreshing at
+  once don't sign each other out. Sign-out (`/auth/logout`, called by the BFF)
+  and a password reset revoke; a revoked token with no `replaced_by` is never
+  honoured, grace or not.
+- **Password sign-in locks for 15 minutes after 5 wrong passwords**
+  (`users.failed_login_count`/`locked_until`). Unknown email, wrong password
+  and Google-only account all return the same message; `resend-otp` and
+  `forgot-password` always return 204. Don't reintroduce "no account found".
+  New passwords (register, reset) go through `core/passwords.password_problem`;
+  sign-in accepts any existing password. Hashing is `bcrypt` directly (no
+  passlib), JWTs are PyJWT.
+- **Rate limits key on the client address from `X-Real-IP`**
+  (`rate_limit.client_ip`), which nginx sets and the BFF passes on. Auth
+  routes use `key_func=client_ip`; everything else falls under
+  `SlowAPIMiddleware`'s 300/min default. The api has no published port in
+  `docker-compose.yml` for this reason: reachable only via nginx/BFF.
+- **`ENVIRONMENT=production` refuses to start with unsafe settings**
+  (`Settings._refuse_unsafe_production`: short/placeholder `SECRET_KEY`, empty
+  webhook secret, `DEBUG`, localhost CORS, non-https URLs). Add a rule there
+  rather than a runtime check.
+- **Security headers**: page-level ones (CSP, HSTS behind https, frame and
+  referrer policy) live in `frontend/web/nginx/`; the CSP's storage origin is
+  filled from `CSP_S3_ORIGIN` at container start. The api adds `nosniff`, a
+  `default-src 'none'` CSP and `no-store` on `/auth/*` (`middleware.py`). A new
+  third-party script or frame origin needs adding to the CSP.
+- **Auth events are audited** (`user.login`, `user.login_failed`,
+  `user.login_locked`, `user.logout`, `user.password_reset`,
+  `user.email_verified`, `user.registered`, `user.approved`), in the same
+  transaction as the action. Logs are JSON in production
+  (`core/logging.configure_logging`); log emails through `mask_email`.
 
 ## Commands
 
@@ -199,7 +233,7 @@ Auth flow: the SPA never stores a token in localStorage. `POST /bff/login`
 sets an httpOnly refresh-token cookie and returns a short-lived access token
 that lives only in a React context; a 401 from the API triggers exactly one
 `/bff/refresh` + retry (see `src/lib/api-client.ts`). In production, nginx
-(`frontend/web/nginx.conf`) serves the built SPA and reverse-proxies
+(`frontend/web/nginx/default.conf.template`) serves the built SPA and reverse-proxies
 `/api/*` and `/bff/*` to the `api` and `bff` containers so everything is
 same-origin — the backend's `CORS_ORIGINS` setting is a fallback for direct
 API access, not something the deployed frontend relies on.
@@ -247,3 +281,10 @@ the existing pattern in that file rather than autogenerating blind.
 - Every screen designs loading, empty, error and success states.
 - Money is always visible before any pay action. Amounts come from the server.
 - Download access is enforced on the server, never only in the UI.
+- **Audience: older lawyers who may be new to technology.** Body text is 17px
+  (`text-sm` is redefined as the body step in `index.css`), nothing under 14px,
+  buttons at least 44px (48px for the main size), labels dark, not grey.
+  Icon buttons show a text label wherever there is room; nothing important
+  lives only in a hover tooltip; error toasts stay until dismissed; every
+  inner page has a `BackLink` and a `usePageTitle`. The Text size setting
+  (`lib/preferences.ts`) scales every rem, so size things in rem, never px.

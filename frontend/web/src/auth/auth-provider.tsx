@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { AuthContext, type AuthContextValue } from '@/auth/auth-context'
-import { bffLogin, bffLoginWithGoogle, bffLogout, bffRefresh, bffVerifyEmail } from '@/lib/bff-client'
+import {
+  bffLogin,
+  bffLoginWithGoogle,
+  bffLogout,
+  bffRefresh,
+  bffResetPassword,
+  bffVerifyEmail,
+} from '@/lib/bff-client'
 import { setSessionExpiredHandler } from '@/lib/api-client'
 import { getMe } from '@/lib/api/users'
 import { setAccessToken } from '@/lib/token-store'
@@ -59,6 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user
   }, [])
 
+  const resetPassword = useCallback(async (email: string, code: string, newPassword: string) => {
+    const res = await bffResetPassword(email, code, newPassword)
+    applySession(res.user, res.access_token)
+    return res.user
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await bffLogout()
@@ -75,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, login, loginWithGoogle, verifyEmail, logout, refreshUser }),
-    [user, status, login, loginWithGoogle, verifyEmail, logout, refreshUser],
+    () => ({ user, status, login, loginWithGoogle, verifyEmail, resetPassword, logout, refreshUser }),
+    [user, status, login, loginWithGoogle, verifyEmail, resetPassword, logout, refreshUser],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

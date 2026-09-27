@@ -320,7 +320,7 @@ function ChatBody({
                     endsGroup={item.endsGroup}
                   />
                   {item.own && message.id === lastOwn && seen && thread.outbox.length === 0 && (
-                    <p className="text-muted text-caption px-1 text-right">Seen</p>
+                    <p className="text-muted text-label px-1 text-right">Seen</p>
                   )}
                 </div>
               )
@@ -335,7 +335,7 @@ function ChatBody({
             toBottom()
             setNewBelow(0)
           }}
-          className="text-caption absolute right-4 bottom-24 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 font-medium text-white shadow-lg"
+          className="text-label absolute right-4 bottom-24 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 font-medium text-white shadow-lg"
         >
           New messages <ArrowDown className="size-3.5" aria-hidden />
         </button>

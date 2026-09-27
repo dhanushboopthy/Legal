@@ -17,6 +17,9 @@ export interface AuthContextValue {
   // _require_verified) — this is how a fresh account lands on
   // pending-approval, or straight on Cases, with no separate login step.
   verifyEmail: (email: string, code: string) => Promise<UserOut>
+  // Sets a new password with the emailed code and signs this browser in; the
+  // backend signs every other session out.
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<UserOut>
   logout: () => Promise<void>
   // Re-fetches /users/me and updates user/status from it — how a 'pending'
   // session notices it was approved without a full page reload.

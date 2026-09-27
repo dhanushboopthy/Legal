@@ -13,6 +13,7 @@ import { Field, Input } from '@/components/ui/input'
 import { PageSpinner } from '@/components/ui/page-spinner'
 import { updateMe } from '@/lib/api/users'
 import { getErrorMessage } from '@/lib/errors'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const schema = z.object({
   bar_council_id: z.string().trim().min(3, 'Enter your Bar Council ID'),
@@ -23,6 +24,7 @@ type FormValues = z.infer<typeof schema>
 // ID — password sign-up (after OTP) and Google sign-up alike, so the
 // advocate always has something to verify before approving an account.
 export function CompleteProfilePage() {
+  usePageTitle('Complete your profile')
   const { user, status, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)

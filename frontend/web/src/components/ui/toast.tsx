@@ -23,7 +23,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((item) => (
           <RadixToast.Root
             key={item.id}
-            duration={4000}
+            // Success notes stay long enough to read slowly; errors stay until
+            // dismissed, so nobody misses what went wrong.
+            duration={item.variant === 'success' ? 8000 : Infinity}
             onOpenChange={(open) => {
               if (!open) remove(item.id)
             }}
@@ -36,17 +38,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             ) : (
               <XCircle className="mt-0.5 size-5 shrink-0 text-[var(--color-danger)]" />
             )}
-            <div>
-              <RadixToast.Title className="text-sm font-medium">{item.title}</RadixToast.Title>
+            <div className="min-w-0 flex-1">
+              <RadixToast.Title className="text-sm font-semibold">{item.title}</RadixToast.Title>
               {item.description && (
-                <RadixToast.Description className="text-muted text-label mt-0.5">
+                <RadixToast.Description className="text-muted mt-1 text-sm">
                   {item.description}
                 </RadixToast.Description>
               )}
             </div>
+            <RadixToast.Close className="min-h-11 shrink-0 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold hover:bg-black/[0.05]">
+              Dismiss
+            </RadixToast.Close>
           </RadixToast.Root>
         ))}
-        <RadixToast.Viewport className="fixed right-0 bottom-0 z-50 flex w-96 max-w-[100vw] flex-col gap-2 p-4 outline-none" />
+        <RadixToast.Viewport className="fixed right-0 bottom-0 z-50 flex w-[28rem] max-w-[100vw] flex-col gap-2 p-4 outline-none" />
       </RadixToast.Provider>
     </ToastContext>
   )

@@ -15,6 +15,7 @@ import { listCases } from '@/lib/api/cases'
 import { STATUS_META, perspectiveFor, type StatusGroup } from '@/lib/status-meta'
 import { formatDate } from '@/lib/utils'
 import type { CaseListItem } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const FILTERS: Array<{ label: string; group: StatusGroup | null }> = [
   { label: 'All', group: null },
@@ -24,6 +25,7 @@ const FILTERS: Array<{ label: string; group: StatusGroup | null }> = [
 ]
 
 export function DashboardPage() {
+  usePageTitle('Cases')
   const { can } = usePermissions()
   const perspective = perspectiveFor(can)
   const viewsAll = can(PERMISSIONS.CASE_VIEW_ALL)

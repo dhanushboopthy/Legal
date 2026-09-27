@@ -24,6 +24,8 @@ import { getErrorMessage } from '@/lib/errors'
 import { acceptedLabel, titleFromFilename } from '@/lib/uploads'
 import { formatCurrency } from '@/lib/utils'
 import type { CaseOut, DocumentOut, Pricing, UploadRules } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
+import { BackLink } from '@/components/layout/back-link'
 
 const schema = z.object({
   title: z.string().trim().min(3, 'At least 3 characters').max(255, 'At most 255 characters'),
@@ -48,6 +50,7 @@ export interface CasePrefill {
 }
 
 export function NewCasePage() {
+  usePageTitle('New case')
   const [params] = useSearchParams()
   const location = useLocation()
   const wantedDraft = params.get('draft')
@@ -249,6 +252,7 @@ function NewCaseForm({
 
   return (
     <div className="mx-auto max-w-xl">
+      <BackLink to="/">All cases</BackLink>
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">New case</h1>
       <p className="text-muted mb-6 text-sm">
         Add your files, then send the case to the advocate for review. The review fee is {fee}.

@@ -10,10 +10,12 @@ import { useAuth } from '@/auth/auth-context'
 import { destinationFor } from '@/auth/destination'
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/input'
+import { Field, Input, PasswordInput } from '@/components/ui/input'
+import { ContactCard } from '@/features/help/help-page'
 import { isGoogleSignInConfigured } from '@/hooks/use-google-identity'
 import { getErrorMessage } from '@/lib/errors'
 import type { UserOut } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -22,6 +24,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function LoginPage() {
+  usePageTitle('Sign in')
   const { login, loginWithGoogle, status, user: sessionUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,6 +34,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
@@ -88,8 +92,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
+      <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-[var(--color-accent)] text-white">
             <Briefcase className="size-6" strokeWidth={1.75} />
@@ -109,7 +113,7 @@ export function LoginPage() {
 
             <div className="mb-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-[var(--border)]" />
-              <span className="text-muted text-caption">or</span>
+              <span className="text-muted text-sm">or</span>
               <div className="h-px flex-1 bg-[var(--border)]" />
             </div>
           </>
@@ -123,8 +127,7 @@ export function LoginPage() {
           </Field>
           <Field id="password" label="Password" error={errors.password?.message}>
             {(control) => (
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="current-password"
                 {...control}
                 {...register('password')}
@@ -132,21 +135,32 @@ export function LoginPage() {
             )}
           </Field>
           {error && (
-            <p role="alert" className="text-label text-danger-ink">
+            <p role="alert" className="text-danger-ink text-sm font-medium">
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" loading={isSubmitting}>
+          <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
             Sign in
           </Button>
+          <p className="text-center">
+            <Link
+              to="/forgot-password"
+              state={{ email: getValues('email') }}
+              className="text-accent-ink inline-flex min-h-11 items-center text-sm font-semibold hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </p>
         </form>
 
-        <p className="text-muted mt-6 text-center text-sm">
+        <p className="mt-6 text-center text-sm">
           New here?{' '}
-          <Link to="/register" className="text-accent-ink font-medium">
+          <Link to="/register" className="text-accent-ink font-semibold hover:underline">
             Create an account
           </Link>
         </p>
+
+        <ContactCard />
       </div>
     </div>
   )

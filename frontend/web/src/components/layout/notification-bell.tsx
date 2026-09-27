@@ -32,20 +32,28 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="relative flex size-9 items-center justify-center rounded-full transition-colors hover:bg-black/[0.05]"
+          className="relative flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2 text-sm font-semibold transition-colors hover:bg-black/[0.06] lg:px-3"
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
-          <Bell className="size-[18px]" strokeWidth={1.75} />
+          <Bell className="size-6" strokeWidth={1.75} aria-hidden />
+          <span aria-hidden className="hidden lg:inline">
+            Alerts
+          </span>
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[var(--color-danger)]" />
+            <span
+              aria-hidden
+              className="absolute -top-0.5 left-6 flex min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-caption font-bold text-white"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-0">
+      <DropdownMenuContent className="w-[26rem] max-w-[calc(100vw-2rem)] p-0">
         <div className="border-b border-[var(--border)] px-4 py-3">
-          <p className="text-sm font-semibold">Notifications</p>
+          <p className="text-base font-semibold">Notifications</p>
         </div>
-        <div className="max-h-80 overflow-y-auto p-1.5">
+        <div className="max-h-[28rem] overflow-y-auto p-1.5">
           {isLoading ? (
             <p className="text-muted px-3 py-6 text-center text-sm">Loading…</p>
           ) : error && !notifications ? (
@@ -79,8 +87,8 @@ export function NotificationBell() {
                   if (n.case_id) navigate(`/cases/${n.case_id}`)
                 }}
               >
-                <p className="text-label leading-snug">{n.message}</p>
-                <p className="text-muted text-caption">{formatDate(n.created_at)}</p>
+                <p className="text-sm leading-snug">{n.message}</p>
+                <p className="text-muted text-label">{formatDate(n.created_at)}</p>
               </DropdownMenuItem>
             ))
           )}

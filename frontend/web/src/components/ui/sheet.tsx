@@ -22,7 +22,7 @@ export function Sheet({
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <RadixDialog.Content className="surface shadow-card fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-[var(--radius-card)] focus:outline-none sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[28rem] sm:rounded-t-none sm:rounded-l-[var(--radius-card)]">
+        <RadixDialog.Content className="surface shadow-card fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-[var(--radius-card)] focus:outline-none sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[32rem] sm:rounded-t-none sm:rounded-l-[var(--radius-card)]">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-4">
             <div>
               <RadixDialog.Title className="text-lg font-semibold">{title}</RadixDialog.Title>
@@ -33,10 +33,10 @@ export function Sheet({
               )}
             </div>
             <RadixDialog.Close
-              aria-label="Close"
-              className="rounded-full p-1.5 text-[var(--fg-muted)] transition-colors hover:bg-black/[0.05]"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold transition-colors hover:bg-black/[0.05]"
             >
-              <X className="size-4" />
+              <X className="size-5" aria-hidden />
+              Close
             </RadixDialog.Close>
           </div>
           <div className="overflow-y-auto px-6 py-5">{children}</div>

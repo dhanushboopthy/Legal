@@ -7,6 +7,18 @@ description: UX rules and copy guidelines for the legal case-filing platform. Re
 
 The product should need no manual. Every screen answers three things without reading: **where am I, whose turn is it, what is the one thing to do next.**
 
+## Audience
+
+The people using this are often **older lawyers who may be new to technology**. Design for someone who reads slowly, uses a mouse carefully, may have reduced vision, and won't guess at icons:
+
+- Text is large (17 px body) and dark; secondary text is still easy to read.
+- Every button is big (≥44 px) and says what it does in words. Icon-only buttons are a last resort for tight spaces, always with an `aria-label`.
+- Nothing important is only on hover (no tooltip-only labels or dates).
+- Errors stay on screen until dismissed. Nothing times out on someone reading slowly.
+- Every inner page has a visible way back ("← All cases") and a page title.
+- Plain words: "5 min ago", not "5m"; "Bar Council enrolment number", not "BCI ID".
+- The Text size setting (Normal / Large / Extra large) must never break a layout: check pages at Extra large on a 360 px phone.
+
 ## North-star tests
 
 | Person | Test |
@@ -16,7 +28,8 @@ The product should need no manual. Every screen answers three things without rea
 | Junior | Never sees a pay button without the amount on it. |
 | Advocate | Opens the app and sees what needs them, in one list, without opening cases. |
 | Advocate | Decides a case in 2 taps; sends draft and quote in one sheet with one confirmation. |
-| Both | Everything works on a 360 px phone. |
+| Both | Everything works on a 360 px phone, at every text size. |
+| Both | Someone who forgot their password gets back in without calling anyone. |
 
 ## Rules
 

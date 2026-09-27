@@ -30,6 +30,19 @@ export async function bffVerifyEmail(email: string, code: string): Promise<Login
   return data
 }
 
+export async function bffResetPassword(
+  email: string,
+  code: string,
+  newPassword: string,
+): Promise<LoginResponse> {
+  const { data } = await bffClient.post<LoginResponse>('/reset-password', {
+    email,
+    code,
+    new_password: newPassword,
+  })
+  return data
+}
+
 export async function bffRefresh(): Promise<LoginResponse> {
   const { data } = await bffClient.post<LoginResponse>('/refresh')
   return data

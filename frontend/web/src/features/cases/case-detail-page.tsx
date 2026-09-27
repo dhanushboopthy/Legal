@@ -17,6 +17,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { PERMISSIONS, type CanFn } from '@/auth/permissions'
 import { useAuth } from '@/auth/auth-context'
 import { usePermissions } from '@/auth/use-permissions'
+import { BackLink } from '@/components/layout/back-link'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card } from '@/components/ui/card'
@@ -40,6 +41,7 @@ import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { UploadRevisionPanel } from '@/features/cases/upload-revision-panel'
 import { createReviewPayment, getCase } from '@/lib/api/cases'
 import { getPricing } from '@/lib/api/config'
+import { usePageTitle } from '@/hooks/use-page-title'
 import { listCaseDocuments } from '@/lib/api/documents'
 import { listPaymentsForCase } from '@/lib/api/payments'
 import { getStatusMeta, perspectiveFor, type Perspective } from '@/lib/status-meta'
@@ -99,6 +101,8 @@ export function CaseDetailPage() {
     queryFn: () => listPaymentsForCase(caseId),
   })
 
+  usePageTitle(caseData ? (caseData.case_number ? `Case ${caseData.case_number}` : caseData.title) : 'Case')
+
   const refresh = () => {
     if (caseData) setAwaitingStatus(caseData.status)
     void queryClient.invalidateQueries({ queryKey: ['case', caseId] })
@@ -141,7 +145,8 @@ export function CaseDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-4 flex items-start justify-between gap-4">
+      <BackLink to="/">All cases</BackLink>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           {caseData.case_number && (
             <p className="text-muted text-label font-medium">{caseData.case_number}</p>
@@ -411,7 +416,7 @@ function CaseActionPanel({
                   }
                 }}
               >
-                Download
+                Download final filing
               </Button>
             )
           }

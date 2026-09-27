@@ -21,19 +21,20 @@ A **fill** colour is for backgrounds, borders and icons (needs 3:1). An **ink** 
 | `--color-warning` / `-ink` | `#d97706` / `#92400e` | icon+fill / text | ink ≥5.87 (fill text was 2.86) |
 | `--color-danger` / `-ink` | `#dc2626` / `#b91c1c` | fill+danger button / text | ink ≥5.09; white on fill 4.83 |
 | `--fg` | `#1d1d1f` | text | 15.5 on bg |
-| `--fg-muted` | `#636366` (was `#6e6e73`, 4.07 on the neutral pill) | secondary text | ≥4.80 everywhere used |
+| `--fg-muted` | `#48484a` (was `#636366`) | secondary text | ~9:1 on bg |
 | `--bg` / `--bg-elevated` | `#f5f5f7` / `#ffffff` | page / card | |
-| `--border` | `rgba(0,0,0,.08)` | | |
+| `--border` | `rgba(0,0,0,.14)` | card and divider edges | |
+| `--border-strong` | `#86868b` | form-control and secondary-button edges | 3:1 on white (WCAG 1.4.11) |
 
 Pills: `bg-{tone}/10` fill with `text-{tone}-ink`. Status colours always come from `statusMeta`, not per-component.
 
-## Type scale (named, min 12 px)
+## Type scale (named, min 14 px)
 
-Replace arbitrary `text-[11px|12px|13px|15px]` with named steps: `text-caption` 12, `text-label` 13, `text-sm` 14 (body), `text-lead` 15, `text-base` 16 (card title, semibold), `text-2xl` 24 (page title, semibold, tracking-tight). Font: system stack, no unloaded webfont: `system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif`.
+Sized for older readers. Named steps, all in rem: `text-caption` 14, `text-label` 15, `text-sm` 17 (**body**, redefined from Tailwind's 14), `text-lead` 18, `text-base` 20 (card title, semibold), `text-lg` 22, `text-xl` 24, `text-2xl` 28 (page title, semibold, tracking-tight). Never arbitrary `text-[Npx]`. `cn()` knows the custom steps (tailwind-merge is extended in `lib/utils.ts`); add any new step there too. The Text size setting (`html[data-text-size]`, `lib/preferences.ts`) scales the root to 112.5% / 125%, so size in rem, never px. Font: system stack, no unloaded webfont: `system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif`.
 
 ## Layout
 
-Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, forms `max-w-xl`, case `max-w-2xl`, lists `max-w-5xl`. Radii: card `1.25rem`, control `0.75rem`. Touch targets ≥44 px on mobile (`min-h-11`); desktop buttons `h-10` (md). Bottom tab bar on mobile, top bar from `sm`. Page transitions ≤150 ms or none.
+Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, forms `max-w-xl`, case `max-w-2xl`, lists `max-w-5xl`. Radii: card `1.25rem`, control `0.75rem`. Targets ≥44 px on every screen, not just mobile: button `sm` `min-h-11`, `md` `min-h-12`, `lg` `min-h-14`; inputs `min-h-12`. One global `:focus-visible` outline (3 px accent) — don't remove it with `outline-none`. Bottom tab bar on mobile, top bar from `sm`. Page transitions ≤150 ms or none.
 
 ## Components and when to use which
 
@@ -41,7 +42,10 @@ Gutter `px-4` on mobile, `px-6` from `sm`. Content widths: auth `max-w-sm`, form
 |---|---|
 | Form field with label + error | `Field` (wires `aria-invalid`, `aria-describedby`, error `role="alert"`) |
 | Field-level validation error | inline under the field |
-| Confirmation of a finished, non-blocking action | toast (success/error, 4 s) |
+| Confirmation of a finished, non-blocking action | toast: success 8 s, error until dismissed; both have a Dismiss button |
+| A way back from an inner page | `BackLink` ("← All cases"), plus `usePageTitle` on every page |
+| Password field | `PasswordInput` (visible Show/Hide) |
+| Text size | `TextSizeControl` (profile page) |
 | A page-level load that failed | `ErrorState` with retry (inline) |
 | Whole-screen state (404, 403, crash, pending approval) | `StatusPage` |
 | A list that succeeded with zero rows | `EmptyState` (only then) |

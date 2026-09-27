@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
 import { approveUser, listUsers } from '@/lib/api/users'
 import type { UserOut } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
+import { BackLink } from '@/components/layout/back-link'
 
 // Matches the backend's default PENDING_APPROVAL_REMINDER_AFTER_HOURS — only
 // used here to decide when to flag a row, not to gate anything.
@@ -28,6 +30,7 @@ function waitingLabel(hours: number): string {
 }
 
 export function PeoplePage() {
+  usePageTitle('People')
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState<UserOut | null>(null)
@@ -62,6 +65,7 @@ export function PeoplePage() {
 
   return (
     <div>
+      <BackLink to="/">All cases</BackLink>
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">People</h1>
       <p className="text-muted mb-6 text-sm">Everyone at the practice, and new registrations to approve.</p>
 

@@ -3,11 +3,28 @@ import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { Route, Routes } from 'react-router-dom'
+
+import { AppShell } from '@/components/layout/app-shell'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Sheet } from '@/components/ui/sheet'
+import { ForgotPasswordPage } from '@/features/auth/forgot-password-page'
 import { LoginPage } from '@/features/auth/login-page'
 import { RegisterPage } from '@/features/auth/register-page'
-import { renderWithProviders } from '@/test/render-helpers'
+import { HelpPage } from '@/features/help/help-page'
+import { ADVOCATE_PERMISSIONS, makeUser, renderWithProviders } from '@/test/render-helpers'
+
+vi.mock('@/lib/api/config', () => ({
+  getPricing: vi.fn().mockResolvedValue({ review_fee_inr: 100, quote_min_inr: 100, quote_max_inr: 100000 }),
+  getSupport: vi
+    .fn()
+    .mockResolvedValue({ email: 'help@example.com', phone: '+91 22 5555 0100', hours: 'Weekdays' }),
+  getUploadRules: vi.fn(),
+}))
+vi.mock('@/lib/api/notifications', () => ({
+  listMyNotifications: vi.fn().mockResolvedValue([]),
+  markNotificationRead: vi.fn(),
+}))
 
 afterEach(cleanup)
 
@@ -24,6 +41,34 @@ describe('accessibility', () => {
 
   it('RegisterPage has no automatically detectable violations', async () => {
     const { container } = renderWithProviders(<RegisterPage />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('ForgotPasswordPage has no automatically detectable violations', async () => {
+    const { container } = renderWithProviders(<ForgotPasswordPage />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('HelpPage, with the contact card, has no automatically detectable violations', async () => {
+    const { container } = renderWithProviders(<HelpPage />, {
+      user: makeUser(ADVOCATE_PERMISSIONS),
+    })
+    await screen.findByText(/Call \+91/)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('AppShell navigation has no automatically detectable violations', async () => {
+    const { container } = renderWithProviders(
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<h1>Cases</h1>} />
+        </Route>
+      </Routes>,
+      { user: makeUser(ADVOCATE_PERMISSIONS) },
+    )
+    expect(screen.getByRole('link', { name: 'Skip to main content' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Cases' })[0]).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
     expect(await axe(container)).toHaveNoViolations()
   })
 

@@ -14,8 +14,11 @@ import { getErrorMessage } from '@/lib/errors'
 import { listAllPayments, refundPayment } from '@/lib/api/payments'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { PaymentListItem } from '@/types/api'
+import { usePageTitle } from '@/hooks/use-page-title'
+import { BackLink } from '@/components/layout/back-link'
 
 export function PaymentsPage() {
+  usePageTitle('Payments')
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState<PaymentListItem | null>(null)
@@ -47,6 +50,7 @@ export function PaymentsPage() {
 
   return (
     <div>
+      <BackLink to="/">All cases</BackLink>
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">Payments</h1>
       <p className="text-muted mb-6 text-sm">Every payment across the practice.</p>
 

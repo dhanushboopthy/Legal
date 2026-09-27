@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/auth-context'
 import { Button } from '@/components/ui/button'
 import { PageSpinner } from '@/components/ui/page-spinner'
 import { StatusPage } from '@/components/ui/status-page'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const POLL_MS = 5_000
 
@@ -14,6 +15,7 @@ const POLL_MS = 5_000
 // approval gate allows (GET /users/me only) and polls that endpoint, moving
 // on to Cases the moment it's approved — no re-login needed.
 export function PendingApprovalPage() {
+  usePageTitle('Waiting for approval')
   const { user, status, refreshUser, logout } = useAuth()
   const navigate = useNavigate()
 

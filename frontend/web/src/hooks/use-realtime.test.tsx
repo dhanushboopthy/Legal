@@ -48,6 +48,7 @@ afterEach(() => {
   api.restore()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 function Probe() {
@@ -134,6 +135,10 @@ describe('RealtimeProvider', () => {
   })
 
   it('waits longer after each failed attempt, and starts over after a good connection', async () => {
+    // Pin the jitter to its top end so the waits land at fixed times
+    // (~1 s, ~2 s, ...); with real randomness the "not yet" check below failed
+    // whenever two short waits added up to under 2 s.
+    vi.spyOn(Math, 'random').mockReturnValue(0.99)
     api.reset()
     api.onPost('/ws/ticket').reply(500)
     mount()
