@@ -66,7 +66,7 @@ export function AppShell() {
           <div className="flex items-center gap-4 lg:gap-8">
             <NavLink
               to="/"
-              className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] text-lg font-bold tracking-tight"
+              className="flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] text-base leading-tight font-bold tracking-tight sm:text-lg"
             >
               <Briefcase className="size-6" strokeWidth={1.75} aria-hidden />
               <span className="sm:max-lg:sr-only">Advocate Filing</span>

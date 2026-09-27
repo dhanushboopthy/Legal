@@ -99,7 +99,7 @@ export function MessagesPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
               aria-label="Search conversations"
-              className="min-h-11 w-full rounded-full bg-black/[0.05] py-2 pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:min-h-9"
+              className="surface min-h-12 w-full rounded-full border border-[var(--border-strong)] py-2 pr-3 pl-9 text-sm focus:border-[var(--color-accent)]"
             />
           </div>
         </div>

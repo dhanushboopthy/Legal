@@ -84,16 +84,18 @@ export function DashboardPage() {
       </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {FILTERS.map((f, i) => (
             <button
               key={f.label}
+              type="button"
+              aria-pressed={i === filterIndex}
               onClick={() => setFilterIndex(i)}
               className={
-                'text-label rounded-full px-3.5 py-1.5 font-medium transition-colors ' +
+                'min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ' +
                 (i === filterIndex
                   ? 'bg-[var(--color-accent)] text-white'
-                  : 'bg-black/[0.04] text-[var(--fg-muted)] hover:bg-black/[0.07]')
+                  : 'bg-black/[0.06] text-[var(--fg)] hover:bg-black/[0.1]')
               }
             >
               {f.label}
@@ -101,9 +103,9 @@ export function DashboardPage() {
           ))}
         </div>
         {viewsAll && (
-          <div className="relative min-w-48 flex-1 sm:flex-none">
+          <div className="relative w-full min-w-48 sm:w-auto sm:flex-1">
             <Search
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--fg-muted)]"
+              className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[var(--fg-muted)]"
               aria-hidden
             />
             <input
@@ -111,7 +113,7 @@ export function DashboardPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by title, lawyer or case number"
               aria-label="Search cases"
-              className="w-full rounded-full border border-[var(--border)] surface py-1.5 pr-3 pl-9 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/40"
+              className="surface text-lead min-h-12 w-full rounded-full border border-[var(--border-strong)] py-2 pr-4 pl-11 focus:border-[var(--color-accent)]"
             />
           </div>
         )}
@@ -211,13 +213,13 @@ function CaseList({
     <div className="space-y-3">
       {cases.map((c) => (
         <Link key={c.id} to={`/cases/${c.id}`}>
-          <Card className="flex items-center justify-between gap-4 transition-transform hover:-translate-y-0.5">
-            <div className="min-w-0">
+          <Card className="flex flex-col gap-3 transition-transform hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0 flex-1">
               {c.case_number && (
                 <p className="text-muted text-caption font-medium">{c.case_number}</p>
               )}
-              <div className="flex items-center gap-2">
-                <p className="truncate font-medium">{c.title}</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="line-clamp-2 font-semibold">{c.title}</p>
                 {c.turn === 'you' && (
                   <span className="text-caption inline-flex shrink-0 items-center rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 font-medium text-[var(--color-accent-ink)]">
                     Your turn
@@ -227,7 +229,7 @@ function CaseList({
               {showLawyer && (
                 <p className="text-muted text-caption mt-0.5 truncate">
                   {c.junior_lawyer_name}
-                  {c.junior_lawyer_bar_council_id && ` · Bar council ID: ${c.junior_lawyer_bar_council_id}`}
+                  {c.junior_lawyer_bar_council_id && ` · Bar Council no. ${c.junior_lawyer_bar_council_id}`}
                 </p>
               )}
               {c.last_message ? (
@@ -248,7 +250,7 @@ function CaseList({
                 </p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
               {c.unread_count > 0 && (
                 <span
                   aria-label={`${c.unread_count} unread ${c.unread_count === 1 ? 'message' : 'messages'}`}

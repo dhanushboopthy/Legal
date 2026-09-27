@@ -150,7 +150,7 @@ function PersonInfo({ user }: { user: UserOut }) {
         {user.email}
         {' · '}
         <span className="capitalize">{user.role_name.replace(/_/g, ' ')}</span>
-        {user.bar_council_id && ` · Bar council ID: ${user.bar_council_id}`}
+        {user.bar_council_id && ` · Bar Council no. ${user.bar_council_id}`}
       </p>
     </div>
   )
