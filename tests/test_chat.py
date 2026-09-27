@@ -322,6 +322,7 @@ async def test_the_cases_list_carries_last_message_unread_count_and_whose_turn_i
     chatty = mine[str(case.id)]
     assert chatty["unread_count"] == 2          # the case was created already accepted: just the two messages
     assert chatty["last_message"]["preview"] == "Got the FIR?" and chatty["last_message"]["sender_name"] == advocate.full_name
+    assert chatty["last_message"]["sender_id"] == str(advocate.id)
     assert mine[str(quiet.id)]["last_message"] is None and mine[str(quiet.id)]["unread_count"] == 0
 
     await client.post(f"/cases/{case.id}/read", headers=auth_header(lawyer), json={"last_read_message_id": 10**9})

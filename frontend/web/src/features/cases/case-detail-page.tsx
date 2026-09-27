@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, FolderOpen, Hourglass, Info, Pencil, PenSquare, XCircle, type LucideIcon } from 'lucide-react'
+import {
+  Clock,
+  ExternalLink,
+  FolderOpen,
+  Hourglass,
+  Info,
+  Pencil,
+  PenSquare,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
 import { Link, useLocation, useParams } from 'react-router-dom'
@@ -16,6 +26,7 @@ import { useToast } from '@/components/ui/toast-context'
 import { ForbiddenPage } from '@/features/errors/forbidden-page'
 import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
+import { hasChat } from '@/features/chat/chat-access'
 import { ChatThread } from '@/features/chat/chat-thread'
 import { CaseProgress } from '@/features/cases/case-progress'
 import { DecisionPanel } from '@/features/cases/decision-panel'
@@ -36,15 +47,6 @@ import { openDocument } from '@/lib/download'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/utils'
 import type { CaseOut, CaseStatus, DocumentOut, Pricing } from '@/types/api'
-
-// The statuses in which a case has a chat (docs/NEW_FLOW_SPEC.md D4).
-const CHAT_STATUSES: CaseStatus[] = [
-  'accepted',
-  'quoted',
-  'delivered',
-  'revision_requested',
-  'completed',
-]
 
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -176,13 +178,27 @@ export function CaseDetailPage() {
       {/* The chat is for the two people on the case: its owner and whoever holds
           case:message. It exists from acceptance on (and stays, read-only, once
           the case is complete). Everyone else who can see the case never sees it. */}
-      {user &&
-        CHAT_STATUSES.includes(caseData.status) &&
-        (isOwner || can(PERMISSIONS.CASE_MESSAGE)) && (
-          <div className="mb-4">
-            <ChatThread caseId={caseId} ownId={user.id} />
-          </div>
-        )}
+      {user && hasChat(caseData, user.id, can) && (
+        <div className="mb-4">
+          <ChatThread
+            caseId={caseId}
+            ownId={user.id}
+            header={
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-1.5">
+                <h2 className="text-base font-semibold">Chat</h2>
+                <a
+                  href={`/messages/${caseId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent-ink text-label inline-flex min-h-11 items-center gap-1.5 font-medium sm:min-h-9"
+                >
+                  <ExternalLink className="size-4" aria-hidden /> Open in new window
+                </a>
+              </div>
+            }
+          />
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button variant="secondary" size="sm" onClick={() => setFilesOpen(true)}>

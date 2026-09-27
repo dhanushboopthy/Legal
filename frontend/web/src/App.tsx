@@ -42,6 +42,9 @@ const NewCasePage = lazy(() =>
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/dashboard-page').then((m) => ({ default: m.DashboardPage })),
 )
+const MessagesPage = lazy(() =>
+  import('@/features/messages/messages-page').then((m) => ({ default: m.MessagesPage })),
+)
 const NotFoundPage = lazy(() =>
   import('@/features/errors/not-found-page').then((m) => ({ default: m.NotFoundPage })),
 )
@@ -67,6 +70,8 @@ function AppRoutes() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/cases/:id" element={<CaseDetailPage />} />
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/messages/:caseId" element={<MessagesPage />} />
 
               <Route element={<RequireAuth permission={PERMISSIONS.CASE_SUBMIT} />}>
                 <Route path="/cases/new" element={<NewCasePage />} />

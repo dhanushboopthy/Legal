@@ -111,6 +111,7 @@ describe('DashboardPage states', () => {
         last_message: {
           preview: 'Please share the FIR copy',
           at: '2026-09-15T11:00:00Z',
+          sender_id: 'u-advocate',
           sender_name: 'Adv. Rao',
           kind: 'text',
         },

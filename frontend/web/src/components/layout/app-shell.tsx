@@ -1,5 +1,13 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Briefcase, Folder, LogOut, Receipt, User as UserIcon, Users } from 'lucide-react'
+import {
+  Briefcase,
+  Folder,
+  LogOut,
+  MessageCircle,
+  Receipt,
+  User as UserIcon,
+  Users,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
@@ -23,11 +31,22 @@ export function AppShell() {
   const { can } = usePermissions()
   const showPeople = can(PERMISSIONS.USER_MANAGE)
   const showPayments = can(PERMISSIONS.PAYMENT_VIEW_ALL)
+  // Case owners and whoever holds case:message are in chats; a clerk isn't.
+  const showMessages = can(PERMISSIONS.CASE_MESSAGE) || can(PERMISSIONS.CASE_VIEW_OWN)
   const reduceMotion = useReducedMotion()
+  // Messages fills the screen like a messaging app; on a phone an open
+  // conversation takes it all, with its own back button instead of the bars.
+  const immersive = /^\/messages(\/|$)/.test(location.pathname)
+  const conversationOpen = /^\/messages\/[^/]+/.test(location.pathname)
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-xl">
+      <header
+        className={cn(
+          'sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-xl',
+          conversationOpen && 'hidden sm:block',
+        )}
+      >
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-8">
             <NavLink to="/" className="flex items-center gap-2 font-semibold tracking-tight">
@@ -36,6 +55,7 @@ export function AppShell() {
             </NavLink>
             <nav className="hidden items-center gap-6 text-sm sm:flex">
               <NavItem to="/">Cases</NavItem>
+              {showMessages && <NavItem to="/messages">Messages</NavItem>}
               {showPeople && <NavItem to="/admin/people">People</NavItem>}
               {showPayments && <NavItem to="/admin/payments">Payments</NavItem>}
             </nav>
@@ -74,19 +94,37 @@ export function AppShell() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 sm:pb-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.12, ease: 'easeOut' }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
-      <BottomTabBar showPeople={showPeople} showPayments={showPayments} />
+      {immersive ? (
+        // No page transition here: switching conversations shouldn't animate the inbox.
+        <main
+          className={cn(
+            'mx-auto max-w-5xl sm:h-[calc(100dvh-3.5rem)] sm:px-6 sm:py-6',
+            conversationOpen ? 'h-dvh' : 'h-[calc(100dvh-3.5rem)]',
+          )}
+        >
+          <Outlet />
+        </main>
+      ) : (
+        <main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 sm:pb-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.12, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      )}
+      {!conversationOpen && (
+        <BottomTabBar
+          showMessages={showMessages}
+          showPeople={showPeople}
+          showPayments={showPayments}
+        />
+      )}
     </div>
   )
 }
@@ -95,6 +133,7 @@ function NavItem({ to, children }: { to: string; children: string }) {
   return (
     <NavLink
       to={to}
+      end={to === '/'}
       className={({ isActive }) =>
         cn(
           'font-medium text-[var(--fg-muted)] transition-colors hover:text-[var(--fg)]',
@@ -107,7 +146,15 @@ function NavItem({ to, children }: { to: string; children: string }) {
   )
 }
 
-function BottomTabBar({ showPeople, showPayments }: { showPeople: boolean; showPayments: boolean }) {
+function BottomTabBar({
+  showMessages,
+  showPeople,
+  showPayments,
+}: {
+  showMessages: boolean
+  showPeople: boolean
+  showPayments: boolean
+}) {
   return (
     <nav
       aria-label="Primary"
@@ -115,6 +162,7 @@ function BottomTabBar({ showPeople, showPayments }: { showPeople: boolean; showP
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <TabItem to="/" icon={Folder} label="Cases" />
+      {showMessages && <TabItem to="/messages" icon={MessageCircle} label="Messages" />}
       {showPeople && <TabItem to="/admin/people" icon={Users} label="People" />}
       {showPayments && <TabItem to="/admin/payments" icon={Receipt} label="Payments" />}
     </nav>

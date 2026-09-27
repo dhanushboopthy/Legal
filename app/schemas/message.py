@@ -57,6 +57,8 @@ class ReadRequest(BaseModel):
 class LastMessageOut(BaseModel):
     preview: str
     at: datetime
+    # So the list can say "You: …" for the viewer's own last message.
+    sender_id: uuid.UUID | None
     sender_name: str | None
     kind: str
 

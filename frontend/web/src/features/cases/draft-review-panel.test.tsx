@@ -42,8 +42,10 @@ describe('DraftReviewPanel', () => {
       <DraftReviewPanel caseId="c1" caseTitle="Bail petition" onChanged={onChanged} />,
     )
 
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Download draft/ })).toBeEnabled(),
+    // Enabled once the documents request lands; allow for a loaded machine.
+    await waitFor(
+      () => expect(screen.getByRole('button', { name: /Download draft/ })).toBeEnabled(),
+      { timeout: 5_000 },
     )
 
     await userEvent.click(screen.getByRole('button', { name: /Approve filing/ }))

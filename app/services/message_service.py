@@ -317,7 +317,10 @@ async def summaries(
     for m in last_rows:
         sender = names.get(m.sender_id) if m.sender_id else None
         result[m.case_id] = (
-            LastMessageOut(preview=preview_of(m, sender), at=m.created_at, sender_name=sender, kind=m.kind),
+            LastMessageOut(
+                preview=preview_of(m, sender), at=m.created_at,
+                sender_id=m.sender_id, sender_name=sender, kind=m.kind,
+            ),
             unread.get(m.case_id, 0),
         )
     return result

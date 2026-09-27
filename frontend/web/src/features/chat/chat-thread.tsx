@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowDown } from 'lucide-react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 
 import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,6 +23,7 @@ import {
 } from '@/features/chat/message-views'
 import { buildThread, lastOwnMessageId } from '@/features/chat/thread-model'
 import { useThread } from '@/features/chat/use-thread'
+import { useVisualViewportHeight } from '@/hooks/use-visual-viewport-height'
 import { getUploadRules } from '@/lib/api/config'
 import { getErrorMessage } from '@/lib/errors'
 import type { UploadRules } from '@/types/api'
@@ -27,22 +36,18 @@ const subscribeVisibility = (notify: () => void) => {
 }
 const isTabVisible = () => document.visibilityState === 'visible'
 
-// On a phone the keyboard shrinks the *visual* viewport but not the layout one,
-// so a fixed-height chat would slide under it. Follow the visual viewport.
-function useVisualViewportHeight(): number | null {
-  const [height, setHeight] = useState<number | null>(null)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const update = () => setHeight(viewport.height)
-    update()
-    viewport.addEventListener('resize', update)
-    return () => viewport.removeEventListener('resize', update)
-  }, [])
-  return height
+
+// `card`: a fixed-height card inside a page (the case screen). `fill`: fills its
+// container edge to edge (the Messages screen). `header` replaces the default
+// "Chat" bar; pass null for none.
+export interface ChatThreadProps {
+  caseId: string
+  ownId: string
+  variant?: 'card' | 'fill'
+  header?: ReactNode
 }
 
-export function ChatThread({ caseId, ownId }: { caseId: string; ownId: string }) {
+export function ChatThread({ caseId, ownId, variant = 'card', header }: ChatThreadProps) {
   const rules = useQuery({
     queryKey: ['upload-rules'],
     queryFn: getUploadRules,
@@ -50,15 +55,29 @@ export function ChatThread({ caseId, ownId }: { caseId: string; ownId: string })
   })
   if (rules.isError) {
     return (
-      <ErrorState
-        error={rules.error}
-        title="Couldn't load the chat"
-        onRetry={() => void rules.refetch()}
-      />
+      <Padded fill={variant === 'fill'}>
+        <ErrorState
+          error={rules.error}
+          title="Couldn't load the chat"
+          onRetry={() => void rules.refetch()}
+        />
+      </Padded>
     )
   }
-  if (!rules.data) return <ChatSkeleton />
-  return <ChatBody caseId={caseId} ownId={ownId} rules={rules.data} />
+  if (!rules.data) {
+    return (
+      <Padded fill={variant === 'fill'}>
+        <ChatSkeleton />
+      </Padded>
+    )
+  }
+  return (
+    <ChatBody caseId={caseId} ownId={ownId} rules={rules.data} variant={variant} header={header} />
+  )
+}
+
+function Padded({ fill, children }: { fill: boolean; children: ReactNode }) {
+  return fill ? <div className="p-4">{children}</div> : <>{children}</>
 }
 
 function ChatSkeleton() {
@@ -71,7 +90,15 @@ function ChatSkeleton() {
   )
 }
 
-function ChatBody({ caseId, ownId, rules }: { caseId: string; ownId: string; rules: UploadRules }) {
+function ChatBody({
+  caseId,
+  ownId,
+  rules,
+  variant,
+  header,
+}: Required<Pick<ChatThreadProps, 'caseId' | 'ownId' | 'variant'>> &
+  Pick<ChatThreadProps, 'header'> & { rules: UploadRules }) {
+  const fill = variant === 'fill'
   const { toast } = useToast()
   const thread = useThread({ caseId, rules })
   const { data } = thread
@@ -168,14 +195,22 @@ function ChatBody({ caseId, ownId, rules }: { caseId: string; ownId: string; rul
   // --- states -----------------------------------------------------------------------
   if (thread.error && !data) {
     return (
-      <ErrorState
-        error={thread.error}
-        title="Couldn't load the chat"
-        onRetry={() => void thread.refetch()}
-      />
+      <Padded fill={fill}>
+        <ErrorState
+          error={thread.error}
+          title="Couldn't load the chat"
+          onRetry={() => void thread.refetch()}
+        />
+      </Padded>
     )
   }
-  if (!data) return <ChatSkeleton />
+  if (!data) {
+    return (
+      <Padded fill={fill}>
+        <ChatSkeleton />
+      </Padded>
+    )
+  }
 
   const lastOwn = lastOwnMessageId(data.messages, ownId)
   const seen = lastOwn !== null && data.otherLastReadId >= lastOwn
@@ -184,14 +219,28 @@ function ChatBody({ caseId, ownId, rules }: { caseId: string; ownId: string; rul
   return (
     <section
       aria-label="Case chat"
-      className="surface shadow-card relative flex min-h-[420px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]"
-      style={{
-        height: viewportHeight ? `min(70dvh, ${Math.max(360, viewportHeight - 24)}px)` : '70dvh',
-      }}
+      className={
+        fill
+          ? 'relative flex h-full min-h-0 flex-col overflow-hidden'
+          : 'surface shadow-card relative flex min-h-[420px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]'
+      }
+      style={
+        fill
+          ? undefined
+          : {
+              height: viewportHeight
+                ? `min(70dvh, ${Math.max(360, viewportHeight - 24)}px)`
+                : '70dvh',
+            }
+      }
     >
-      <div className="border-b border-[var(--border)] px-4 py-3">
-        <h2 className="text-base font-semibold">Chat</h2>
-      </div>
+      {header === undefined ? (
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <h2 className="text-base font-semibold">Chat</h2>
+        </div>
+      ) : (
+        header
+      )}
 
       <div
         ref={listRef}

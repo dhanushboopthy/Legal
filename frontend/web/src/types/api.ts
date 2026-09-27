@@ -88,6 +88,7 @@ export interface MessagePage {
 export interface LastMessage {
   preview: string
   at: string
+  sender_id: string | null
   sender_name: string | null
   kind: MessageKind
 }
