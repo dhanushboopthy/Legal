@@ -45,6 +45,7 @@ beforeEach(() => {
     max_case_size_mb: 100,
     accepted: { '.pdf': 'application/pdf' },
   })
+  api.onGet('/cases').reply(200, [])
   api.onGet('/cases/c1/messages').reply(200, {
     messages: [],
     has_more: false,
@@ -69,25 +70,30 @@ function open(status: CaseStatus, user: ReturnType<typeof makeUser>) {
 }
 
 const chatRequests = () => api.history.get.filter((r) => r.url === '/cases/c1/messages')
+const chatLink = () => screen.queryByRole('link', { name: /Messages/ })
 
 describe('who gets the chat on a case', () => {
   it.each(['accepted', 'quoted', 'delivered', 'revision_requested', 'completed'] as CaseStatus[])(
     'gives it to the lawyer who owns the case once it is %s',
     async (status) => {
       open(status, makeUser(LAWYER_PERMISSIONS, { id: OWNER }))
-      expect(await screen.findByRole('region', { name: 'Case chat' })).toBeInTheDocument()
+      expect(await screen.findByRole('link', { name: /Messages/ })).toHaveAttribute(
+        'href',
+        '/messages/c1',
+      )
     },
   )
 
-  it('keeps the chat on the case page, with no second inbox to look in', async () => {
+  it('opens the chat on the Messages screen instead of on the case page', async () => {
     open('accepted', makeUser(LAWYER_PERMISSIONS, { id: OWNER }))
-    await screen.findByRole('region', { name: 'Case chat' })
-    expect(screen.queryByRole('link', { name: /Open in new window/ })).toBeNull()
+    await screen.findByRole('link', { name: /Messages/ })
+    expect(screen.queryByRole('region', { name: 'Case chat' })).toBeNull()
+    expect(chatRequests()).toHaveLength(0)
   })
 
   it('gives it to the advocate, who holds case:message', async () => {
     open('accepted', makeUser(ADVOCATE_PERMISSIONS, { id: 'u-advocate' }))
-    expect(await screen.findByRole('region', { name: 'Case chat' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: /Messages/ })).toBeInTheDocument()
   })
 
   it.each(['submitted', 'review_fee_paid', 'rejected', 'draft'] as CaseStatus[])(
@@ -95,7 +101,7 @@ describe('who gets the chat on a case', () => {
     async (status) => {
       open(status, makeUser(LAWYER_PERMISSIONS, { id: OWNER }))
       await screen.findByText('Bail petition')
-      expect(screen.queryByRole('region', { name: 'Case chat' })).toBeNull()
+      expect(chatLink()).toBeNull()
       expect(chatRequests()).toHaveLength(0)
     },
   )
@@ -103,7 +109,7 @@ describe('who gets the chat on a case', () => {
   it('is not shown to someone who can see the case but is not in it (a clerk)', async () => {
     open('accepted', makeUser([PERMISSIONS.CASE_VIEW_ALL], { id: 'u-clerk' }))
     await screen.findByText('Bail petition')
-    expect(screen.queryByRole('region', { name: 'Case chat' })).toBeNull()
+    expect(chatLink()).toBeNull()
     await waitFor(() => expect(api.history.get.length).toBeGreaterThan(0))
     expect(chatRequests()).toHaveLength(0)
   })
@@ -111,6 +117,6 @@ describe('who gets the chat on a case', () => {
   it("is not shown to another lawyer's case", async () => {
     open('accepted', makeUser(LAWYER_PERMISSIONS, { id: 'u-someone-else' }))
     await screen.findByText('Bail petition')
-    expect(screen.queryByRole('region', { name: 'Case chat' })).toBeNull()
+    expect(chatLink()).toBeNull()
   })
 })

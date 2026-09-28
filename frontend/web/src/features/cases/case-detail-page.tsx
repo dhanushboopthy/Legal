@@ -3,6 +3,7 @@ import {
   Clock,
   FolderOpen,
   Hourglass,
+  MessageCircle,
   Pencil,
   PenSquare,
   XCircle,
@@ -26,7 +27,6 @@ import { ForbiddenPage } from '@/features/errors/forbidden-page'
 import { NotFoundPage } from '@/features/errors/not-found-page'
 import { ServerErrorPage } from '@/features/errors/server-error-page'
 import { hasChat } from '@/features/chat/chat-access'
-import { ChatThread } from '@/features/chat/chat-thread'
 import { CaseDetailsSheet } from '@/features/cases/case-details-sheet'
 import { stepLine } from '@/features/cases/case-steps'
 import { DecisionPanel } from '@/features/cases/decision-panel'
@@ -36,7 +36,7 @@ import { QuotedPaymentPanel } from '@/features/cases/quoted-payment-panel'
 import { QuoteSheet } from '@/features/cases/quote-sheet'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { UploadRevisionPanel } from '@/features/cases/upload-revision-panel'
-import { createReviewPayment, getCase } from '@/lib/api/cases'
+import { createReviewPayment, getCase, listCases } from '@/lib/api/cases'
 import { getPricing } from '@/lib/api/config'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { listCaseDocuments } from '@/lib/api/documents'
@@ -97,7 +97,12 @@ export function CaseDetailPage() {
     queryFn: () => listPaymentsForCase(caseId),
   })
 
-  usePageTitle(caseData ? (caseData.case_number ? `Case ${caseData.case_number}` : caseData.title) : 'Case')
+  // Unread count and last message for the Messages row, from the Cases list.
+  const { data: casesList } = useQuery({ queryKey: ['cases'], queryFn: listCases })
+
+  usePageTitle(
+    caseData ? (caseData.case_number ? `Case ${caseData.case_number}` : caseData.title) : 'Case',
+  )
 
   const refresh = () => {
     if (caseData) setAwaitingStatus(caseData.status)
@@ -137,6 +142,14 @@ export function CaseDetailPage() {
   }
 
   const isOwner = user?.id === caseData.junior_lawyer_id
+  const listed = casesList?.find((c) => c.id === caseId)
+  const unread = listed?.unread_count ?? 0
+  const lastMessage = listed?.last_message
+  const chatSummary = lastMessage
+    ? `${lastMessage.sender_id === user?.id ? 'You: ' : ''}${lastMessage.preview}`
+    : perspective === 'reviewer'
+      ? 'Talk to the lawyer'
+      : 'Talk to the advocate'
   const step = stepLine(caseData.status)
   const detailsSummary = [
     `${caseFiles.length} ${caseFiles.length === 1 ? 'file' : 'files'}`,
@@ -180,24 +193,26 @@ export function CaseDetailPage() {
         />
       </section>
 
-      {/* The chat is for the two people on the case: its owner and whoever holds
-          case:message. It exists from acceptance on (and stays, read-only, once
-          the case is complete). Everyone else who can see the case never sees it. */}
-      {user && hasChat(caseData, user.id, can) && (
-        <div className="mb-8">
-          <ChatThread
-            caseId={caseId}
-            ownId={user.id}
-            header={
-              <div className="border-b border-[var(--border)] px-5 py-3">
-                <h2 className="text-base font-semibold">Messages</h2>
-              </div>
+      <List>
+        {/* The chat lives on the Messages screen. It is for the two people on
+            the case (its owner and whoever holds case:message), from acceptance
+            on; everyone else who can see the case never gets this row. */}
+        {user && hasChat(caseData, user.id, can) && (
+          <ListRow
+            to={`/messages/${caseId}`}
+            icon={MessageCircle}
+            title="Messages"
+            subtitle={chatSummary}
+            trailing={
+              unread > 0 ? (
+                <span className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-1.5 font-semibold text-white">
+                  {unread}
+                  <span className="sr-only"> unread</span>
+                </span>
+              ) : undefined
             }
           />
-        </div>
-      )}
-
-      <List>
+        )}
         <ListRow
           icon={FolderOpen}
           title="Case details"
@@ -326,14 +341,14 @@ function CaseActionPanel({
       return can(PERMISSIONS.QUOTE_CREATE) ? (
         <Card>
           <div className="flex items-start gap-4">
-            <div className="hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
+            <div className="hidden size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)] sm:flex">
               <PenSquare className="size-5" strokeWidth={1.75} />
             </div>
             <div>
               <h3 className="font-semibold">Send draft and quote</h3>
               <p className="text-muted mt-0.5 text-sm">
-                Prepare the draft, then send it with its price. The lawyer pays that price to
-                unlock it.
+                Prepare the draft, then send it with its price. The lawyer pays that price to unlock
+                it.
               </p>
               <Button className="mt-4" onClick={() => onOpenQuoteSheet('send')}>
                 Send draft and quote

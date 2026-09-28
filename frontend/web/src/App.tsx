@@ -51,6 +51,9 @@ const ForgotPasswordPage = lazy(() =>
 const HelpPage = lazy(() =>
   import('@/features/help/help-page').then((m) => ({ default: m.HelpPage })),
 )
+const MessagesPage = lazy(() =>
+  import('@/features/messages/messages-page').then((m) => ({ default: m.MessagesPage })),
+)
 const ProfilePage = lazy(() =>
   import('@/features/profile/profile-page').then((m) => ({ default: m.ProfilePage })),
 )
@@ -75,6 +78,8 @@ function AppRoutes() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/cases/:id" element={<CaseDetailPage />} />
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/messages/:caseId" element={<MessagesPage />} />
 
               <Route element={<RequireAuth permission={PERMISSIONS.CASE_SUBMIT} />}>
                 <Route path="/cases/new" element={<NewCasePage />} />

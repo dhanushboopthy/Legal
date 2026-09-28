@@ -256,7 +256,7 @@ export function QuoteCard({ message }: { message: MessageOut }) {
   )
 }
 
-// Says a new version arrived. Downloading lives in one place, the case's
+// Says a new version arrived. Downloading lives in one place, the case page's
 // action card at the top, so this card only points there.
 export function DraftCard({ message }: { message: MessageOut }) {
   return (
@@ -270,7 +270,7 @@ export function DraftCard({ message }: { message: MessageOut }) {
           <p className="text-muted text-label mt-0.5 break-words">
             {draftSummary(message.meta as DraftInfo)}
           </p>
-          <p className="text-muted text-label mt-1">Open it from the top of this case.</p>
+          <p className="text-muted text-label mt-1">Download it from the case: tap Open case, above.</p>
         </div>
       </div>
     </div>

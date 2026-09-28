@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ChevronsUpDown,
   Folder,
   LifeBuoy,
   LogOut,
+  MessageCircle,
   Receipt,
   Scale,
   Type,
@@ -24,12 +26,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { listCases } from '@/lib/api/cases'
 import { cn } from '@/lib/utils'
 
 interface Destination {
   to: string
   label: string
   icon: LucideIcon
+  badge?: number
 }
 
 /**
@@ -43,14 +47,38 @@ export function AppShell() {
   const { can } = usePermissions()
   const reduceMotion = useReducedMotion()
 
+  const { user } = useAuth()
+  const hasMessages = can(PERMISSIONS.CASE_SUBMIT) || can(PERMISSIONS.CASE_MESSAGE)
+  // Same query (and poll) as the Cases and Messages screens: one cache.
+  const cases = useQuery({
+    queryKey: ['cases'],
+    queryFn: listCases,
+    refetchInterval: 30_000,
+    enabled: hasMessages,
+  })
+  const unread = (cases.data ?? []).reduce(
+    (sum, c) =>
+      sum + (c.junior_lawyer_id === user?.id || can(PERMISSIONS.CASE_MESSAGE) ? c.unread_count : 0),
+    0,
+  )
+
   const destinations: Destination[] = [
     { to: '/', label: 'Cases', icon: Folder },
-    ...(can(PERMISSIONS.USER_MANAGE) ? [{ to: '/admin/people', label: 'People', icon: Users }] : []),
+    ...(hasMessages
+      ? [{ to: '/messages', label: 'Messages', icon: MessageCircle, badge: unread }]
+      : []),
+    ...(can(PERMISSIONS.USER_MANAGE)
+      ? [{ to: '/admin/people', label: 'People', icon: Users }]
+      : []),
     ...(can(PERMISSIONS.PAYMENT_VIEW_ALL)
       ? [{ to: '/admin/payments', label: 'Payments', icon: Receipt }]
       : []),
   ]
   const showTabBar = destinations.length > 1
+  // Messages fills the screen like a messaging app. On a phone an open
+  // conversation takes all of it, with its own Back button instead of the bars.
+  const immersive = /^\/messages(\/|$)/.test(location.pathname)
+  const conversationOpen = /^\/messages\/[^/]+/.test(location.pathname)
 
   return (
     <div className="min-h-screen">
@@ -62,31 +90,47 @@ export function AppShell() {
       </a>
 
       <Sidebar destinations={destinations} />
-      <TopBar />
+      <TopBar hidden={conversationOpen} />
 
       <div className="lg:pl-[16.25rem]">
-        <main
-          id="main"
-          tabIndex={-1}
-          className={cn(
-            'mx-auto max-w-[55rem] px-4 pt-6 outline-none sm:px-8 lg:pt-12',
-            showTabBar ? 'pb-28 lg:pb-16' : 'pb-16',
-          )}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-        </main>
+        {immersive ? (
+          // No page transition: switching conversations shouldn't animate the list.
+          <main
+            id="main"
+            tabIndex={-1}
+            className={cn(
+              'outline-none sm:h-[calc(100dvh-4rem)] lg:h-dvh',
+              conversationOpen ? 'h-dvh' : 'h-[calc(100dvh-4rem)]',
+              showTabBar && 'sm:pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0',
+              showTabBar && !conversationOpen && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
+            )}
+          >
+            <Outlet />
+          </main>
+        ) : (
+          <main
+            id="main"
+            tabIndex={-1}
+            className={cn(
+              'mx-auto max-w-[55rem] px-4 pt-6 outline-none sm:px-8 lg:pt-12',
+              showTabBar ? 'pb-28 lg:pb-16' : 'pb-16',
+            )}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        )}
       </div>
 
-      {showTabBar && <BottomTabBar destinations={destinations} />}
+      {showTabBar && <BottomTabBar destinations={destinations} hidden={conversationOpen} />}
     </div>
   )
 }
@@ -127,7 +171,7 @@ function Sidebar({ destinations }: { destinations: Destination[] }) {
   )
 }
 
-function SidebarItem({ to, label, icon: Icon }: Destination) {
+function SidebarItem({ to, label, icon: Icon, badge }: Destination) {
   return (
     <NavLink
       to={to}
@@ -137,20 +181,35 @@ function SidebarItem({ to, label, icon: Icon }: Destination) {
         cn(
           'flex min-h-11 items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm font-medium transition-colors',
           isActive
-            ? 'bg-[var(--color-accent)]/10 text-accent-ink'
+            ? 'text-accent-ink bg-[var(--color-accent)]/10'
             : 'text-[var(--fg)] hover:bg-black/[0.05]',
         )
       }
     >
       <Icon className="size-5" strokeWidth={1.75} aria-hidden />
-      {label}
+      <span className="flex-1">{label}</span>
+      {!!badge && <Badge count={badge} />}
     </NavLink>
   )
 }
 
-function TopBar() {
+function Badge({ count }: { count: number }) {
   return (
-    <header className="bar-translucent sticky top-0 z-30 border-b border-[var(--border)] lg:hidden">
+    <span className="text-caption inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-accent)] px-1.5 font-semibold text-white">
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> unread</span>
+    </span>
+  )
+}
+
+function TopBar({ hidden }: { hidden: boolean }) {
+  return (
+    <header
+      className={cn(
+        'bar-translucent sticky top-0 z-30 border-b border-[var(--border)] lg:hidden',
+        hidden && 'max-sm:hidden',
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-[55rem] items-center justify-between gap-2 px-4 sm:px-8">
         <Brand />
         <div className="flex items-center gap-1">
@@ -183,7 +242,7 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
             <Avatar initial={initial} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{user?.full_name}</span>
-              <span className="text-muted block truncate text-caption">{user?.email}</span>
+              <span className="text-muted text-caption block truncate">{user?.email}</span>
             </span>
             <ChevronsUpDown className="size-4 shrink-0 text-[var(--fg-muted)]" aria-hidden />
           </button>
@@ -231,14 +290,17 @@ function Avatar({ initial }: { initial?: string }) {
   )
 }
 
-function BottomTabBar({ destinations }: { destinations: Destination[] }) {
+function BottomTabBar({ destinations, hidden }: { destinations: Destination[]; hidden: boolean }) {
   return (
     <nav
       aria-label="Primary"
-      className="bar-translucent fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] lg:hidden"
+      className={cn(
+        'bar-translucent fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] lg:hidden',
+        hidden && 'max-sm:hidden',
+      )}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      {destinations.map(({ to, label, icon: Icon }) => (
+      {destinations.map(({ to, label, icon: Icon, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -250,7 +312,14 @@ function BottomTabBar({ destinations }: { destinations: Destination[] }) {
             )
           }
         >
-          <Icon className="size-6" strokeWidth={1.75} aria-hidden />
+          <span className="relative">
+            <Icon className="size-6" strokeWidth={1.75} aria-hidden />
+            {!!badge && (
+              <span className="absolute -top-1.5 left-4">
+                <Badge count={badge} />
+              </span>
+            )}
+          </span>
           <span className="text-caption font-medium">{label}</span>
         </NavLink>
       ))}
