@@ -88,12 +88,12 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     submitter: {
       label: 'Ready to download',
       turn: 'you',
-      next: 'Download your draft. Approve it, or ask for changes.',
+      next: 'Download your draft. Approve it, or inform changes.',
     },
     reviewer: {
       label: 'Delivered',
       turn: 'them',
-      next: 'Delivered. Waiting for the lawyer to approve or ask for changes.',
+      next: 'Delivered. Waiting for the lawyer to approve or inform changes.',
     },
   },
 
@@ -116,11 +116,11 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     tone: 'danger',
     group: 'rejected',
     submitter: {
-      label: 'Not accepted',
+      label: 'Deferred',
       turn: 'none',
-      next: "The advocate didn't accept this case.",
+      next: 'The advocate deferred this case.',
     },
-    reviewer: { label: 'Declined', turn: 'none', next: 'You declined this case.' },
+    reviewer: { label: 'Deferred', turn: 'none', next: 'You deferred this case.' },
   },
   accepted: {
     tone: 'info',
@@ -128,26 +128,40 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     submitter: {
       label: 'Accepted',
       turn: 'them',
-      next: 'The advocate will send you a draft and a price.',
+      next: 'The advocate will send you a draft and the drafting charges.',
     },
     reviewer: {
-      label: 'Send draft and price',
+      label: 'Send draft and charges',
       turn: 'you',
-      next: 'Prepare the draft, then send it with its price.',
+      next: 'Prepare the draft, then send it with your drafting charges.',
     },
   },
   revision_requested: {
     tone: 'warning',
     group: 'active',
     submitter: {
-      label: 'Changes requested',
+      label: 'Changes informed',
       turn: 'them',
-      next: 'The advocate is working on the changes you asked for.',
+      next: 'The advocate is working on the changes you informed.',
     },
     reviewer: {
-      label: 'Changes requested',
+      label: 'Changes informed',
       turn: 'you',
-      next: 'Upload a new version with the requested changes.',
+      next: 'Upload a new version with the changes the lawyer informed.',
+    },
+  },
+  held_over: {
+    tone: 'neutral',
+    group: 'active',
+    submitter: {
+      label: 'Held over',
+      turn: 'them',
+      next: 'The advocate has held this case over. Work resumes when they are ready.',
+    },
+    reviewer: {
+      label: 'Held over',
+      turn: 'none',
+      next: 'You held this case over. Resume work when you are ready.',
     },
   },
   completed,

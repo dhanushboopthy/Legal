@@ -36,9 +36,9 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
     onSuccess: (_, accept) => {
       toast({
         variant: 'success',
-        title: accept ? 'Case accepted' : 'Case declined',
+        title: accept ? 'Case accepted' : 'Case deferred',
         description: accept
-          ? 'The lawyer has been told you will send a draft and a price.'
+          ? 'The lawyer has been told you will send a draft and the drafting charges.'
           : 'The lawyer has been told, with your reason.',
       })
       onDecided()
@@ -54,13 +54,13 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
   return (
     <Card>
       <div className="flex items-start gap-4">
-        <div className="hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
+        <div className="hidden size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)] sm:flex">
           <Scale className="size-5" strokeWidth={1.75} aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold">Will you take this case?</h3>
           <p className="text-muted mt-0.5 text-sm">
-            The review fee is paid. Read the files and details, then accept or decline.
+            The review fee is paid. Read the files and details, then accept or defer.
           </p>
 
           {!declining ? (
@@ -69,12 +69,12 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
                 Accept case
               </Button>
               <Button variant="secondary" onClick={() => setDeclining(true)}>
-                Decline
+                Defer
               </Button>
             </div>
           ) : (
             <fieldset className="mt-4">
-              <legend className="mb-2 text-sm font-medium">Why are you declining?</legend>
+              <legend className="mb-2 text-sm font-medium">Why are you deferring it?</legend>
               <div className="flex flex-wrap gap-2">
                 {REASONS.map((r) => (
                   <button
@@ -111,7 +111,7 @@ export function DecisionPanel({ caseId, onDecided }: { caseId: string; onDecided
                   disabled={!canDecline}
                   onClick={() => mutate(false)}
                 >
-                  Decline case
+                  Defer case
                 </Button>
                 <Button variant="ghost" onClick={() => setDeclining(false)}>
                   Cancel

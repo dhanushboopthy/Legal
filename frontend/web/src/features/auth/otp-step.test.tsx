@@ -25,6 +25,7 @@ const verifiedUser: UserOut = {
   full_name: 'New Lawyer',
   email: 'new@example.com',
   bar_council_id: null,
+  avatar_url: null,
   role_name: 'junior_lawyer',
   permissions: [],
   is_active: false,

@@ -15,6 +15,28 @@ export async function updateMe(payload: UpdateMePayload): Promise<UserOut> {
   return data
 }
 
+// Profile picture: sign a PUT, upload straight to storage, then confirm (the
+// server checks the file before using it).
+export async function uploadAvatar(picture: Blob): Promise<UserOut> {
+  const { data: target } = await apiClient.post<{ key: string; url: string }>(
+    '/users/me/avatar/upload-url',
+    { content_type: picture.type, size: picture.size },
+  )
+  const put = await fetch(target.url, {
+    method: 'PUT',
+    body: picture,
+    headers: { 'Content-Type': picture.type },
+  })
+  if (!put.ok) throw new Error("The picture couldn't be uploaded. Please try again.")
+  const { data } = await apiClient.put<UserOut>('/users/me/avatar', { key: target.key })
+  return data
+}
+
+export async function removeAvatar(): Promise<UserOut> {
+  const { data } = await apiClient.delete<UserOut>('/users/me/avatar')
+  return data
+}
+
 // Everyone: the People page. Pending approvals are just the rows with
 // is_active=false, not a separate list to reconcile against this one.
 export async function listUsers(): Promise<UserOut[]> {

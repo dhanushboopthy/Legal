@@ -21,9 +21,7 @@ describe('DecisionPanel', () => {
   it('accepts the case and reports what happens next', async () => {
     api.onPatch('/cases/c1/decision').reply(200, { id: 'c1', status: 'accepted' })
     const onDecided = vi.fn()
-    const { toast } = renderWithProviders(
-      <DecisionPanel caseId="c1" onDecided={onDecided} />,
-    )
+    const { toast } = renderWithProviders(<DecisionPanel caseId="c1" onDecided={onDecided} />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Accept case' }))
 
@@ -31,16 +29,14 @@ describe('DecisionPanel', () => {
     expect(toast).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'success', title: 'Case accepted' }),
     )
-    expect(api.history.patch[0]?.data).toBe(
-      JSON.stringify({ accept: true, rejection_reason: '' }),
-    )
+    expect(api.history.patch[0]?.data).toBe(JSON.stringify({ accept: true, rejection_reason: '' }))
   })
 
-  it('needs a reason before a case can be declined', async () => {
+  it('needs a reason before a case can be deferred', async () => {
     renderWithProviders(<DecisionPanel caseId="c1" onDecided={vi.fn()} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
-    const confirm = screen.getByRole('button', { name: 'Decline case' })
+    await userEvent.click(screen.getByRole('button', { name: 'Defer' }))
+    const confirm = screen.getByRole('button', { name: 'Defer case' })
     expect(confirm).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Conflict of interest' }))
@@ -50,24 +46,24 @@ describe('DecisionPanel', () => {
   it('"Another reason" needs the reason written out', async () => {
     renderWithProviders(<DecisionPanel caseId="c1" onDecided={vi.fn()} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Defer' }))
     await userEvent.click(screen.getByRole('button', { name: 'Another reason' }))
-    const confirm = screen.getByRole('button', { name: 'Decline case' })
+    const confirm = screen.getByRole('button', { name: 'Defer case' })
     expect(confirm).toBeDisabled()
 
     await userEvent.type(screen.getByLabelText('Your reason'), "Doesn't have a case")
     expect(confirm).toBeEnabled()
   })
 
-  it('declines with the chosen reason and the note', async () => {
+  it('defers with the chosen reason and the note', async () => {
     api.onPatch('/cases/c1/decision').reply(200, { id: 'c1', status: 'rejected' })
     const onDecided = vi.fn()
     renderWithProviders(<DecisionPanel caseId="c1" onDecided={onDecided} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Decline' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Defer' }))
     await userEvent.click(screen.getByRole('button', { name: 'Outside my practice area' }))
     await userEvent.type(screen.getByLabelText(/Note for the lawyer/), 'Try a tax specialist')
-    await userEvent.click(screen.getByRole('button', { name: 'Decline case' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Defer case' }))
 
     await vi.waitFor(() => expect(onDecided).toHaveBeenCalledOnce())
     expect(JSON.parse(api.history.patch[0]?.data as string)).toEqual({

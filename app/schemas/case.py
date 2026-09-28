@@ -31,6 +31,10 @@ class CaseDecision(BaseModel):
     rejection_reason: str | None = None
 
 
+class HoldCreate(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+
+
 class RevisionCreate(BaseModel):
     reason: str = Field(min_length=5, max_length=2000)
 
@@ -48,6 +52,7 @@ class CaseOut(BaseModel):
     note: str | None
     status: CaseStatus
     rejection_reason: str | None
+    hold_reason: str | None = None
     revision_count: int
     created_at: datetime
     updated_at: datetime
@@ -72,3 +77,4 @@ class CaseListItem(CaseOut):
     # to the lawyer looking at their own cases.
     junior_lawyer_name: str = ""
     junior_lawyer_bar_council_id: str | None = None
+    junior_lawyer_avatar_url: str | None = None

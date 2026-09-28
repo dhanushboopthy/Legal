@@ -40,6 +40,9 @@ class World:
 async def build_world(db_session, status, fake_store) -> World:
     users = {actor: await make_user(db_session, role_name=role) for actor, role in ROLE_OF.items()}
     case = await make_case(db_session, users["owner"], status=status)
+    if status == CaseStatus.HELD_OVER:
+        case.held_from, case.hold_reason = CaseStatus.ACCEPTED, "awaiting the court date"
+        await db_session.commit()
     world = World(users=users, case=case, store=fake_store)
     world.original_id = (await seed_original(db_session, case, uploader=users["owner"])).id
 
@@ -98,6 +101,8 @@ ENDPOINTS = [
     Endpoint("pay quote", "POST", lambda w: _case(w) + "/quote/pay", CaseStatus.QUOTED, ("owner",), needs_razorpay=True),
     Endpoint("upload revised draft", "POST", lambda w: _case(w) + "/drafts", CaseStatus.REVISION_REQUESTED, ("advocate",), draft_only),
     Endpoint("request changes", "POST", lambda w: _case(w) + "/revision", CaseStatus.DELIVERED, ("owner",), lambda w: {"reason": "please fix the annexure"}),
+    Endpoint("hold over", "POST", lambda w: _case(w) + "/hold", CaseStatus.ACCEPTED, ("advocate",), lambda w: {"reason": "awaiting the court date"}),
+    Endpoint("resume", "POST", lambda w: _case(w) + "/resume", CaseStatus.HELD_OVER, ("advocate",)),
     Endpoint("approve", "POST", lambda w: _case(w) + "/approve", CaseStatus.DELIVERED, ("owner",)),
     Endpoint("read case", "GET", _case, CaseStatus.DELIVERED, ("owner", "advocate", "clerk")),
     Endpoint("read quote", "GET", lambda w: _case(w) + "/quote", CaseStatus.QUOTED, ("owner", "advocate", "clerk")),
@@ -174,8 +179,11 @@ ACTIONS = [
     Action("upload revised draft", "advocate", {CaseStatus.REVISION_REQUESTED}, _endpoint("upload revised draft")),
     Action("request changes", "owner", {CaseStatus.DELIVERED}, _endpoint("request changes")),
     Action("approve", "owner", {CaseStatus.DELIVERED}, _endpoint("approve")),
+    Action("hold over", "advocate", {CaseStatus.ACCEPTED, CaseStatus.REVISION_REQUESTED}, _endpoint("hold over")),
+    Action("resume", "advocate", {CaseStatus.HELD_OVER}, _endpoint("resume")),
     Action("send chat message", "advocate",
-           {CaseStatus.ACCEPTED, CaseStatus.QUOTED, CaseStatus.DELIVERED, CaseStatus.REVISION_REQUESTED},
+           {CaseStatus.ACCEPTED, CaseStatus.QUOTED, CaseStatus.DELIVERED, CaseStatus.REVISION_REQUESTED,
+            CaseStatus.HELD_OVER},
            _endpoint("send chat message")),
     Action("submit", "owner", {CaseStatus.DRAFT}, _endpoint("submit")),
     Action("edit draft", "owner", {CaseStatus.DRAFT}, _endpoint("edit draft")),

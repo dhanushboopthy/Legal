@@ -16,7 +16,7 @@ Builds on `docs/UX_DISCOVERY.md` (finding IDs like F-05 refer to it).
 | D1 | "docs" means `.doc` and `.docx`. | Most likely reading. |
 | D2 | Before paying, the junior sees a **locked draft card** (file name, page count, size, date) but cannot open the file. | Protects the advocate's work. Trust comes from the accepted case and the chat. Watermarked preview is a later option (Q1). |
 | D3 | The fixed ₹150 paid revision is **retired**. Changes are requested in chat. The advocate can replace the draft and change the amount any time before payment. After payment, new versions are free and downloadable at once. | Chat replaces the revision dialog. One payment moment instead of three. |
-| D4 | Chat is **open** in `accepted`, `quoted`, `delivered`, `revision_requested`; **read-only** in `completed`; **unavailable** before acceptance and for rejected cases. | Matches "after the advocate accepts". |
+| D4 | Chat is **open** in `accepted`, `quoted`, `delivered`, `revision_requested`, `held_over`; **read-only** in `completed`; **unavailable** before acceptance and for rejected cases. | Matches "after the advocate accepts". |
 | D5 | A refund **revokes** the junior's download access. | Otherwise refund and access contradict each other. |
 | D6 | Quote bounds are configurable: `QUOTE_MIN_INR=100`, `QUOTE_MAX_INR=100000`. | Prevents typos like ₹25 or ₹25,00,000. |
 | D7 | Upload limits are configurable: 10 files per submission, 25 MB per file, 100 MB per case. | No limits exist today (F-24). |
@@ -36,6 +36,10 @@ stateDiagram-v2
     delivered --> revision_requested: Junior asks for changes in chat
     revision_requested --> delivered: Advocate uploads new version
     delivered --> completed: Junior approves (chat becomes read-only)
+    accepted --> held_over: Advocate holds over, with reason (case:hold)
+    revision_requested --> held_over: Advocate holds over, with reason
+    held_over --> accepted: Advocate resumes (back to held_from)
+    held_over --> revision_requested: Advocate resumes (back to held_from)
     rejected --> [*]
     completed --> [*]
 ```
@@ -45,11 +49,12 @@ stateDiagram-v2
 | `draft` | Junior | Draft: add files | (hidden) | no | no |
 | `submitted` | Junior | Pay ₹100 to send for review | Awaiting payment | no | no |
 | `review_fee_paid` | Advocate | In review | Needs your decision | no | no |
-| `rejected` | none | Not accepted | Declined | no | no |
+| `rejected` | none | Deferred | Deferred | no | no |
 | `accepted` | Advocate | Accepted: discuss details | Discuss, then send draft and quote | open | no |
 | `quoted` | Junior | Draft ready: pay ₹X to unlock | Waiting for payment | open | **no** (locked) |
 | `delivered` | Junior | Ready to download | Delivered | open | yes |
-| `revision_requested` | Advocate | Changes requested | Changes requested | open | yes (previous versions) |
+| `revision_requested` | Advocate | Changes informed | Changes informed | open | yes (previous versions) |
+| `held_over` | none (advocate resumes) | Held over | Held over | open | as before the hold |
 | `completed` | none | Completed | Completed | read-only | yes |
 
 Delete from code and UI: `under_review`, `drafting`, `approved`, `drafting_fee_paid`, `draft_delivered` (old names), `DocumentType.FINAL` (never used; the latest paid draft *is* the final).

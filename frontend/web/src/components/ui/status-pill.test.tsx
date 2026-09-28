@@ -16,7 +16,7 @@ describe('CaseStatusPill', () => {
 
   it('renders the rejected status distinctly per side', () => {
     render(<CaseStatusPill status="rejected" perspective="reviewer" />)
-    expect(screen.getByText('Declined')).toBeInTheDocument()
+    expect(screen.getByText('Deferred')).toBeInTheDocument()
   })
 })
 

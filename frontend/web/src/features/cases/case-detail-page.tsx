@@ -31,6 +31,7 @@ import { CaseDetailsSheet } from '@/features/cases/case-details-sheet'
 import { stepLine } from '@/features/cases/case-steps'
 import { DecisionPanel } from '@/features/cases/decision-panel'
 import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
+import { HeldOverPanel, HoldOverControl } from '@/features/cases/hold-over-panel'
 import { InfoPanel } from '@/features/cases/info-panel'
 import { QuotedPaymentPanel } from '@/features/cases/quoted-payment-panel'
 import { QuoteSheet } from '@/features/cases/quote-sheet'
@@ -191,6 +192,10 @@ export function CaseDetailPage() {
           onChanged={refresh}
           onOpenQuoteSheet={(mode) => setQuoteSheet(mode)}
         />
+        {can(PERMISSIONS.CASE_HOLD) &&
+          (caseData.status === 'accepted' || caseData.status === 'revision_requested') && (
+            <HoldOverControl caseId={caseId} onChanged={refresh} />
+          )}
       </section>
 
       <List>
@@ -302,7 +307,7 @@ function CaseActionPanel({
         <InfoPanel
           icon={XCircle}
           tone="danger"
-          title="Case rejected"
+          title="Case deferred"
           description={caseData.rejection_reason ?? 'No reason was provided.'}
           action={
             isOwner && (
@@ -347,8 +352,8 @@ function CaseActionPanel({
             <div>
               <h3 className="font-semibold">Send draft and quote</h3>
               <p className="text-muted mt-0.5 text-sm">
-                Prepare the draft, then send it with its price. The lawyer pays that price to unlock
-                it.
+                Prepare the draft, then send it with your drafting charges. The lawyer pays them to
+                unlock it.
               </p>
               <Button className="mt-4" onClick={() => onOpenQuoteSheet('send')}>
                 Send draft and quote
@@ -395,6 +400,16 @@ function CaseActionPanel({
         <UploadRevisionPanel caseId={caseId} onChanged={onChanged} />
       ) : (
         waiting(Clock)
+      )
+
+    case 'held_over':
+      return (
+        <HeldOverPanel
+          caseId={caseId}
+          reason={caseData.hold_reason}
+          canResume={can(PERMISSIONS.CASE_HOLD)}
+          onChanged={onChanged}
+        />
       )
 
     case 'completed':

@@ -62,13 +62,13 @@ export function DraftReviewPanel({
     mutationFn: () => requestRevision(caseId, reason),
     onSuccess: () => {
       setDialogOpen(false)
-      toast({ variant: 'success', title: 'Changes requested' })
+      toast({ variant: 'success', title: 'Changes sent to the advocate' })
       onChanged()
     },
     onError: (err) =>
       toast({
         variant: 'error',
-        title: 'Could not request changes',
+        title: 'Could not send the changes',
         description: getErrorMessage(err),
       }),
   })
@@ -77,11 +77,15 @@ export function DraftReviewPanel({
     <Card>
       <h3 className="mb-1 font-semibold">Your draft is ready</h3>
       <p className="text-muted mb-4 text-sm">
-        Review the draft filing, then approve it or request changes.
+        Review the draft filing, then approve it or inform changes.
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button loading={download.isPending} disabled={!latestDraft} onClick={() => download.mutate()}>
+        <Button
+          loading={download.isPending}
+          disabled={!latestDraft}
+          onClick={() => download.mutate()}
+        >
           <Download className="size-4" /> Download draft
         </Button>
 
@@ -92,11 +96,11 @@ export function DraftReviewPanel({
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="secondary">
-              <RotateCcw className="size-4" /> Request changes
+              <RotateCcw className="size-4" /> Inform changes
             </Button>
           </DialogTrigger>
           <DialogContent
-            title="Request changes"
+            title="Inform changes"
             description="Tell the advocate what needs to change."
           >
             <Label htmlFor="revision-reason">What needs to change?</Label>
@@ -112,7 +116,7 @@ export function DraftReviewPanel({
               loading={revise.isPending}
               onClick={() => revise.mutate()}
             >
-              Submit request
+              Send changes
             </Button>
           </DialogContent>
         </Dialog>

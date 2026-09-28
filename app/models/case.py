@@ -22,6 +22,7 @@ class CaseStatus(str, enum.Enum):
     DELIVERED = "delivered"                  # quote paid, draft downloadable
     REVISION_REQUESTED = "revision_requested"
     COMPLETED = "completed"
+    HELD_OVER = "held_over"                  # advocate paused it (e.g. awaiting a court date); resumes to held_from
 
 
 class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -49,6 +50,12 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=CaseStatus.SUBMITTED, index=True,
     )
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # While held over: why, and the status a resume returns to.
+    hold_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    held_from: Mapped[CaseStatus | None] = mapped_column(
+        Enum(CaseStatus, name="case_status", values_callable=lambda e: [m.value for m in e]),
+        nullable=True,
+    )
     revision_count: Mapped[int] = mapped_column(Integer, default=0)
 
     documents: Mapped[list["CaseDocument"]] = relationship(

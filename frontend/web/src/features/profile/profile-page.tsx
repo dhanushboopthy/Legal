@@ -18,6 +18,7 @@ import { getMe, updateMe } from '@/lib/api/users'
 import type { UserOut } from '@/types/api'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { BackLink } from '@/components/layout/back-link'
+import { ProfilePhoto } from '@/features/profile/profile-photo'
 
 const schema = z.object({
   bar_council_id: z.string().trim().max(100).optional().or(z.literal('')),
@@ -43,6 +44,7 @@ export function ProfilePage() {
       <BackLink to="/">All cases</BackLink>
       <h1 className="lg:text-title mb-8 text-2xl font-semibold">Your profile</h1>
       <div className="space-y-8">
+        <ProfilePhoto user={user} />
         <List heading="Account">
           <ListRow title="Name" subtitle={user.full_name} />
           <ListRow title="Email" subtitle={<span className="break-all">{user.email}</span>} />
@@ -110,10 +112,7 @@ function EditableFields({ user }: { user: UserOut }) {
 
   return (
     <Card>
-      <form
-        onSubmit={handleSubmit((values) => save.mutate(values))}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit((values) => save.mutate(values))} className="space-y-4">
         <Field
           id="bar_council_id"
           label="Bar Council enrolment number"

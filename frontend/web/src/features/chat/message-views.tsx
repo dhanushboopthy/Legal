@@ -112,7 +112,9 @@ export function Bubble({
       className={cn('flex flex-col', own ? 'items-end' : 'items-start', !startsGroup && '-mt-1')}
     >
       {!own && startsGroup && message.sender_name && (
-        <span className="text-muted text-label mb-0.5 font-semibold px-1">{message.sender_name}</span>
+        <span className="text-muted text-label mb-0.5 px-1 font-semibold">
+          {message.sender_name}
+        </span>
       )}
       <div
         className={cn(
@@ -176,7 +178,7 @@ export function OutgoingBubble({
       {failed ? (
         <div
           role="alert"
-          className="text-danger-ink text-label mt-1 font-semibold flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-1"
+          className="text-danger-ink text-label mt-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-1 font-semibold"
         >
           <span className="inline-flex items-center gap-1">
             <AlertCircle className="size-3.5" aria-hidden /> Not sent. {entry.error}
@@ -270,7 +272,9 @@ export function DraftCard({ message }: { message: MessageOut }) {
           <p className="text-muted text-label mt-0.5 break-words">
             {draftSummary(message.meta as DraftInfo)}
           </p>
-          <p className="text-muted text-label mt-1">Download it from the case: tap Open case, above.</p>
+          <p className="text-muted text-label mt-1">
+            Download it from the case: tap Open case, above.
+          </p>
         </div>
       </div>
     </div>

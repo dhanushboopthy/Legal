@@ -23,7 +23,7 @@ export function List({
       <ul className="surface divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]">
         {children}
       </ul>
-      {footnote && <p className="text-muted mt-2 px-4 text-label">{footnote}</p>}
+      {footnote && <p className="text-muted text-label mt-2 px-4">{footnote}</p>}
     </section>
   )
 }
@@ -33,6 +33,7 @@ export function ListRow({
   to,
   onClick,
   icon: Icon,
+  leading,
   title,
   subtitle,
   trailing,
@@ -43,6 +44,8 @@ export function ListRow({
   to?: string
   onClick?: () => void
   icon?: LucideIcon
+  /** In place of an icon, e.g. a person's picture. */
+  leading?: ReactNode
   title: ReactNode
   subtitle?: ReactNode
   trailing?: ReactNode
@@ -55,6 +58,7 @@ export function ListRow({
 }) {
   const body = (
     <>
+      {leading}
       {Icon && (
         <span className="flex size-9 shrink-0 items-center justify-center rounded-[0.625rem] bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
           <Icon className="size-5" strokeWidth={1.75} aria-hidden />
@@ -68,13 +72,15 @@ export function ListRow({
       >
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium break-words">{title}</span>
-          {subtitle && <span className="text-muted mt-0.5 block text-label">{subtitle}</span>}
+          {subtitle && <span className="text-muted text-label mt-0.5 block">{subtitle}</span>}
         </span>
         {trailing && (
           <span
             className={cn(
               'flex min-w-0 flex-wrap items-center gap-2 text-sm break-words',
-              stack ? 'sm:max-w-[45%] sm:justify-end sm:text-right' : 'max-w-[60%] justify-end text-right',
+              stack
+                ? 'sm:max-w-[45%] sm:justify-end sm:text-right'
+                : 'max-w-[60%] justify-end text-right',
             )}
           >
             {trailing}

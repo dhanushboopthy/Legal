@@ -49,9 +49,7 @@ describe('DraftReviewPanel', () => {
     )
 
     await userEvent.click(screen.getByRole('button', { name: /Approve filing/ }))
-    expect(
-      screen.getByRole('dialog', { name: 'Approve "Bail petition"?' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Approve "Bail petition"?' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Approve filing' }))
 
     await waitFor(() => expect(onChanged).toHaveBeenCalledOnce())
@@ -63,11 +61,13 @@ describe('DraftReviewPanel', () => {
   it('will not submit a change request with less than 5 characters, and posts the reason once valid', async () => {
     api.onPost('/cases/c1/revision').reply(200, { id: 'c1', status: 'revision_requested' })
     const onChanged = vi.fn()
-    renderWithProviders(<DraftReviewPanel caseId="c1" caseTitle="Bail petition" onChanged={onChanged} />)
+    renderWithProviders(
+      <DraftReviewPanel caseId="c1" caseTitle="Bail petition" onChanged={onChanged} />,
+    )
 
-    await userEvent.click(await screen.findByRole('button', { name: /Request changes/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Inform changes/ }))
     const textarea = screen.getByLabelText('What needs to change?')
-    const submit = screen.getByRole('button', { name: 'Submit request' })
+    const submit = screen.getByRole('button', { name: 'Send changes' })
     expect(submit).toBeDisabled()
 
     await userEvent.type(textarea, 'Fix')

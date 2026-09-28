@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { listCases } from '@/lib/api/cases'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { cn } from '@/lib/utils'
 
 interface Destination {
@@ -224,7 +225,6 @@ function TopBar({ hidden }: { hidden: boolean }) {
 function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const initial = user?.full_name.charAt(0).toUpperCase()
 
   function signOut() {
     void logout()
@@ -239,7 +239,7 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
             aria-label={`Account: ${user?.full_name ?? ''}`}
             className="flex min-h-12 w-full items-center gap-3 rounded-[var(--radius-control)] px-2 text-left transition-colors hover:bg-black/[0.05]"
           >
-            <Avatar initial={initial} />
+            <UserAvatar name={user?.full_name ?? ''} src={user?.avatar_url} className="size-9" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{user?.full_name}</span>
               <span className="text-muted text-caption block truncate">{user?.email}</span>
@@ -251,7 +251,7 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
             aria-label={`Account: ${user?.full_name ?? ''}`}
             className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-black/[0.06]"
           >
-            <Avatar initial={initial} />
+            <UserAvatar name={user?.full_name ?? ''} src={user?.avatar_url} className="size-9" />
           </button>
         )}
       </DropdownMenuTrigger>
@@ -276,17 +276,6 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-function Avatar({ initial }: { initial?: string }) {
-  return (
-    <span
-      aria-hidden
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--fg-muted)] text-sm font-medium text-white"
-    >
-      {initial}
-    </span>
   )
 }
 

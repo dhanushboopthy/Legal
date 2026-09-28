@@ -8,6 +8,7 @@ export const CHAT_STATUSES: CaseStatus[] = [
   'delivered',
   'revision_requested',
   'completed',
+  'held_over',
 ]
 
 // Mirrors message_service.is_participant: the case's owner and whoever holds

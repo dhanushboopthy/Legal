@@ -38,6 +38,7 @@ const draftCase = (over: Partial<CaseOut> = {}): CaseOut => ({
   note: null,
   status: 'draft',
   rejection_reason: null,
+  hold_reason: null,
   revision_count: 0,
   created_at: '2026-09-15T10:00:00Z',
   updated_at: '2026-09-15T10:00:00Z',

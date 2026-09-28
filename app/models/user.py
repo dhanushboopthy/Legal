@@ -21,6 +21,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     bar_council_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Profile picture: an object key under avatars/{user_id}/ (never served by
+    # the api; the browser gets a presigned URL).
+    avatar_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     role_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("roles.id"))
     role: Mapped["Role"] = relationship(back_populates="users")

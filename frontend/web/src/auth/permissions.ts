@@ -11,6 +11,7 @@ export const PERMISSIONS = {
   CASE_APPROVE_FINAL: 'case:approve_final',
   CASE_MESSAGE: 'case:message',
   QUOTE_CREATE: 'quote:create',
+  CASE_HOLD: 'case:hold',
   PAYMENT_INITIATE: 'payment:initiate',
   PAYMENT_VIEW_OWN: 'payment:view_own',
   PAYMENT_VIEW_ALL: 'payment:view_all',

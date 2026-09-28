@@ -12,6 +12,7 @@ from app.core.permissions import (
     CASE_APPROVE_FINAL,
     CASE_DECIDE,
     CASE_DRAFT,
+    CASE_HOLD,
     CASE_REQUEST_REVISION,
     CASE_SUBMIT,
     CASE_VIEW_ALL,
@@ -56,6 +57,12 @@ TRANSITIONS: dict[tuple[CaseStatus, CaseStatus], Transition] = {
     ),
     (CaseStatus.REVISION_REQUESTED, CaseStatus.DELIVERED): Transition(Actor.REVIEWER, CASE_DRAFT),
     (CaseStatus.DELIVERED, CaseStatus.COMPLETED): Transition(Actor.SUBMITTER, CASE_APPROVE_FINAL),
+    # Held over: the advocate pauses a case that is waiting on them (e.g. for a
+    # court date), and resumes it to exactly where it was (`held_from`).
+    (CaseStatus.ACCEPTED, CaseStatus.HELD_OVER): Transition(Actor.REVIEWER, CASE_HOLD),
+    (CaseStatus.REVISION_REQUESTED, CaseStatus.HELD_OVER): Transition(Actor.REVIEWER, CASE_HOLD),
+    (CaseStatus.HELD_OVER, CaseStatus.ACCEPTED): Transition(Actor.REVIEWER, CASE_HOLD),
+    (CaseStatus.HELD_OVER, CaseStatus.REVISION_REQUESTED): Transition(Actor.REVIEWER, CASE_HOLD),
 }
 
 
@@ -149,6 +156,7 @@ _TURN_SIDE = {
     CaseStatus.REVIEW_FEE_PAID: Actor.REVIEWER, CaseStatus.ACCEPTED: Actor.REVIEWER,
     CaseStatus.QUOTED: Actor.SUBMITTER, CaseStatus.DELIVERED: Actor.SUBMITTER,
     CaseStatus.REVISION_REQUESTED: Actor.REVIEWER,
+    # Held over is the advocate's to resume, but nobody has anything to do now.
 }
 
 
@@ -260,6 +268,12 @@ def can_open_drafts(case: Case, user: User) -> bool:
 async def decide_case(
     db: AsyncSession, *, case: Case, admin: User, accept: bool, rejection_reason: str | None,
 ) -> Case:
+    # Its own source status too: held_over -> accepted is a legal move, but it
+    # is a resume, not a decision.
+    if case.status != CaseStatus.REVIEW_FEE_PAID:
+        raise ConflictError(
+            f"Only a case whose review fee is paid can be decided (current: '{case.status.value}')"
+        )
     transition(case, CaseStatus.ACCEPTED if accept else CaseStatus.REJECTED, by=admin)
     if not accept:
         case.rejection_reason = rejection_reason or "No reason provided"
@@ -337,6 +351,11 @@ async def request_revision(
 ) -> Case:
     """Ask the advocate for changes. Free: the price of the draft already
     covers revisions (chat replaces the old paid-revision dialog)."""
+    # Only from a delivered draft; held_over -> revision_requested is a resume.
+    if case.status != CaseStatus.DELIVERED:
+        raise ConflictError(
+            f"Changes can only be asked for on a delivered draft (current: '{case.status.value}')"
+        )
     transition(case, CaseStatus.REVISION_REQUESTED, by=junior_lawyer)
     case.revision_count += 1
     db.add(RevisionRequest(case_id=case.id, requested_by=junior_lawyer.id, reason=reason))
@@ -366,5 +385,53 @@ async def approve_case(db: AsyncSession, *, case: Case, junior_lawyer: User) -> 
     await message_service.post_event(
         db, case=case, kind=MessageKind.SYSTEM, actor=junior_lawyer, meta={"event": "completed"},
         body="The lawyer approved the draft. This case is complete and the chat is now read-only.",
+    )
+    return case
+
+
+async def hold_over(db: AsyncSession, *, case: Case, admin: User, reason: str) -> Case:
+    """Pause a case that is waiting on the advocate. The chat stays open."""
+    held_from = case.status
+    transition(case, CaseStatus.HELD_OVER, by=admin)
+    case.held_from = held_from
+    case.hold_reason = reason
+
+    await audit_service.log_action(
+        db, user_id=admin.id, action="case.held_over",
+        entity_type="case", entity_id=str(case.id),
+        metadata={"reason": reason, "from": held_from.value},
+    )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM, actor=admin, meta={"event": "held_over"},
+        body=f"The advocate held this case over: {reason}",
+    )
+    await notification_service.notify(
+        db, user_id=case.junior_lawyer_id,
+        message=f"'{case.title}' is held over: {reason}",
+        case_id=case.id, kind="case_held_over",
+    )
+    return case
+
+
+async def resume(db: AsyncSession, *, case: Case, admin: User) -> Case:
+    """Take a held-over case back to where it was."""
+    if case.status != CaseStatus.HELD_OVER or case.held_from is None:
+        raise ConflictError("Only a case that is held over can be resumed")
+    transition(case, case.held_from, by=admin)
+    case.held_from = None
+    case.hold_reason = None
+
+    await audit_service.log_action(
+        db, user_id=admin.id, action="case.resumed",
+        entity_type="case", entity_id=str(case.id), metadata={"to": case.status.value},
+    )
+    await message_service.post_event(
+        db, case=case, kind=MessageKind.SYSTEM, actor=admin, meta={"event": "resumed"},
+        body="The advocate resumed work on this case.",
+    )
+    await notification_service.notify(
+        db, user_id=case.junior_lawyer_id,
+        message=f"Work on '{case.title}' has resumed.",
+        case_id=case.id, kind="case_resumed",
     )
     return case

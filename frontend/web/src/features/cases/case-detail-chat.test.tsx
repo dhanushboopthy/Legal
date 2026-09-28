@@ -26,6 +26,7 @@ const aCase = (status: CaseStatus): CaseOut => ({
   note: null,
   status,
   rejection_reason: null,
+  hold_reason: null,
   revision_count: 0,
   created_at: '2026-09-15T10:00:00Z',
   updated_at: '2026-09-15T10:00:00Z',

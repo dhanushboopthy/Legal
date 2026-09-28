@@ -60,6 +60,16 @@ export async function requestRevision(caseId: string, reason: string): Promise<C
   return data
 }
 
+export async function holdCase(caseId: string, reason: string): Promise<CaseOut> {
+  const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/hold`, { reason })
+  return data
+}
+
+export async function resumeCase(caseId: string): Promise<CaseOut> {
+  const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/resume`)
+  return data
+}
+
 export async function approveCase(caseId: string): Promise<CaseOut> {
   const { data } = await apiClient.post<CaseOut>(`/cases/${caseId}/approve`)
   return data

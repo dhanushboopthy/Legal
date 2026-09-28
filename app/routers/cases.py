@@ -9,6 +9,7 @@ from app.core.permissions import (
     CASE_APPROVE_FINAL,
     CASE_DECIDE,
     CASE_DRAFT,
+    CASE_HOLD,
     CASE_REQUEST_REVISION,
     CASE_SUBMIT,
     PAYMENT_INITIATE,
@@ -20,11 +21,13 @@ from app.dependencies import get_current_user, require_permission
 from app.models.case import Case
 from app.models.revision import RevisionRequest
 from app.models.user import User
-from app.schemas.case import CaseCreate, CaseDecision, CaseListItem, CaseOut, CaseUpdate, RevisionCreate, RevisionOut
+from app.schemas.case import (
+    CaseCreate, CaseDecision, CaseListItem, CaseOut, CaseUpdate, HoldCreate, RevisionCreate, RevisionOut,
+)
 from app.schemas.document import DocumentOut
 from app.schemas.payment import PaymentOrderResponse
 from app.schemas.quote import DraftUpload, QuoteCreate, QuoteOut
-from app.services import case_service, message_service, payment_service, quote_service
+from app.services import avatar_service, case_service, message_service, payment_service, quote_service
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -56,6 +59,7 @@ async def list_cases(current_user: User = Depends(get_current_user), db: AsyncSe
             "turn": case_service.turn_for(case, current_user),
             "junior_lawyer_name": case.junior_lawyer.full_name,
             "junior_lawyer_bar_council_id": case.junior_lawyer.bar_council_id,
+            "junior_lawyer_avatar_url": avatar_service.url_for(case.junior_lawyer),
         })
         for case in cases
     ]
@@ -293,6 +297,41 @@ async def approve_case(
     case = await case_service.get_case_or_404(db, case_id)
     case_service.authorize_case_access(case, current_user)
     case = await case_service.approve_case(db, case=case, junior_lawyer=current_user)
+    await db.commit()
+    await db.refresh(case)
+    return case
+
+
+@router.post(
+    "/{case_id}/hold", response_model=CaseOut, dependencies=[Depends(require_permission(CASE_HOLD))],
+)
+async def hold_case(
+    case_id: uuid.UUID,
+    payload: HoldCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Hold a case over (pause it), with a reason the lawyer sees."""
+    # Locked, so a hold can't interleave with a draft and price being sent.
+    case = await case_service.lock_case(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    case = await case_service.hold_over(db, case=case, admin=current_user, reason=payload.reason)
+    await db.commit()
+    await db.refresh(case)
+    return case
+
+
+@router.post(
+    "/{case_id}/resume", response_model=CaseOut, dependencies=[Depends(require_permission(CASE_HOLD))],
+)
+async def resume_case(
+    case_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    case = await case_service.lock_case(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    case = await case_service.resume(db, case=case, admin=current_user)
     await db.commit()
     await db.refresh(case)
     return case

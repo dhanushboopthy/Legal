@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { List, ListRow } from '@/components/ui/list'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
@@ -67,7 +68,9 @@ export function PeoplePage() {
     <div>
       <BackLink to="/">All cases</BackLink>
       <h1 className="lg:text-title text-2xl font-semibold">People</h1>
-      <p className="text-muted mt-1 mb-8 text-sm">Everyone at the practice, and new registrations to approve.</p>
+      <p className="text-muted mt-1 mb-8 text-sm">
+        Everyone at the practice, and new registrations to approve.
+      </p>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -89,6 +92,9 @@ export function PeoplePage() {
                   <ListRow
                     key={u.id}
                     stack
+                    leading={
+                      <UserAvatar name={u.full_name} src={u.avatar_url} className="size-10" />
+                    }
                     title={u.full_name}
                     subtitle={
                       <>
@@ -118,7 +124,12 @@ export function PeoplePage() {
 
           <List heading={`Active (${active.length})`}>
             {active.map((u) => (
-              <ListRow key={u.id} title={u.full_name} subtitle={<PersonDetails user={u} />} />
+              <ListRow
+                key={u.id}
+                leading={<UserAvatar name={u.full_name} src={u.avatar_url} className="size-10" />}
+                title={u.full_name}
+                subtitle={<PersonDetails user={u} />}
+              />
             ))}
           </List>
         </div>
@@ -148,8 +159,11 @@ const ROLE_LABELS: Record<string, string> = {
 function PersonDetails({ user }: { user: UserOut }) {
   return (
     <span className="block break-words">
-      {[user.email, ROLE_LABELS[user.role_name] ?? user.role_name.replace(/_/g, ' '),
-        user.bar_council_id && `Bar Council no. ${user.bar_council_id}`]
+      {[
+        user.email,
+        ROLE_LABELS[user.role_name] ?? user.role_name.replace(/_/g, ' '),
+        user.bar_council_id && `Bar Council no. ${user.bar_council_id}`,
+      ]
         .filter(Boolean)
         .join(' · ')}
     </span>

@@ -24,6 +24,7 @@ const aCase = (over: Partial<CaseListItem> = {}): CaseListItem => ({
   note: null,
   status: 'review_fee_paid',
   rejection_reason: null,
+  hold_reason: null,
   revision_count: 0,
   created_at: '2026-09-15T10:00:00Z',
   updated_at: '2026-09-15T10:00:00Z',
@@ -32,6 +33,7 @@ const aCase = (over: Partial<CaseListItem> = {}): CaseListItem => ({
   turn: 'none',
   junior_lawyer_name: 'Priya Shah',
   junior_lawyer_bar_council_id: 'MH/1234/2020',
+  junior_lawyer_avatar_url: null,
   ...over,
 })
 
@@ -81,11 +83,13 @@ describe('DashboardPage states', () => {
   })
 
   it('groups cases by whose turn it is, with finished ones tucked away', async () => {
-    mock.onGet('/cases').reply(200, [
-      aCase({ id: 'a', title: 'Needs paying', status: 'submitted', turn: 'you' }),
-      aCase({ id: 'b', title: 'Being reviewed', turn: 'them' }),
-      aCase({ id: 'c', title: 'All done', status: 'completed', turn: 'none' }),
-    ])
+    mock
+      .onGet('/cases')
+      .reply(200, [
+        aCase({ id: 'a', title: 'Needs paying', status: 'submitted', turn: 'you' }),
+        aCase({ id: 'b', title: 'Being reviewed', turn: 'them' }),
+        aCase({ id: 'c', title: 'All done', status: 'completed', turn: 'none' }),
+      ])
     renderWithProviders(<DashboardPage />, { user: makeUser(LAWYER_PERMISSIONS) })
 
     expect(await screen.findByRole('heading', { name: 'Your turn (1)' })).toBeInTheDocument()
@@ -94,6 +98,20 @@ describe('DashboardPage states', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Show 1 finished case' }))
     expect(screen.getByText('All done')).toBeInTheDocument()
+  })
+
+  it('keeps held-over cases in their own group, not with the finished ones', async () => {
+    mock
+      .onGet('/cases')
+      .reply(200, [
+        aCase({ id: 'a', title: 'Being reviewed', turn: 'them' }),
+        aCase({ id: 'h', title: 'Waiting for court', status: 'held_over', turn: 'none' }),
+      ])
+    renderWithProviders(<DashboardPage />, { user: makeUser(LAWYER_PERMISSIONS) })
+
+    expect(await screen.findByRole('heading', { name: 'Held over (1)' })).toBeInTheDocument()
+    expect(screen.getByText('Waiting for court')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /finished/ })).toBeNull()
   })
 
   it('says when a search finds nothing, not that there are no cases', async () => {

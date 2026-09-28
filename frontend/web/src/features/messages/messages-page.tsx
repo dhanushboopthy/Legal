@@ -7,11 +7,11 @@ import { useAuth } from '@/auth/auth-context'
 import { usePermissions } from '@/auth/use-permissions'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { EmptyState } from '@/components/ui/empty-state'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { hasChat } from '@/features/chat/chat-access'
 import { ChatThread } from '@/features/chat/chat-thread'
-import { Avatar } from '@/features/messages/avatar'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useVisualViewportHeight } from '@/hooks/use-visual-viewport-height'
 import { listCases } from '@/lib/api/cases'
@@ -181,7 +181,13 @@ function ConversationAvatar({
   className?: string
 }) {
   if (perspective === 'reviewer')
-    return <Avatar name={c.junior_lawyer_name} className={className} />
+    return (
+      <UserAvatar
+        name={c.junior_lawyer_name}
+        src={c.junior_lawyer_avatar_url}
+        className={className}
+      />
+    )
   return (
     <span
       aria-hidden

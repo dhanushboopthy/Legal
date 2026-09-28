@@ -32,6 +32,7 @@ export function makeUser(permissions: string[], overrides: Partial<UserOut> = {}
     // A fully onboarded test user by default — RequireAuth otherwise routes
     // straight to /complete-profile. Pass `bar_council_id: null` to test that.
     bar_council_id: 'BAR-TEST-0001',
+    avatar_url: null,
     role_name: 'unused_by_ui_gating',
     permissions,
     is_active: true,

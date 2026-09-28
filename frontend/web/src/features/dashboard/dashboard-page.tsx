@@ -56,6 +56,8 @@ export function DashboardPage() {
     )
   }, [cases, query])
 
+  const finished = matching.filter((c) => c.turn === 'none' && c.status !== 'held_over')
+
   // Grouped by whose turn it is; the groups replace filter buttons.
   const groups =
     perspective === 'reviewer'
@@ -89,7 +91,9 @@ export function DashboardPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={viewsAll ? 'Search by title, lawyer or case number' : 'Search by title or case number'}
+            placeholder={
+              viewsAll ? 'Search by title, lawyer or case number' : 'Search by title or case number'
+            }
             aria-label="Search cases"
             className="text-lead min-h-12 w-full rounded-[var(--radius-control)] border-0 bg-black/[0.06] py-2 pr-4 pl-12 placeholder:text-[var(--fg-muted)] focus:bg-white focus:ring-1 focus:ring-[var(--border-strong)]"
           />
@@ -145,13 +149,20 @@ export function DashboardPage() {
             perspective={perspective}
             ownId={user?.id}
           />
+          {/* Paused by the advocate: nobody's move until it is resumed. */}
+          <CaseGroup
+            title="Held over"
+            cases={matching.filter((c) => c.status === 'held_over')}
+            perspective={perspective}
+            ownId={user?.id}
+          />
           <CaseGroup
             title={groups.none}
-            cases={matching.filter((c) => c.turn === 'none')}
+            cases={finished}
             perspective={perspective}
             ownId={user?.id}
             // Tucked away only when there is active work above it to look at.
-            collapsible={!query && matching.some((c) => c.turn !== 'none')}
+            collapsible={!query && finished.length < matching.length}
           />
         </div>
       )}
@@ -198,7 +209,15 @@ function CaseGroup({
   )
 }
 
-function CaseRow({ c, perspective, ownId }: { c: CaseListItem; perspective: Perspective; ownId?: string }) {
+function CaseRow({
+  c,
+  perspective,
+  ownId,
+}: {
+  c: CaseListItem
+  perspective: Perspective
+  ownId?: string
+}) {
   const last = c.last_message
   const sender = last && (last.sender_id && last.sender_id === ownId ? 'You' : last.sender_name)
   const subtitle = (

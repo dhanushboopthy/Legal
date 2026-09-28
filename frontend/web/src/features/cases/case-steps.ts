@@ -9,7 +9,8 @@ const STEPS: { label: string; statuses: CaseStatus[] }[] = [
   { label: 'Complete', statuses: ['completed'] },
 ]
 
-/** "Step 3 of 6 · Accepted", or null off the normal path (draft, rejected). */
+/** "Step 3 of 6 · Accepted", or null off the normal path (draft, deferred,
+ * held over). */
 export function stepLine(status: CaseStatus): string | null {
   const i = STEPS.findIndex((s) => s.statuses.includes(status))
   if (i < 0) return null

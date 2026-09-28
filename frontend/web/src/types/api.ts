@@ -11,6 +11,7 @@ export type CaseStatus =
   | 'delivered'
   | 'revision_requested'
   | 'completed'
+  | 'held_over'
 
 // 'drafting' and 'revision' are retired fixed fees; they only appear on old rows.
 export type PaymentType = 'review' | 'quote' | 'drafting' | 'revision'
@@ -23,6 +24,8 @@ export interface UserOut {
   full_name: string
   email: string
   bar_council_id: string | null
+  // Presigned and short-lived; null when there is no profile picture.
+  avatar_url: string | null
   role_name: string
   permissions: string[]
   is_active: boolean
@@ -47,6 +50,8 @@ export interface CaseOut {
   note: string | null
   status: CaseStatus
   rejection_reason: string | null
+  // Why the advocate held the case over; set only while it is held over.
+  hold_reason: string | null
   revision_count: number
   created_at: string
   updated_at: string
@@ -102,6 +107,7 @@ export interface CaseListItem extends CaseOut {
   // Only meaningful to a viewer with case:view_all (the advocate's list).
   junior_lawyer_name: string
   junior_lawyer_bar_council_id: string | null
+  junior_lawyer_avatar_url: string | null
 }
 
 export interface PaymentOrderResponse {

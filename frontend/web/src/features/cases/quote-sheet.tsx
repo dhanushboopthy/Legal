@@ -84,7 +84,7 @@ export function QuoteSheet({
         variant: 'success',
         title: replacing ? 'Quote updated' : 'Draft and quote sent',
         description: replacing
-          ? 'The lawyer sees the new draft and price.'
+          ? 'The lawyer sees the new draft and drafting charges.'
           : "The lawyer can pay to unlock the draft you've sent.",
       })
       reset()
@@ -105,7 +105,7 @@ export function QuoteSheet({
         if (!next) reset()
         onOpenChange(next)
       }}
-      title={replacing ? 'Replace draft or price' : 'Send draft and quote'}
+      title={replacing ? 'Replace draft or drafting charges' : 'Send draft and quote'}
       description="The lawyer pays this amount to unlock the download."
     >
       <div className="space-y-4">
@@ -132,7 +132,7 @@ export function QuoteSheet({
 
         <Field
           id="quote-amount"
-          label="Price"
+          label="Drafting charges"
           hint={`Between ${formatCurrency(pricing.quote_min_inr)} and ${formatCurrency(pricing.quote_max_inr)}`}
         >
           {(control) => (
@@ -223,7 +223,7 @@ export function QuoteSheet({
               setConfirmAmount(amountInr)
             }}
           >
-            {replacing ? 'Send updated draft and price' : 'Send draft and quote'}
+            {replacing ? 'Send updated draft and charges' : 'Send draft and quote'}
           </Button>
         )}
       </div>

@@ -101,6 +101,22 @@ frontend/
   api reads an object itself only to verify an upload (exists, size, first
   bytes, a draft's page count) — `storage_service.head_object/read_head/
   read_object` over `S3_INTERNAL_ENDPOINT_URL` — and never to serve it.
+- **Held over is a pause, not a decision.** An advocate with `case:hold` can
+  move `accepted`/`revision_requested` to `held_over` (reason required,
+  `cases.hold_reason`) and `POST /cases/{id}/resume` returns it to
+  `cases.held_from`. Because `held_over -> accepted` and
+  `held_over -> revision_requested` exist in `TRANSITIONS`, `decide_case` and
+  `request_revision` check their own source status; do the same in any new
+  action that reaches those statuses. UI words: "rejected" shows as
+  **Deferred**, "request changes" as **Inform changes**, the quote amount as
+  **Drafting charges**.
+- **Profile pictures** (`avatar_service.py`, `users.avatar_key`): the browser
+  crops to a 512px JPEG, PUTs it to a presigned URL under `avatars/{user_id}/`
+  (type and size signed in), then `PUT /users/me/avatar` checks the key's
+  owner, size and magic bytes before using it. They're shown via presigned GET
+  URLs (1 hour) in `UserOut.avatar_url` and `CaseListItem.junior_lawyer_avatar_url`;
+  the SPA reuses one URL per picture (`lib/avatar-url.ts`) so polling doesn't
+  re-download it.
 - **A draft case is its owner's private work.** A new case is `draft`;
   `authorize_case_access` and `visible_cases_query` hide it from everyone else
   (404, not 403), and the review fee can't be paid until `POST /cases/{id}/submit`.

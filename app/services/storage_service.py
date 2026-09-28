@@ -56,12 +56,12 @@ def generate_presigned_upload_url(
     )
 
 
-def generate_presigned_download_url(storage_key: str) -> str:
+def generate_presigned_download_url(storage_key: str, expires_in: int | None = None) -> str:
     client = _signing_client()
     return client.generate_presigned_url(
         "get_object",
         Params={"Bucket": settings.s3_bucket_name, "Key": storage_key},
-        ExpiresIn=settings.s3_presigned_url_expire_seconds,
+        ExpiresIn=expires_in or settings.s3_presigned_url_expire_seconds,
     )
 
 

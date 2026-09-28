@@ -28,6 +28,7 @@ const aCase = (id: string, over: Partial<CaseListItem> = {}): CaseListItem => ({
   note: null,
   status: 'accepted' as CaseStatus,
   rejection_reason: null,
+  hold_reason: null,
   revision_count: 0,
   created_at: '2026-09-15T10:00:00Z',
   updated_at: '2026-09-15T10:00:00Z',
@@ -36,6 +37,7 @@ const aCase = (id: string, over: Partial<CaseListItem> = {}): CaseListItem => ({
   turn: 'none',
   junior_lawyer_name: 'Priya Shah',
   junior_lawyer_bar_council_id: 'MH/1234/2020',
+  junior_lawyer_avatar_url: null,
   ...over,
 })
 

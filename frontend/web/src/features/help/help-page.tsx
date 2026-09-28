@@ -12,7 +12,11 @@ import { formatCurrency } from '@/lib/utils'
 
 export function HelpPage() {
   usePageTitle('Help')
-  const { data: pricing } = useQuery({ queryKey: ['pricing'], queryFn: getPricing, staleTime: Infinity })
+  const { data: pricing } = useQuery({
+    queryKey: ['pricing'],
+    queryFn: getPricing,
+    staleTime: Infinity,
+  })
   const fee = pricing ? formatCurrency(pricing.review_fee_inr) : 'the review fee'
 
   return (
@@ -27,13 +31,16 @@ export function HelpPage() {
         <Question title="How do I file a new case?">
           <ol className="list-decimal space-y-2 pl-6">
             <li>
-              On the <Link to="/" className="text-accent-ink font-semibold underline">Cases</Link>{' '}
+              On the{' '}
+              <Link to="/" className="text-accent-ink font-semibold underline">
+                Cases
+              </Link>{' '}
               page, choose <strong>New case</strong>.
             </li>
             <li>Fill in the case details and add your documents (PDF, Word or photos).</li>
             <li>
-              Choose <strong>Submit and pay</strong>. Your case goes to the advocate once the
-              review fee is paid.
+              Choose <strong>Submit and pay</strong>. Your case goes to the advocate once the review
+              fee is paid.
             </li>
           </ol>
           <p className="mt-3">
@@ -43,16 +50,16 @@ export function HelpPage() {
 
         <Question title={`What is the ${fee} review fee for?`}>
           <p>
-            It pays for the advocate to read your case and decide whether to take it on. The
-            amount is always shown on the button before you pay.
+            It pays for the advocate to read your case and decide whether to take it on. The amount
+            is always shown on the button before you pay.
           </p>
         </Question>
 
         <Question title="How does payment work?">
           <p>
-            Payments are made through Razorpay, using UPI, card or net banking. After paying,
-            the case page shows <strong>Confirming your payment</strong> for a few moments and
-            then moves on by itself. You don't need to do anything else.
+            Payments are made through Razorpay, using UPI, card or net banking. After paying, the
+            case page shows <strong>Confirming your payment</strong> for a few moments and then
+            moves on by itself. You don't need to do anything else.
           </p>
           <p className="mt-3">
             If it takes longer than a few minutes, your money is safe. Use{' '}
@@ -62,13 +69,13 @@ export function HelpPage() {
 
         <Question title="How do I get the draft?">
           <p>
-            When the advocate sends the draft, the case page shows its price. Pay that price and
-            the <strong>Download draft</strong> button appears. You can download it again at any time
-            from the same case.
+            When the advocate sends the draft, the case page shows its drafting charges. Pay them
+            and the <strong>Download draft</strong> button appears. You can download it again at any
+            time from the same case.
           </p>
           <p className="mt-3">
-            If something needs changing, use <strong>Request changes</strong> and say what to
-            fix. You can also write to the advocate in the case's chat.
+            If something needs changing, use <strong>Inform changes</strong> and say what to fix.
+            You can also write to the advocate in <strong>Messages</strong>.
           </p>
         </Question>
 
@@ -78,8 +85,8 @@ export function HelpPage() {
             <Link to="/profile#text-size" className="text-accent-ink font-semibold underline">
               Your profile
             </Link>{' '}
-            and choose <strong>Larger</strong> or <strong>Largest</strong> under Text size.
-            The whole site changes at once, and it is remembered on this device.
+            and choose <strong>Larger</strong> or <strong>Largest</strong> under Text size. The
+            whole site changes at once, and it is remembered on this device.
           </p>
           <p className="mt-3">
             You can also zoom with <kbd className="rounded border px-1.5">Ctrl</kbd> and{' '}
@@ -91,8 +98,8 @@ export function HelpPage() {
 
         <Question title="I forgot my password">
           <p>
-            Sign out, then choose <strong>Forgot password?</strong> on the sign-in page. We'll
-            email you a code to set a new one.
+            Sign out, then choose <strong>Forgot password?</strong> on the sign-in page. We'll email
+            you a code to set a new one.
           </p>
         </Question>
       </div>

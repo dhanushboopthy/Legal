@@ -187,7 +187,7 @@ def fake_store(monkeypatch) -> FakeStore:
     monkeypatch.setattr(storage_service, "delete_object", delete_object)
     monkeypatch.setattr(storage_service, "delete_prefix", delete_prefix)
     monkeypatch.setattr(
-        storage_service, "generate_presigned_download_url", lambda key: f"https://store.test/{key}?sig=x"
+        storage_service, "generate_presigned_download_url", lambda key, expires_in=None: f"https://store.test/{key}?sig=x"
     )
     monkeypatch.setattr(
         storage_service, "generate_presigned_upload_url", lambda key, content_type="application/pdf", size=None: f"https://store.test/{key}?put=x&type={content_type}&size={size}"

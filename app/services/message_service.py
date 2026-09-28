@@ -27,6 +27,7 @@ from app.services.realtime import Event, queue_event
 # complete, and doesn't exist before the advocate accepts (or after a rejection).
 CHAT_OPEN = {
     CaseStatus.ACCEPTED, CaseStatus.QUOTED, CaseStatus.DELIVERED, CaseStatus.REVISION_REQUESTED,
+    CaseStatus.HELD_OVER,
 }
 CHAT_VISIBLE = CHAT_OPEN | {CaseStatus.COMPLETED}
 
