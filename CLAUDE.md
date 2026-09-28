@@ -282,8 +282,8 @@ the existing pattern in that file rather than autogenerating blind.
 - Money is always visible before any pay action. Amounts come from the server.
 - Download access is enforced on the server, never only in the UI.
 - **Look: calm and Apple-like.** Inter (bundled), flat white cards with hairline borders, one blue accent, pill buttons, grouped lists (`components/ui/list.tsx`), a sidebar on desktop. See `.claude/skills/design-system`. Third-party design skills (`ui-ux-pro-max`, `bencium-controlled-ux-designer`, `typography`, `design-audit`) are installed for guidance; the project's own skills win where they disagree (17px body, 44px targets).
-- **Audience: older lawyers who may be new to technology.** Body text is 17px
-  (`text-sm` is redefined as the body step in `index.css`), nothing under 14px,
+- **Audience: older lawyers who may be new to technology.** Body text is 16px
+  (`text-sm` is redefined as the body step in `index.css`), nothing under 13px,
   buttons at least 44px (48px for the main size), labels dark, not grey.
   Icon buttons show a text label wherever there is room; nothing important
   lives only in a hover tooltip; error toasts stay until dismissed; every

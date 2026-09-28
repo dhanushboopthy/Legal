@@ -28,29 +28,29 @@
   --color-danger: #dc2626;
   --color-danger-ink: #b91c1c;
 
-  /* Sized for older readers: body text is 17px and nothing is under 14px.
-     `text-sm` is redefined as the body step (it is what most of the app uses
-     for body text), so the whole app grew with it. Everything is in rem, so
-     the Text size setting (html[data-text-size]) scales it all together. */
-  --text-caption: 0.875rem;
-  --text-caption--line-height: 1.35rem;
-  --text-label: 0.9375rem;
-  --text-label--line-height: 1.45rem;
-  --text-sm: 1.0625rem;
-  --text-sm--line-height: 1.7rem;
-  --text-lead: 1.125rem;
-  --text-lead--line-height: 1.75rem;
-  --text-base: 1.25rem;
-  --text-base--line-height: 1.8rem;
-  --text-lg: 1.375rem;
-  --text-lg--line-height: 1.9rem;
-  --text-xl: 1.5rem;
-  --text-xl--line-height: 2rem;
-  --text-2xl: 1.75rem;
-  --text-2xl--line-height: 2.25rem;
+  /* Body text is 16px and nothing is under 13px. `text-sm` is redefined as
+     the body step (it is what most of the app uses for body text). Everything
+     is in rem, so the Text size setting (html[data-text-size]) scales it all
+     together for readers who want it larger. */
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.25rem;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.35rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
+  --text-lead: 1.0625rem;
+  --text-lead--line-height: 1.6rem;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.65rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.85rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.1rem;
   /* The large page title (Apple's "Large Title"), from lg up. */
-  --text-title: 2.125rem;
-  --text-title--line-height: 2.5rem;
+  --text-title: 1.875rem;
+  --text-title--line-height: 2.35rem;
 
   --radius-card: 1.25rem;
   --radius-control: 0.75rem;

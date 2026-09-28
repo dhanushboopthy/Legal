@@ -28,9 +28,9 @@ A **fill** colour is for backgrounds, borders and icons (needs 3:1). An **ink** 
 
 Pills: `bg-{tone}/10` fill with `text-{tone}-ink`. Status colours always come from `statusMeta`, not per-component.
 
-## Type scale (named, min 14 px)
+## Type scale (named, min 13 px)
 
-Sized for older readers. Named steps, all in rem: `text-caption` 14, `text-label` 15, `text-sm` 17 (**body**, redefined from Tailwind's 14), `text-lead` 18, `text-base` 20 (card title, semibold), `text-lg` 22, `text-xl` 24, `text-2xl` 28 (page title on phones), `text-title` 34 (page title from `lg`, Apple's "Large Title"). Never arbitrary `text-[Npx]`. `cn()` knows the custom steps (tailwind-merge is extended in `lib/utils.ts`); add any new step there too. The Text size setting (`html[data-text-size]`, `lib/preferences.ts`) scales the root to 112.5% / 125%, so size in rem, never px. Font: **Inter**, bundled (`@fontsource-variable/inter`, imported in `main.tsx`), so it is identical on every device; never load a font from a CDN (the CSP is `'self'`). Weights: 400 body, 500 (`font-medium`) for controls and labels, `font-semibold` (580) for titles only; avoid `font-bold`. Headings get `letter-spacing: -0.02em` globally.
+Named steps, all in rem: `text-caption` 13, `text-label` 14, `text-sm` 16 (**body**, redefined from Tailwind's 14), `text-lead` 17, `text-base` 18 (card title, semibold), `text-lg` 20, `text-xl` 22, `text-2xl` 26 (page title on phones), `text-title` 30 (page title from `lg`, Apple's "Large Title"). Never arbitrary `text-[Npx]`. `cn()` knows the custom steps (tailwind-merge is extended in `lib/utils.ts`); add any new step there too. The Text size setting (`html[data-text-size]`, `lib/preferences.ts`) scales the root to 112.5% / 125%, so size in rem, never px. Font: **Inter**, bundled (`@fontsource-variable/inter`, imported in `main.tsx`), so it is identical on every device; never load a font from a CDN (the CSP is `'self'`). Weights: 400 body, 500 (`font-medium`) for controls and labels, `font-semibold` (580) for titles only; avoid `font-bold`. Headings get `letter-spacing: -0.02em` globally.
 
 ## Layout
 

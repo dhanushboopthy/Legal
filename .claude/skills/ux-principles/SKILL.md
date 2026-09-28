@@ -11,7 +11,7 @@ The product should need no manual. Every screen answers three things without rea
 
 The people using this are often **older lawyers who may be new to technology**. Design for someone who reads slowly, uses a mouse carefully, may have reduced vision, and won't guess at icons:
 
-- Text is large (17 px body) and dark; secondary text is still easy to read.
+- Text is a comfortable 16 px body and dark; secondary text is still easy to read. The owner found 17 px too big — keep 16 px as the default and let the Text size setting go larger.
 - Every button is big (≥44 px) and says what it does in words. Icon-only buttons are a last resort for tight spaces, always with an `aria-label`.
 - Nothing important is only on hover (no tooltip-only labels or dates).
 - Errors stay on screen until dismissed. Nothing times out on someone reading slowly.
