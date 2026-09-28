@@ -13,24 +13,24 @@ afterEach(() => {
 })
 
 describe('TextSizeControl', () => {
-  it('starts at Normal', () => {
+  it('starts at Standard', () => {
     render(<TextSizeControl />)
-    expect(screen.getByRole('radio', { name: /Normal/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Standard/ })).toBeChecked()
   })
 
   it('enlarges the whole page and remembers the choice', async () => {
     render(<TextSizeControl />)
-    await userEvent.click(screen.getByRole('radio', { name: /Extra large/ }))
+    await userEvent.click(screen.getByRole('radio', { name: /Largest/ }))
 
     expect(document.documentElement.dataset.textSize).toBe('xlarge')
     expect(getTextSize()).toBe('xlarge')
-    expect(screen.getByRole('radio', { name: /Extra large/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Largest/ })).toBeChecked()
   })
 
-  it('going back to Normal removes the scaling', async () => {
+  it('going back to Standard removes the scaling', async () => {
     render(<TextSizeControl />)
-    await userEvent.click(screen.getByRole('radio', { name: 'Large' }))
-    await userEvent.click(screen.getByRole('radio', { name: /Normal/ }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Larger' }))
+    await userEvent.click(screen.getByRole('radio', { name: /Standard/ }))
     expect(document.documentElement.dataset.textSize).toBeUndefined()
   })
 

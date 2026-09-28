@@ -78,7 +78,7 @@ export function HelpPage() {
             <Link to="/profile#text-size" className="text-accent-ink font-semibold underline">
               Your profile
             </Link>{' '}
-            and choose <strong>Large</strong> or <strong>Extra large</strong> under Text size.
+            and choose <strong>Larger</strong> or <strong>Largest</strong> under Text size.
             The whole site changes at once, and it is remembered on this device.
           </p>
           <p className="mt-3">

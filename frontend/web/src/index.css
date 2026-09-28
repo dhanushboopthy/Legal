@@ -84,12 +84,29 @@ body,
 }
 
 /* Text size setting (src/lib/preferences.ts). Scales every rem: text,
-   spacing and touch targets together, like browser zoom. */
+   spacing and targets together, like browser zoom.
+   Standard (default) matches Apple's website: compact on desktop (14px body),
+   16px on phones, where smaller text is hard to read and tap. Larger and
+   Largest step up from there for anyone who wants bigger text. */
+html {
+  font-size: 100%;
+}
 html[data-text-size='large'] {
   font-size: 112.5%;
 }
 html[data-text-size='xlarge'] {
   font-size: 125%;
+}
+@media (min-width: 1024px) {
+  html {
+    font-size: 87.5%;
+  }
+  html[data-text-size='large'] {
+    font-size: 100%;
+  }
+  html[data-text-size='xlarge'] {
+    font-size: 112.5%;
+  }
 }
 
 body {

@@ -11,7 +11,7 @@ The product should need no manual. Every screen answers three things without rea
 
 The people using this are often **older lawyers who may be new to technology**. Design for someone who reads slowly, uses a mouse carefully, may have reduced vision, and won't guess at icons:
 
-- Text is a comfortable 16 px body and dark; secondary text is still easy to read. The owner found 17 px too big — keep 16 px as the default and let the Text size setting go larger.
+- **Standard** (default) is Apple-website density: 14 px body on desktop, 16 px on phones. **Larger** (16 px desktop) and **Largest** are for readers who want bigger text; the switch is on every sign-in screen, in the account menu and on the profile page. The owner found bigger defaults "so big" — don't enlarge the default; enlarge through the setting.
 - Every button is big (≥44 px) and says what it does in words. Icon-only buttons are a last resort for tight spaces, always with an `aria-label`.
 - Nothing important is only on hover (no tooltip-only labels or dates).
 - Errors stay on screen until dismissed. Nothing times out on someone reading slowly.

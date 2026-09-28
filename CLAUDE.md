@@ -281,10 +281,12 @@ the existing pattern in that file rather than autogenerating blind.
 - Every screen designs loading, empty, error and success states.
 - Money is always visible before any pay action. Amounts come from the server.
 - Download access is enforced on the server, never only in the UI.
-- **Look: calm and Apple-like.** Inter (bundled), flat white cards with hairline borders, one blue accent, pill buttons, grouped lists (`components/ui/list.tsx`), a sidebar on desktop. See `.claude/skills/design-system`. Third-party design skills (`ui-ux-pro-max`, `bencium-controlled-ux-designer`, `typography`, `design-audit`) are installed for guidance; the project's own skills win where they disagree (17px body, 44px targets).
-- **Audience: older lawyers who may be new to technology.** Body text is 16px
-  (`text-sm` is redefined as the body step in `index.css`), nothing under 13px,
-  buttons at least 44px (48px for the main size), labels dark, not grey.
+- **Look: calm and Apple-like.** Inter (bundled), flat white cards with hairline borders, one blue accent, pill buttons, grouped lists (`components/ui/list.tsx`), a sidebar on desktop. See `.claude/skills/design-system`. Third-party design skills (`ui-ux-pro-max`, `bencium-controlled-ux-designer`, `typography`, `design-audit`) are installed for guidance; the project's own skills win where they disagree (text sizes, target sizes).
+- **Audience: older lawyers who may be new to technology.** Default ("Standard") text is Apple-website
+  size: 14px body on desktop, 16px on phones; "Larger"/"Largest" in the Text size
+  setting scale everything up (`index.css` root font-size, `lib/preferences.ts`),
+  buttons at least 44px on phones (they scale with the text size on desktop),
+  labels dark, not grey.
   Icon buttons show a text label wherever there is room; nothing important
   lives only in a hover tooltip; error toasts stay until dismissed; every
   inner page has a `BackLink` and a `usePageTitle`. The Text size setting

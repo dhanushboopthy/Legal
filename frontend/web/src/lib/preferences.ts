@@ -1,9 +1,9 @@
 export type TextSize = 'normal' | 'large' | 'xlarge'
 
 export const TEXT_SIZES: { value: TextSize; label: string; sample: string }[] = [
-  { value: 'normal', label: 'Normal', sample: 'A' },
-  { value: 'large', label: 'Large', sample: 'A+' },
-  { value: 'xlarge', label: 'Extra large', sample: 'A++' },
+  { value: 'normal', label: 'Standard', sample: 'A' },
+  { value: 'large', label: 'Larger', sample: 'A+' },
+  { value: 'xlarge', label: 'Largest', sample: 'A++' },
 ]
 
 const KEY = 'text-size'
