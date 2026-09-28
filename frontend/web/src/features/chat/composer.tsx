@@ -94,7 +94,9 @@ export function Composer({
           ))}
         </ul>
       )}
-      <div className="flex items-end gap-2">
+      {/* On a phone the message box gets its own full-width row, with Attach
+          and Send beneath it; from sm up they share one row. */}
+      <div className="flex flex-wrap items-end gap-2">
         <input
           ref={picker}
           data-testid="chat-file-input"
@@ -119,7 +121,7 @@ export function Composer({
             Attach
           </span>
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="order-first min-w-0 flex-1 basis-full sm:order-none sm:basis-0">
           <textarea
             ref={textarea}
             aria-label="Message"
@@ -142,7 +144,7 @@ export function Composer({
           aria-label="Send message"
           disabled={!canSend}
           onClick={submit}
-          className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+          className="ml-auto inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
         >
           <Send className="size-5" aria-hidden />
           <span aria-hidden>Send</span>

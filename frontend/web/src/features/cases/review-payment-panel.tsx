@@ -108,8 +108,8 @@ export function PaymentActionCard({
         <div
           className={
             state === 'failed'
-              ? 'flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
-              : 'flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+              ? 'hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+              : 'hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
           }
         >
           {state === 'failed' ? (

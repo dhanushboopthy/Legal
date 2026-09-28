@@ -222,7 +222,7 @@ function ChatBody({
       className={
         fill
           ? 'relative flex h-full min-h-0 flex-col overflow-hidden'
-          : 'surface shadow-card relative flex min-h-[420px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]'
+          : 'surface shadow-card relative flex min-h-[320px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]'
       }
       style={
         fill

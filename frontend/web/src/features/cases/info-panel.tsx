@@ -29,7 +29,7 @@ export function InfoPanel({
       <div className="flex items-start gap-4">
         <div
           className={cn(
-            'flex size-11 shrink-0 items-center justify-center rounded-full',
+            'hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex',
             toneClass,
           )}
         >

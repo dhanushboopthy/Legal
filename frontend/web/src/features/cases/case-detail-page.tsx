@@ -326,7 +326,7 @@ function CaseActionPanel({
       return can(PERMISSIONS.QUOTE_CREATE) ? (
         <Card>
           <div className="flex items-start gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
+            <div className="hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-accent)]/10 text-[var(--color-accent-ink)]">
               <PenSquare className="size-5" strokeWidth={1.75} />
             </div>
             <div>
