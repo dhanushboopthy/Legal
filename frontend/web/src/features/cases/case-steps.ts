@@ -4,7 +4,7 @@ const STEPS: { label: string; statuses: CaseStatus[] }[] = [
   { label: 'Submitted', statuses: ['submitted'] },
   { label: 'Being reviewed', statuses: ['review_fee_paid'] },
   { label: 'Accepted', statuses: ['accepted'] },
-  { label: 'Draft and price sent', statuses: ['quoted'] },
+  { label: 'Draft and charges sent', statuses: ['quoted'] },
   { label: 'Draft paid for', statuses: ['delivered', 'revision_requested'] },
   { label: 'Complete', statuses: ['completed'] },
 ]

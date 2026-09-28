@@ -297,7 +297,7 @@ the existing pattern in that file rather than autogenerating blind.
 - Every screen designs loading, empty, error and success states.
 - Money is always visible before any pay action. Amounts come from the server.
 - Download access is enforced on the server, never only in the UI.
-- **Look: calm and Apple-like.** Inter (bundled), flat white cards with hairline borders, one blue accent, pill buttons, grouped lists (`components/ui/list.tsx`), a sidebar on desktop. See `.claude/skills/design-system`. Third-party design skills (`ui-ux-pro-max`, `bencium-controlled-ux-designer`, `typography`, `design-audit`) are installed for guidance; the project's own skills win where they disagree (text sizes, target sizes).
+- **Look: calm and Apple-like, in light blue.** Inter (bundled), a light-blue page and sidebar, white cards with hairline borders and a soft shadow, one blue accent, navy (`navy`) for the brand and selected chips, gold (`gold`) as the warm complement; neutral fills are `bg-ink/[…]` tints, never `bg-black`. Pill buttons, grouped lists (`components/ui/list.tsx`), a sidebar on desktop. See `.claude/skills/design-system`. Third-party design skills (`ui-ux-pro-max`, `bencium-controlled-ux-designer`, `typography`, `design-audit`) are installed for guidance; the project's own skills win where they disagree (text sizes, target sizes).
 - **Audience: older lawyers who may be new to technology.** Default ("Standard") text is Apple-website
   size: 14px body on desktop, 16px on phones; "Larger"/"Largest" in the Text size
   setting scale everything up (`index.css` root font-size, `lib/preferences.ts`),

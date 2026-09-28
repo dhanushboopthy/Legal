@@ -33,7 +33,7 @@ export function Sheet({
               )}
             </div>
             <RadixDialog.Close
-              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold transition-colors hover:bg-black/[0.05]"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold transition-colors hover:bg-ink/[0.05]"
             >
               <X className="size-5" aria-hidden />
               Close

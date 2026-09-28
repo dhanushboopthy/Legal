@@ -66,7 +66,7 @@ function AttachmentChip({ attachment, own }: { attachment: AttachmentOut; own: b
       onClick={() => void open(attachment.document_id)}
       className={cn(
         'text-label flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-left',
-        own ? 'bg-white/15 hover:bg-white/25' : 'bg-black/[0.04] hover:bg-black/[0.07]',
+        own ? 'bg-white/15 hover:bg-white/25' : 'bg-ink/[0.04] hover:bg-ink/[0.07]',
       )}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
@@ -247,7 +247,7 @@ export function QuoteCard({ message }: { message: MessageOut }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-muted text-caption">
-            {message.meta.updated === true ? 'Draft and price updated' : 'Draft and price'}
+            {message.meta.updated === true ? 'Drafting charges updated' : 'Drafting charges'}
           </p>
           {amount !== null && <p className="text-lg font-semibold">{formatCurrency(amount)}</p>}
           <p className="text-muted text-label mt-0.5 break-words">{draftSummary(draft)}</p>

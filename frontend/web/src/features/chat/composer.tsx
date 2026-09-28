@@ -72,13 +72,13 @@ export function Composer({
   }
 
   return (
-    <div className="border-t border-[var(--border)] p-3">
+    <div className="surface border-t border-[var(--border)] p-3">
       {files.length > 0 && (
         <ul className="mb-2 flex flex-wrap gap-2" aria-label="Files to send">
           {files.map((file) => (
             <li
               key={`${file.name}-${file.size}`}
-              className="text-label flex max-w-full items-center gap-1.5 rounded-full bg-black/[0.05] py-1 pr-1 pl-3"
+              className="text-label flex max-w-full items-center gap-1.5 rounded-full bg-ink/[0.05] py-1 pr-1 pl-3"
             >
               <span className="max-w-40 truncate">{file.name}</span>
               <span className="text-muted text-caption">{formatBytes(file.size)}</span>
@@ -86,7 +86,7 @@ export function Composer({
                 type="button"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => setFiles((all) => all.filter((f) => f !== file))}
-                className="inline-flex size-10 items-center justify-center rounded-full hover:bg-black/[0.08]"
+                className="inline-flex size-10 items-center justify-center rounded-full hover:bg-ink/[0.08]"
               >
                 <X className="size-4" aria-hidden />
               </button>
@@ -114,7 +114,7 @@ export function Composer({
           aria-label="Attach files"
           disabled={files.length >= MAX_ATTACHMENTS}
           onClick={() => picker.current?.click()}
-          className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[var(--border-strong)] text-sm font-semibold hover:bg-black/[0.05] disabled:opacity-60 sm:px-4"
+          className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[var(--border-strong)] text-sm font-semibold hover:bg-ink/[0.05] disabled:opacity-60 sm:px-4"
         >
           <Paperclip className="size-5" aria-hidden />
           <span aria-hidden className="hidden sm:inline">

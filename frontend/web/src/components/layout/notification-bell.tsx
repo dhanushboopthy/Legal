@@ -44,7 +44,7 @@ export function NotificationBell({ variant = 'icon' }: { variant?: 'icon' | 'row
           // A sidebar row, styled like the navigation items around it.
           <button
             aria-label={label}
-            className="flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm font-medium transition-colors hover:bg-black/[0.05]"
+            className="flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm font-medium transition-colors hover:bg-ink/[0.05]"
           >
             <Bell className="size-5" strokeWidth={1.75} aria-hidden />
             <span aria-hidden className="flex-1 text-left">
@@ -55,7 +55,7 @@ export function NotificationBell({ variant = 'icon' }: { variant?: 'icon' | 'row
         ) : (
           <button
             aria-label={label}
-            className="relative flex size-11 items-center justify-center rounded-full transition-colors hover:bg-black/[0.06]"
+            className="relative flex size-11 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
           >
             <Bell className="size-6" strokeWidth={1.75} aria-hidden />
             {count && <span className="absolute -top-0.5 left-6">{count}</span>}

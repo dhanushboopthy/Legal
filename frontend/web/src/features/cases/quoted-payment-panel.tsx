@@ -52,7 +52,7 @@ export function QuotedPaymentPanel({
       buttonLabel={(amount) => `Pay ${amount} to unlock`}
       onPaid={onChanged}
     >
-      <div className="mt-4 rounded-[var(--radius-control)] bg-black/[0.04] p-4">
+      <div className="mt-4 rounded-[var(--radius-control)] bg-ink/[0.04] p-4">
         <div className="flex items-start gap-3">
           <Lock className="mt-0.5 size-5 shrink-0 text-[var(--fg-muted)]" strokeWidth={1.75} aria-hidden />
           <div className="min-w-0">

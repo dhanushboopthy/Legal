@@ -79,7 +79,7 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     reviewer: {
       label: 'Waiting for payment',
       turn: 'them',
-      next: 'Waiting for the lawyer to pay. You can still replace the draft or change the amount.',
+      next: 'Waiting for the lawyer to pay. You can still replace the draft or change the drafting charges.',
     },
   },
   delivered: {

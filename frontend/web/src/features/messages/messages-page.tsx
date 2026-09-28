@@ -100,7 +100,7 @@ export function MessagesPage() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search"
                 aria-label="Search conversations"
-                className="min-h-11 w-full rounded-full bg-black/[0.05] py-2 pr-3 pl-10 text-sm placeholder:text-[var(--fg-muted)]"
+                className="min-h-11 w-full rounded-full bg-ink/[0.05] py-2 pr-3 pl-10 text-sm placeholder:text-[var(--fg-muted)]"
               />
             </div>
           )}
@@ -142,7 +142,7 @@ export function MessagesPage() {
         </div>
       </aside>
 
-      <div className={cn('min-w-0 flex-1 flex-col', caseId ? 'flex' : 'hidden sm:flex')}>
+      <div className={cn('min-w-0 flex-1 flex-col bg-[var(--bg)]', caseId ? 'flex' : 'hidden sm:flex')}>
         {!caseId ? (
           <NoneOpen />
         ) : cases.isLoading ? (
@@ -221,8 +221,8 @@ function ConversationRow({
       to={`/messages/${c.id}`}
       className={({ isActive }) =>
         cn(
-          'flex min-h-[4.5rem] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-black/[0.03] sm:px-5',
-          isActive && 'bg-black/[0.05] hover:bg-black/[0.05]',
+          'flex min-h-[4.5rem] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-ink/[0.03] sm:px-5',
+          isActive && 'bg-ink/[0.05] hover:bg-ink/[0.05]',
         )
       }
     >
@@ -278,11 +278,11 @@ function Conversation({
 
   return (
     <>
-      <header className="flex min-h-16 items-center gap-3 border-b border-[var(--border)] px-2 py-2 sm:px-5">
+      <header className="surface flex min-h-16 items-center gap-3 border-b border-[var(--border)] px-2 py-2 sm:px-5">
         <Link
           to="/messages"
           aria-label="Back to conversations"
-          className="text-accent-ink inline-flex min-h-11 shrink-0 items-center rounded-full pr-2 text-sm font-medium hover:bg-black/[0.05] sm:hidden"
+          className="text-accent-ink inline-flex min-h-11 shrink-0 items-center rounded-full pr-2 text-sm font-medium hover:bg-ink/[0.05] sm:hidden"
         >
           <ChevronLeft className="size-6" aria-hidden />
           <span aria-hidden>Back</span>

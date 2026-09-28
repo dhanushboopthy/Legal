@@ -19,10 +19,10 @@ export function AuthLayout({
   footer?: ReactNode
 }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
+    <main className="auth-backdrop flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-4 text-center">
-          <div className="flex size-14 items-center justify-center rounded-[1rem] bg-[var(--fg)] text-white">
+          <div className="flex size-14 items-center justify-center rounded-[1rem] bg-navy text-gold shadow-[0_6px_20px_rgba(15,39,71,0.25)]">
             <Icon className="size-7" strokeWidth={1.5} aria-hidden />
           </div>
           <div>
@@ -30,7 +30,7 @@ export function AuthLayout({
             {subtitle && <p className="text-muted mt-2 text-sm">{subtitle}</p>}
           </div>
         </div>
-        <div className="surface rounded-[var(--radius-sheet)] border border-[var(--border)] p-6 sm:p-8">
+        <div className="surface shadow-overlay rounded-[var(--radius-sheet)] border border-[var(--border)] p-6 sm:p-8">
           {children}
         </div>
         {footer && <div className="mt-6 text-center text-sm">{footer}</div>}

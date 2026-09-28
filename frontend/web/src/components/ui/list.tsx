@@ -20,7 +20,7 @@ export function List({
   return (
     <section className={className}>
       {heading && <h2 className="text-muted mb-2 px-4 text-sm font-medium">{heading}</h2>}
-      <ul className="surface divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]">
+      <ul className="surface shadow-card divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)]">
         {children}
       </ul>
       {footnote && <p className="text-muted text-label mt-2 px-4">{footnote}</p>}
@@ -93,7 +93,7 @@ export function ListRow({
     </>
   )
   const rowClass = cn('flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left', className)
-  const interactive = 'transition-colors hover:bg-black/[0.03] active:bg-black/[0.06]'
+  const interactive = 'transition-colors hover:bg-ink/[0.03] active:bg-ink/[0.06]'
 
   return (
     <li>

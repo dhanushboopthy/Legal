@@ -9,7 +9,7 @@ export function BackLink({ to, children, className }: { to: string; children: st
     <Link
       to={to}
       className={cn(
-        'text-accent-ink -ml-2 mb-4 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm font-semibold hover:bg-black/[0.05] hover:underline',
+        'text-accent-ink -ml-2 mb-4 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm font-semibold hover:bg-ink/[0.05] hover:underline',
         className,
       )}
     >

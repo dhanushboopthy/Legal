@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 </RadixToast.Description>
               )}
             </div>
-            <RadixToast.Close className="min-h-11 shrink-0 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold hover:bg-black/[0.05]">
+            <RadixToast.Close className="min-h-11 shrink-0 rounded-full border border-[var(--border-strong)] px-4 text-sm font-semibold hover:bg-ink/[0.05]">
               Dismiss
             </RadixToast.Close>
           </RadixToast.Root>

@@ -20,7 +20,7 @@ export function TextSizeControl({ className, compact = false }: { className?: st
       <legend className={cn('text-sm font-medium', compact ? 'text-muted float-left' : 'mb-2')}>
         Text size
       </legend>
-      <div className="inline-flex flex-wrap gap-1 rounded-full bg-black/[0.06] p-1">
+      <div className="inline-flex flex-wrap gap-1 rounded-full bg-ink/[0.06] p-1">
         {TEXT_SIZES.map((option) => {
           const checked = option.value === size
           return (
@@ -28,7 +28,7 @@ export function TextSizeControl({ className, compact = false }: { className?: st
               key={option.value}
               className={cn(
                 'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--color-accent)]',
-                checked ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'hover:bg-black/[0.04]',
+                checked ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'hover:bg-ink/[0.04]',
               )}
             >
               <input

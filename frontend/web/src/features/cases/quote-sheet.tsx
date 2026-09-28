@@ -178,7 +178,7 @@ export function QuoteSheet({
           <div
             role="group"
             aria-label="Confirm"
-            className="rounded-[var(--radius-control)] bg-black/[0.04] p-4"
+            className="rounded-[var(--radius-control)] bg-ink/[0.04] p-4"
           >
             <p className="text-sm font-medium">
               {replacing

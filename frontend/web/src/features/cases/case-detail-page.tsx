@@ -380,7 +380,7 @@ function CaseActionPanel({
               className="mt-4"
               onClick={() => onOpenQuoteSheet('replace')}
             >
-              Replace draft or change amount
+              Replace draft or change charges
             </Button>
           }
         />

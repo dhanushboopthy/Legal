@@ -58,7 +58,7 @@ export function Dropzone({
           'flex min-h-32 w-full flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border border-dashed px-4 py-6 text-center transition-colors',
           dragging
             ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
-            : 'border-[var(--border-strong)] bg-black/[0.02] hover:bg-black/[0.04]',
+            : 'border-[var(--border-strong)] bg-ink/[0.02] hover:bg-ink/[0.04]',
           disabled && 'opacity-50',
         )}
       >
@@ -120,7 +120,7 @@ export function FileRow({
             onClick={onRetry}
             disabled={busy}
             aria-label={`Retry ${name}`}
-            className="text-accent-ink text-label inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] px-2 font-medium hover:bg-black/[0.04] disabled:opacity-50 sm:min-h-9"
+            className="text-accent-ink text-label inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] px-2 font-medium hover:bg-ink/[0.04] disabled:opacity-50 sm:min-h-9"
           >
             <RotateCcw className="size-4" aria-hidden /> Retry
           </button>
@@ -131,7 +131,7 @@ export function FileRow({
             onClick={onRemove}
             disabled={busy || status === 'uploading'}
             aria-label={`Remove ${name}`}
-            className="inline-flex size-11 items-center justify-center rounded-full text-[var(--fg-muted)] hover:bg-black/[0.04] disabled:opacity-40 sm:size-9"
+            className="inline-flex size-11 items-center justify-center rounded-full text-[var(--fg-muted)] hover:bg-ink/[0.04] disabled:opacity-40 sm:size-9"
           >
             <X className="size-4" aria-hidden />
           </button>
@@ -144,7 +144,7 @@ export function FileRow({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={percent}
-          className="mt-2 h-1 overflow-hidden rounded-full bg-black/[0.06]"
+          className="mt-2 h-1 overflow-hidden rounded-full bg-ink/[0.06]"
         >
           <div className="h-full bg-[var(--color-accent)]" style={{ width: `${percent}%` }} />
         </div>

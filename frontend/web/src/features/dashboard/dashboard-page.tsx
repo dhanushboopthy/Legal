@@ -95,7 +95,7 @@ export function DashboardPage() {
               viewsAll ? 'Search by title, lawyer or case number' : 'Search by title or case number'
             }
             aria-label="Search cases"
-            className="text-lead min-h-12 w-full rounded-[var(--radius-control)] border-0 bg-black/[0.06] py-2 pr-4 pl-12 placeholder:text-[var(--fg-muted)] focus:bg-white focus:ring-1 focus:ring-[var(--border-strong)]"
+            className="text-lead min-h-12 w-full rounded-[var(--radius-control)] border-0 bg-ink/[0.06] py-2 pr-4 pl-12 placeholder:text-[var(--fg-muted)] focus:bg-white focus:ring-1 focus:ring-[var(--border-strong)]"
           />
         </div>
       )}

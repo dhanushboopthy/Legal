@@ -144,7 +144,7 @@ export function ContactCard() {
         {support.phone && (
           <a
             href={`tel:${support.phone.replace(/[^\d+]/g, '')}`}
-            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border-strong)] px-4 text-sm font-semibold hover:bg-black/[0.04]"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border-strong)] px-4 text-sm font-semibold hover:bg-ink/[0.04]"
           >
             <Phone className="size-5" aria-hidden />
             Call {support.phone}
@@ -153,7 +153,7 @@ export function ContactCard() {
         {support.email && (
           <a
             href={`mailto:${support.email}`}
-            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border-strong)] px-4 text-sm font-semibold break-all hover:bg-black/[0.04]"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--border-strong)] px-4 text-sm font-semibold break-all hover:bg-ink/[0.04]"
           >
             <Mail className="size-5 shrink-0" aria-hidden />
             Email {support.email}

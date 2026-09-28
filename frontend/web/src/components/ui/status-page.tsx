@@ -31,7 +31,7 @@ export function StatusPage({
         compact ? 'py-16' : inline ? 'min-h-[60vh]' : 'min-h-screen',
       )}
     >
-      <div className="flex size-14 items-center justify-center rounded-full bg-black/[0.04]">
+      <div className="flex size-14 items-center justify-center rounded-full bg-ink/[0.04]">
         <Icon className="size-7 text-[var(--fg-muted)]" strokeWidth={1.5} />
       </div>
       {code && <p className="text-muted text-label font-medium tracking-widest">{code}</p>}

@@ -10,7 +10,7 @@ export const buttonVariants = cva(
       variant: {
         primary:
           'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] active:bg-[var(--color-accent-active)]',
-        secondary: 'bg-black/[0.06] text-[var(--fg)] hover:bg-black/[0.1] active:bg-black/[0.14]',
+        secondary: 'bg-ink/[0.06] text-[var(--fg)] hover:bg-ink/[0.1] active:bg-ink/[0.14]',
         ghost: 'text-accent-ink hover:bg-[var(--color-accent)]/[0.08]',
         danger: 'bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-ink)]',
       },

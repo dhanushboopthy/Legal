@@ -19,7 +19,7 @@ export function InfoPanel({
   action?: ReactNode
 }) {
   const toneClass = {
-    neutral: 'bg-black/[0.04] text-[var(--fg-muted)]',
+    neutral: 'bg-ink/[0.04] text-[var(--fg-muted)]',
     success: 'bg-[var(--color-success)]/10 text-[var(--color-success)]',
     danger: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]',
   }[tone]

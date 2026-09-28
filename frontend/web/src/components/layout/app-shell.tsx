@@ -142,7 +142,7 @@ function Brand() {
       to="/"
       className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-[var(--radius-control)] text-base font-semibold tracking-tight"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-[0.5rem] bg-[var(--fg)] text-white">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[0.5rem] bg-navy text-gold">
         <Scale className="size-[18px]" strokeWidth={1.75} aria-hidden />
       </span>
       <span className="truncate">Advocate Filing</span>
@@ -152,7 +152,7 @@ function Brand() {
 
 function Sidebar({ destinations }: { destinations: Destination[] }) {
   return (
-    <aside className="bar-translucent fixed inset-y-0 left-0 z-30 hidden w-[16.25rem] flex-col border-r border-[var(--border)] px-4 py-6 lg:flex">
+    <aside className="sidebar-surface fixed inset-y-0 left-0 z-30 hidden w-[16.25rem] flex-col border-r border-[var(--border)] px-4 py-6 lg:flex">
       <div className="px-2">
         <Brand />
       </div>
@@ -182,8 +182,8 @@ function SidebarItem({ to, label, icon: Icon, badge }: Destination) {
         cn(
           'flex min-h-11 items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm font-medium transition-colors',
           isActive
-            ? 'text-accent-ink bg-[var(--color-accent)]/10'
-            : 'text-[var(--fg)] hover:bg-black/[0.05]',
+            ? 'text-accent-ink bg-white shadow-[0_1px_2px_rgba(15,39,71,0.08)]'
+            : 'text-[var(--fg)] hover:bg-ink/[0.05]',
         )
       }
     >
@@ -237,7 +237,7 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
         {variant === 'row' ? (
           <button
             aria-label={`Account: ${user?.full_name ?? ''}`}
-            className="flex min-h-12 w-full items-center gap-3 rounded-[var(--radius-control)] px-2 text-left transition-colors hover:bg-black/[0.05]"
+            className="flex min-h-12 w-full items-center gap-3 rounded-[var(--radius-control)] px-2 text-left transition-colors hover:bg-ink/[0.05]"
           >
             <UserAvatar name={user?.full_name ?? ''} src={user?.avatar_url} className="size-9" />
             <span className="min-w-0 flex-1">
@@ -249,7 +249,7 @@ function AccountMenu({ variant }: { variant: 'icon' | 'row' }) {
         ) : (
           <button
             aria-label={`Account: ${user?.full_name ?? ''}`}
-            className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-black/[0.06]"
+            className="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
           >
             <UserAvatar name={user?.full_name ?? ''} src={user?.avatar_url} className="size-9" />
           </button>

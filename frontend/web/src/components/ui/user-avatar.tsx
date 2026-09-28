@@ -7,7 +7,7 @@ const TONES = [
   'bg-[var(--color-accent)]/10 text-accent-ink',
   'bg-[var(--color-success)]/10 text-success-ink',
   'bg-[var(--color-warning)]/10 text-warning-ink',
-  'bg-black/[0.06] text-[var(--fg)]',
+  'bg-ink/[0.06] text-[var(--fg)]',
 ]
 
 function initials(name: string): string {
@@ -46,7 +46,7 @@ export function UserAvatar({
         src={url}
         alt=""
         aria-hidden
-        className={cn(base, 'bg-black/[0.06] object-cover')}
+        className={cn(base, 'bg-ink/[0.06] object-cover')}
         onError={() => setFailed(url)}
       />
     )

@@ -79,8 +79,8 @@ export function HoldOverControl({ caseId, onChanged }: { caseId: string; onChang
               className={cn(
                 'min-h-11 rounded-full px-4 text-sm font-medium transition-colors',
                 reason === r
-                  ? 'bg-[var(--fg)] text-white'
-                  : 'bg-black/[0.06] text-[var(--fg)] hover:bg-black/[0.1]',
+                  ? 'bg-navy text-white'
+                  : 'bg-ink/[0.06] text-[var(--fg)] hover:bg-ink/[0.1]',
               )}
             >
               {r}
