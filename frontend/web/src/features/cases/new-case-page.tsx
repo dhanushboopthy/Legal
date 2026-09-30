@@ -358,7 +358,7 @@ function NewCaseForm({
               {label}
             </Button>
             <p className="text-muted text-caption mt-2 text-center">
-              You pay {fee} in the next step. It isn&apos;t refunded if the advocate declines the
+              You pay {fee} in the next step. It isn&apos;t refunded if the advocate defers the
               case.
             </p>
           </div>
