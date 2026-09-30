@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { getQuote, payQuote } from '@/lib/api/cases'
+import { listPaymentsForCase } from '@/lib/api/payments'
 import { formatBytes } from '@/lib/uploads'
 import { formatDate } from '@/lib/utils'
 import type { DocumentOut } from '@/types/api'
@@ -50,11 +51,20 @@ export function QuotedPaymentPanel({
       description="Pay the price below to open and download it."
       amountInr={quote.data.amount_inr}
       buttonLabel={(amount) => `Pay ${amount} to unlock`}
+      findPaymentId={async () =>
+        (await listPaymentsForCase(caseId)).findLast(
+          (p) => p.type === 'quote' && p.status === 'pending',
+        )?.id
+      }
       onPaid={onChanged}
     >
-      <div className="mt-4 rounded-[var(--radius-control)] bg-ink/[0.04] p-4">
+      <div className="bg-ink/[0.04] mt-4 rounded-[var(--radius-control)] p-4">
         <div className="flex items-start gap-3">
-          <Lock className="mt-0.5 size-5 shrink-0 text-[var(--fg-muted)]" strokeWidth={1.75} aria-hidden />
+          <Lock
+            className="mt-0.5 size-5 shrink-0 text-[var(--fg-muted)]"
+            strokeWidth={1.75}
+            aria-hidden
+          />
           <div className="min-w-0">
             <p className="font-medium break-words">{draft?.original_filename ?? 'Draft'}</p>
             <p className="text-muted text-label mt-0.5">{meta}</p>

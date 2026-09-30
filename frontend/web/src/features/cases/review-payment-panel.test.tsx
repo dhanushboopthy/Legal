@@ -95,6 +95,42 @@ describe('PaymentActionCard', () => {
     await vi.waitFor(() => expect(onPaid).toHaveBeenCalledTimes(2))
   })
 
+  it('finds the pending payment for Check status when the checkout opened elsewhere', async () => {
+    vi.useFakeTimers()
+    const onPaid = vi.fn()
+    api.onPost('/payments/pay9/reconcile').reply(200, {
+      id: 'pay9',
+      case_id: 'c1',
+      type: 'review',
+      amount: 100,
+      currency: 'INR',
+      status: 'paid',
+      quote_id: null,
+      paid_at: '2026-09-15T10:00:00Z',
+    })
+    // Paid on the new-case page: this card never created the order, so it
+    // starts in "confirming" with no payment id of its own.
+    renderWithProviders(
+      <PaymentActionCard
+        createOrder={() => Promise.resolve(order)}
+        title="Pay the review fee"
+        description="Pay to proceed."
+        amountInr={100}
+        initiallyConfirming
+        findPaymentId={() => Promise.resolve('pay9')}
+        onPaid={onPaid}
+      />,
+    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
+    vi.useRealTimers()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check status' }))
+    await vi.waitFor(() => expect(onPaid).toHaveBeenCalledTimes(1))
+    expect(api.history.post.map((r) => r.url)).toEqual(['/payments/pay9/reconcile'])
+  })
+
   it('offers Retry when Razorpay reports the attempt failed', async () => {
     const user = userEvent.setup()
     openCheckout.mockImplementation((opts: { onFailed?: () => void }) => {

@@ -26,6 +26,10 @@ interface Props {
   // The fee was paid moments ago (in the checkout that opened from the
   // new-case page), so start out waiting for it to be confirmed.
   initiallyConfirming?: boolean
+  // Finds the payment being waited on when this card didn't create it (the
+  // checkout opened from another page, or the page was reloaded), so "Check
+  // status" always has an id to ask Razorpay about.
+  findPaymentId?: () => Promise<string | undefined>
   onPaid: () => void
   // What is being paid for (e.g. the locked draft's details), shown above the button.
   children?: ReactNode
@@ -38,6 +42,7 @@ export function PaymentActionCard({
   description,
   amountInr,
   initiallyConfirming = false,
+  findPaymentId,
   onPaid,
   children,
   buttonLabel = (amount) => `Pay ${amount}`,
@@ -84,7 +89,11 @@ export function PaymentActionCard({
   })
 
   const check = useMutation({
-    mutationFn: () => reconcilePayment(paymentId!),
+    mutationFn: async () => {
+      const id = paymentId ?? (await findPaymentId?.())
+      if (!id) throw new Error("We couldn't find this payment yet. Please try again in a moment.")
+      return reconcilePayment(id)
+    },
     onSuccess: (payment) => {
       if (payment.status === 'paid') {
         onPaid()
@@ -108,8 +117,8 @@ export function PaymentActionCard({
         <div
           className={
             state === 'failed'
-              ? 'hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
-              : 'hidden size-11 shrink-0 items-center justify-center rounded-full sm:flex bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+              ? 'hidden size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)] sm:flex'
+              : 'hidden size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] sm:flex'
           }
         >
           {state === 'failed' ? (

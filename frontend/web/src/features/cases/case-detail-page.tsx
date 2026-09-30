@@ -289,6 +289,11 @@ function CaseActionPanel({
           description="Pay the review fee so the advocate can start reviewing your case."
           amountInr={pricing?.review_fee_inr}
           initiallyConfirming={confirmingPayment}
+          findPaymentId={async () =>
+            (await listPaymentsForCase(caseId)).findLast(
+              (p) => p.type === 'review' && p.status === 'pending',
+            )?.id
+          }
           onPaid={onChanged}
         />
       ) : (
