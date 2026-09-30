@@ -56,6 +56,6 @@ async def razorpay_webhook(
     else:
         # Acknowledged so Razorpay stops retrying; add a branch above to act
         # on a new event type (look it up, act, commit).
-        logger.info("webhook_event_ignored", event=event)
+        logger.info("webhook_event_ignored", event_type=event)
 
     return {"status": "ok"}

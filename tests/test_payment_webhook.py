@@ -330,3 +330,16 @@ async def test_reconcile_is_limited_to_people_with_access_to_the_case(client, db
     lawyer, admin, case, quote, payment = await _quoted(db_session)
     stranger = await make_user(db_session, role_name="junior_lawyer")
     assert (await client.post(f"/payments/{payment.id}/reconcile", headers=auth_header(stranger))).status_code == 403
+
+
+async def test_an_event_we_do_not_act_on_is_acknowledged_not_a_500(client):
+    """Razorpay also sends order.paid, payment.authorized and others. A 500
+    makes it retry and eventually disable the webhook."""
+    import json
+    body = json.dumps({"event": "order.paid", "payload": {}}).encode()
+    resp = await client.post(
+        "/webhooks/razorpay", content=body,
+        headers={"X-Razorpay-Signature": _sign(body), "Content-Type": "application/json"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == {"status": "ok"}
