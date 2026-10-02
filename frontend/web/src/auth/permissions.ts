@@ -16,6 +16,7 @@ export const PERMISSIONS = {
   PAYMENT_VIEW_OWN: 'payment:view_own',
   PAYMENT_VIEW_ALL: 'payment:view_all',
   PAYMENT_REFUND: 'payment:refund',
+  PAYMENT_RECORD_OFFLINE: 'payment:record_offline',
   USER_MANAGE: 'user:manage',
   AUDIT_VIEW: 'audit:view',
 } as const

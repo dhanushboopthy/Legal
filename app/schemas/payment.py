@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.payment import PaymentStatus, PaymentType
+from app.models.payment import OfflineMethod, PaymentStatus, PaymentType
 
 
 class PaymentOrderRequest(BaseModel):
@@ -29,6 +29,26 @@ class PaymentOut(BaseModel):
     status: PaymentStatus
     quote_id: uuid.UUID | None = None
     paid_at: datetime | None
+    # "razorpay", or "offline" with the method (and any reference) the
+    # advocate recorded.
+    gateway: str = "razorpay"
+    method: OfflineMethod | None = None
+    reference: str | None = None
+
+
+class OfflinePaymentCreate(BaseModel):
+    """The advocate received the drafting charges outside Razorpay. There is
+    no amount: it is always the open quote's."""
+
+    method: OfflineMethod
+    # A UPI transaction id, cheque number, receipt number... optional.
+    reference: str | None = Field(default=None, max_length=150)
+
+    @field_validator("reference")
+    @classmethod
+    def _blank_reference_is_none(cls, value: str | None) -> str | None:
+        value = (value or "").strip()
+        return value or None
 
 
 class PaymentListItem(PaymentOut):

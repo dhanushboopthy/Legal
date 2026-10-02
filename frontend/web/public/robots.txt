@@ -1,0 +1,9 @@
+# The home page is the only public page. Everything else is signed-in or a
+# sign-in step, and nginx sends those with `X-Robots-Tag: noindex`. They are
+# not disallowed here on purpose: a crawler that can't fetch a page never sees
+# its noindex, and may list the bare URL anyway.
+User-agent: *
+Disallow: /api/
+Disallow: /bff/
+
+Sitemap: https://srikrishnlegaloffice.in/sitemap.xml

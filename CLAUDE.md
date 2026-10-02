@@ -70,7 +70,10 @@ frontend/
   (one table: from, to, who, permission) via `transition()`. Don't assign
   `case.status` anywhere else. Edges taken by a confirmed payment
   (`submitted -> review_fee_paid`, `quoted -> delivered`) are system-only: a
-  person can never take them, whatever they hold. A new action that reaches
+  person can never take them through `transition()`, whatever they hold. The
+  one exception is `payment_service.record_offline_payment` (below), which
+  records the money first and then unlocks through the same `_quote_paid` the
+  webhook uses. A new action that reaches
   one of those statuses must check its own source status too — "is the move
   legal for anyone" is not the same as "may this action make it".
 - **RBAC is permission-based, not role-based**, at the check site:
@@ -87,6 +90,15 @@ frontend/
   verifies a signed Razorpay event — the client polling or reporting success
   does not itself move the state machine. `POST /payments/{id}/reconcile`
   ("check status") feeds Razorpay's answer through the same handler.
+- **Drafting charges can also be paid offline.** Cash, GPay/UPI, bank
+  transfer or cheque: someone with `payment:record_offline` calls
+  `POST /cases/{id}/quote/record-payment` (method + optional reference, never
+  an amount). It writes a `paid` Payment with `gateway='offline'` and the
+  open quote's amount, under `lock_case`, then runs `_quote_paid`, so the
+  chat line, notifications and download unlock are identical. A Razorpay
+  capture for the same quote afterwards is auto-refunded. Refunding an offline
+  payment applies at once (no gateway call) and locks the draft again. The
+  review fee stays Razorpay-only.
 - **Amounts come from the server.** A Razorpay order's amount is read from the
   quote row (or `REVIEW_FEE_INR`); whatever the client sends is ignored. The
   webhook re-checks order, amount and currency, and moves exactly one edge.
@@ -169,6 +181,15 @@ frontend/
   email (not one per pending account) via
   `maintenance_service.remind_stale_pending_approvals`, at most once per
   `pending_approval_reminder_gap_hours`.
+- **Removing a person is not the same as "not yet approved".**
+  `PATCH /users/{id}/remove` sets `users.removed_at` (and `is_active=False`)
+  and revokes every refresh token; `/restore` clears it. Nothing is deleted.
+  Every token-issuing route calls `auth._refuse_removed` once the credential
+  is proven, and both `get_current_user` and `get_current_user_or_pending`
+  refuse a removed user, so they never see the pending-approval screen. You
+  can't remove yourself or the last active `user:manage` holder (checked
+  under a `pg_advisory_xact_lock`). "Pending approval" everywhere (People
+  page, reminders) means `is_active=False AND removed_at IS NULL`.
 - **A case's `case_number` (`LF-2026-0042`) is assigned once, in
   `case_service.create_case`, from the `case_number_seq` Postgres sequence —
   never recomputed, never derived from `id`.** It's nullable at the DB level
@@ -193,7 +214,18 @@ frontend/
   (`rate_limit.client_ip`), which nginx sets and the BFF passes on. Auth
   routes use `key_func=client_ip`; everything else falls under
   `SlowAPIMiddleware`'s 300/min default. The api has no published port in
-  `docker-compose.yml` for this reason: reachable only via nginx/BFF.
+  `docker-compose.yml` for this reason: reachable only via nginx/BFF. Behind
+  the Cloudflare Tunnel, nginx takes the visitor's address from
+  `CF-Connecting-IP`, trusted only from `REAL_IP_FROM` (the prod compose
+  network; `127.0.0.1/32`, i.e. off, in dev).
+- **Production is one Windows PC** (`docs/production-windows.md`):
+  `docker-compose.prod.yml` on top of the base file (never the override),
+  project `legal-filing-prod`, settings in `.env.production` (git-ignored),
+  nothing published on the host, the internet reaching `web` and `storage`
+  only through the `cloudflared` service. `deploy/windows/start.ps1` builds,
+  migrates, seeds roles and starts it; `backup.ps1`/`restore.ps1` cover the
+  database and documents. The first advocate comes from
+  `python -m scripts.create_admin`. Windows scripts target PowerShell 5.1.
 - **`ENVIRONMENT=production` refuses to start with unsafe settings**
   (`Settings._refuse_unsafe_production`: short/placeholder `SECRET_KEY`, empty
   webhook secret, `DEBUG`, localhost CORS, non-https URLs). Add a rule there
@@ -203,9 +235,19 @@ frontend/
   filled from `CSP_S3_ORIGIN` at container start. The api adds `nosniff`, a
   `default-src 'none'` CSP and `no-store` on `/auth/*` (`middleware.py`). A new
   third-party script or frame origin needs adding to the CSP.
+- **`/` is two pages.** nginx serves `frontend/web/home.html` (the public,
+  JS-free home page, the only indexable page) to visitors and the app's
+  `index.html` to anyone with the `signed_in` cookie, which the BFF sets and
+  clears alongside the `/bff`-scoped refresh cookie (it holds no secret).
+  Everything except the home page, `robots.txt` and `sitemap.xml` gets
+  `X-Robots-Tag: noindex` (the `$robots_tag` map). A new public page needs
+  adding to that map and to `public/sitemap.xml`. What the home page says is
+  limited by Bar Council of India Rule 36: facts only, no testimonials or
+  solicitation.
 - **Auth events are audited** (`user.login`, `user.login_failed`,
   `user.login_locked`, `user.logout`, `user.password_reset`,
-  `user.email_verified`, `user.registered`, `user.approved`), in the same
+  `user.email_verified`, `user.registered`, `user.approved`, `user.removed`,
+  `user.restored`), in the same
   transaction as the action. Logs are JSON in production
   (`core/logging.configure_logging`); log emails through `mask_email`.
 

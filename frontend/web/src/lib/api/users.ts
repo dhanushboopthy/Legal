@@ -44,6 +44,18 @@ export async function listUsers(): Promise<UserOut[]> {
   return data
 }
 
+// Take someone off the service (signed out everywhere, can't sign in) and
+// bring them back later. Nothing of theirs is deleted.
+export async function removeUser(userId: string): Promise<UserOut> {
+  const { data } = await apiClient.patch<UserOut>(`/users/${userId}/remove`)
+  return data
+}
+
+export async function restoreUser(userId: string): Promise<UserOut> {
+  const { data } = await apiClient.patch<UserOut>(`/users/${userId}/restore`)
+  return data
+}
+
 export async function approveUser(userId: string): Promise<UserOut> {
   const { data } = await apiClient.patch<UserOut>(`/users/${userId}/approve`)
   return data

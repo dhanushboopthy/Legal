@@ -1,20 +1,22 @@
 import uuid
+from datetime import datetime, timezone
 
 import structlog
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.core.logging import mask_email
 from app.core.permissions import USER_MANAGE
 from app.database import get_db
 from app.dependencies import get_current_user, get_current_user_or_pending, require_permission
+from app.models.role import Role
 from app.models.user import User
 from app.core.rate_limit import limiter
 from app.schemas.user import AvatarConfirm, AvatarUploadRequest, AvatarUploadTarget, UserOut, UserUpdate
-from app.services import audit_service, avatar_service, email_service, storage_service
+from app.services import audit_service, avatar_service, email_service, storage_service, token_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 logger = structlog.get_logger()
@@ -111,6 +113,8 @@ async def approve_user(
     user = result.scalar_one_or_none()
     if user is None:
         raise NotFoundError("User not found")
+    if user.removed_at is not None:
+        raise ConflictError("This person was removed. Use Restore access to bring them back.")
 
     user.is_active = True
     user.is_verified = True
@@ -129,5 +133,89 @@ async def approve_user(
         )
     except Exception as exc:  # noqa: BLE001 - a flaky mail server shouldn't fail the approval
         logger.warning("approval_email_send_failed", email=mask_email(user.email), error=str(exc))
+
+    return UserOut.from_user(user)
+
+
+# One key for every remove/restore, so two admins removing each other at the
+# same moment can't both pass the "someone must still manage people" check.
+_PEOPLE_LOCK = 0x7065_6f70  # "peop"
+
+
+async def _load_user(db: AsyncSession, user_id: uuid.UUID) -> User:
+    await db.execute(select(func.pg_advisory_xact_lock(_PEOPLE_LOCK)))
+    user = (await db.execute(
+        select(User).options(selectinload(User.role)).where(User.id == user_id)
+        .execution_options(populate_existing=True)
+    )).scalar_one_or_none()
+    if user is None:
+        raise NotFoundError("User not found")
+    return user
+
+
+@router.patch("/{user_id}/remove", response_model=UserOut, dependencies=[Depends(require_permission(USER_MANAGE))])
+async def remove_user(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Take someone off the service: they are signed out everywhere and can't
+    sign in again until restored. Nothing is deleted: their cases, messages
+    and payments stay, and Restore access brings them back as they were."""
+    user = await _load_user(db, user_id)
+    if user.id == current_user.id:
+        raise ConflictError("You can't remove yourself.")
+    if user.removed_at is not None:
+        return UserOut.from_user(user)  # already removed: nothing to do
+
+    if USER_MANAGE in (user.role.permissions or []):
+        others = (await db.execute(
+            select(func.count()).select_from(User).join(Role, User.role_id == Role.id).where(
+                Role.permissions.any(USER_MANAGE), User.is_active.is_(True),
+                User.removed_at.is_(None), User.id != user.id,
+            )
+        )).scalar_one()
+        if others == 0:
+            raise ConflictError("Someone else must be able to manage people before this person is removed.")
+
+    user.removed_at = datetime.now(timezone.utc)
+    user.is_active = False
+    await token_service.revoke_all_for_user(db, user.id)
+    await audit_service.log_action(
+        db, user_id=current_user.id, action="user.removed", entity_type="user", entity_id=str(user.id),
+    )
+    await db.commit()
+    await db.refresh(user)
+    return UserOut.from_user(user)
+
+
+@router.patch("/{user_id}/restore", response_model=UserOut, dependencies=[Depends(require_permission(USER_MANAGE))])
+async def restore_user(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Bring a removed person back. They sign in with their old password or
+    Google account and find their cases where they left them."""
+    user = await _load_user(db, user_id)
+    if user.removed_at is None:
+        raise ConflictError("This person hasn't been removed.")
+
+    user.removed_at = None
+    user.is_active = True
+    await audit_service.log_action(
+        db, user_id=current_user.id, action="user.restored", entity_type="user", entity_id=str(user.id),
+    )
+    await db.commit()
+    await db.refresh(user)
+
+    try:
+        await email_service.send_email(
+            user.email, "Your access has been restored",
+            f"Hi {user.full_name}, your access has been restored. You can sign in again.",
+            f"<p>Hi {user.full_name},</p><p>Your access has been restored. You can sign in again.</p>",
+        )
+    except Exception as exc:  # noqa: BLE001 - a flaky mail server shouldn't fail the restore
+        logger.warning("restore_email_send_failed", email=mask_email(user.email), error=str(exc))
 
     return UserOut.from_user(user)

@@ -13,6 +13,9 @@ from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+ACCESS_REMOVED = "Your access to this service has been removed. Please contact the office."
+
+
 
 async def _user_from_token(token: str, db: AsyncSession) -> User:
     try:
@@ -41,6 +44,8 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     user = await _user_from_token(token, db)
+    if user.removed_at is not None:
+        raise ForbiddenError(ACCESS_REMOVED)
     if not user.is_active:
         raise ForbiddenError("Account is not active yet — awaiting admin approval")
     return user
@@ -53,8 +58,12 @@ async def get_current_user_or_pending(
     """Like get_current_user, but admits a verified-but-not-yet-approved
     account too. Only for the one endpoint a limited session needs to work at
     all: GET /users/me, which the pending-approval screen polls. Every other
-    route stays behind get_current_user / require_permission."""
-    return await _user_from_token(token, db)
+    route stays behind get_current_user / require_permission. A removed
+    person is not "pending": they are refused here too."""
+    user = await _user_from_token(token, db)
+    if user.removed_at is not None:
+        raise ForbiddenError(ACCESS_REMOVED)
+    return user
 
 
 def require_permission(permission: str):

@@ -13,16 +13,16 @@ A **fill** colour is for backgrounds, borders and icons (needs 3:1). An **ink** 
 
 | Token | Value | Use | Contrast |
 |---|---|---|---|
-| `--color-accent` | `#0071e3` | primary button fill | white on it 4.70 |
-| `--color-accent-hover` | `#0066cc` (was `#0077ed`, lighter than base and 4.32) | hover | white on it 5.57 |
-| `--color-accent-active` | `#005bb8` | pressed | 6.59 |
-| `--color-accent-ink` | `#005bb8` | links, info pills | ≥5.30 on white/bg/tint |
+| `--color-accent` | `#007acc` (VS Code blue) | primary button fill | white on it 4.51; never as text (3.98 on bg) |
+| `--color-accent-hover` | `#0065a9` | hover | white on it 6.11 |
+| `--color-accent-active` | `#005a96` | pressed | 7.23 |
+| `--color-accent-ink` | `#0065a9` | links, info pills | ≥5.37 on white/bg/tint |
 | `--color-success` / `-ink` | `#16a34a` / `#166534` | icon+fill / text | ink ≥5.91 (fill text was 2.96 on its pill) |
 | `--color-warning` / `-ink` | `#d97706` / `#92400e` | icon+fill / text | ink ≥5.87 (fill text was 2.86) |
 | `--color-danger` / `-ink` | `#dc2626` / `#b91c1c` | fill+danger button / text | ink ≥5.09; white on fill 4.83 |
 | `--fg` | `#1d1d1f` | text | 15.5 on bg |
 | `--fg-muted` | `#48484a` (was `#636366`) | secondary text | ~9:1 on bg |
-| `--bg` / `--bg-elevated` | `#f5f5f7` / `#ffffff` | page / card | |
+| `--bg` / `--bg-elevated` | `#e8f2fb` / `#ffffff` | page (light VS Code-hue blue) / card | |
 | `--border` | `rgba(0,0,0,.14)` | card and divider edges | |
 | `--border-strong` | `#86868b` | form-control and secondary-button edges | 3:1 on white (WCAG 1.4.11) |
 

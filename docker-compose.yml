@@ -122,6 +122,9 @@ services:
       # upload documents there. Set CSP_S3_ORIGIN when S3_ENDPOINT_URL is
       # empty (real AWS), e.g. https://<bucket>.s3.ap-south-1.amazonaws.com
       CSP_S3_ORIGIN: ${CSP_S3_ORIGIN:-${S3_ENDPOINT_URL:-http://localhost:8333}}
+      # Who may set the visitor's address (CF-Connecting-IP). Off locally;
+      # docker-compose.prod.yml sets the compose network's range.
+      REAL_IP_FROM: ${REAL_IP_FROM:-127.0.0.1/32}
     ports:
       - "3000:80"
     depends_on:

@@ -12,7 +12,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PaymentStatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
-import { listAllPayments, refundPayment } from '@/lib/api/payments'
+import { listAllPayments, OFFLINE_METHOD_LABELS, refundPayment } from '@/lib/api/payments'
+import { PERMISSIONS } from '@/auth/permissions'
+import { usePermissions } from '@/auth/use-permissions'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { PaymentListItem } from '@/types/api'
 import { usePageTitle } from '@/hooks/use-page-title'
@@ -23,6 +25,8 @@ export function PaymentsPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState<PaymentListItem | null>(null)
+  const { can } = usePermissions()
+  const offline = confirming?.gateway === 'offline'
 
   const {
     data: payments,
@@ -36,9 +40,13 @@ export function PaymentsPage() {
 
   const refund = useMutation({
     mutationFn: refundPayment,
-    onSuccess: () => {
+    onSuccess: (payment) => {
       setConfirming(null)
-      toast({ variant: 'success', title: 'Refund initiated' })
+      toast({
+        variant: 'success',
+        // An offline refund takes effect at once; Razorpay confirms its own later.
+        title: payment.status === 'refunded' ? 'Marked as refunded' : 'Refund started',
+      })
       void queryClient.invalidateQueries({ queryKey: ['all-payments'] })
     },
     onError: (err) =>
@@ -78,7 +86,9 @@ export function PaymentsPage() {
               subtitle={[
                 p.case_number,
                 p.junior_lawyer_name,
-                p.type === 'review' ? 'Review fee' : 'Draft',
+                p.type === 'review' ? 'Review fee' : 'Drafting charges',
+                p.method && `Paid by ${OFFLINE_METHOD_LABELS[p.method]}`,
+                p.reference && `Ref. ${p.reference}`,
                 p.paid_at ? formatDate(p.paid_at) : 'Not paid',
               ]
                 .filter(Boolean)
@@ -87,9 +97,9 @@ export function PaymentsPage() {
                 <>
                   <span className="font-medium tabular-nums">{formatCurrency(p.amount)}</span>
                   <PaymentStatusPill status={p.status} />
-                  {p.status === 'paid' && (
+                  {p.status === 'paid' && can(PERMISSIONS.PAYMENT_REFUND) && (
                     <Button size="sm" variant="secondary" onClick={() => setConfirming(p)}>
-                      Refund
+                      {p.gateway === 'offline' ? 'Mark as refunded' : 'Refund'}
                     </Button>
                   )}
                 </>
@@ -102,9 +112,17 @@ export function PaymentsPage() {
       <ConfirmDialog
         open={confirming !== null}
         onOpenChange={(open) => !open && setConfirming(null)}
-        title={`Refund ${confirming ? formatCurrency(confirming.amount) : ''} to ${confirming?.junior_lawyer_name}?`}
-        description={`For “${confirming?.case_title}”. This can’t be undone.`}
-        confirmLabel="Refund"
+        title={
+          offline
+            ? `Mark ${confirming ? formatCurrency(confirming.amount) : ''} as refunded to ${confirming?.junior_lawyer_name}?`
+            : `Refund ${confirming ? formatCurrency(confirming.amount) : ''} to ${confirming?.junior_lawyer_name}?`
+        }
+        description={
+          offline
+            ? `For “${confirming?.case_title}”. Do this once you’ve given the money back, or if it was recorded by mistake. The draft locks again for the lawyer. This can’t be undone.`
+            : `For “${confirming?.case_title}”. This can’t be undone.`
+        }
+        confirmLabel={offline ? 'Mark as refunded' : 'Refund'}
         tone="danger"
         loading={refund.isPending}
         onConfirm={() => confirming && refund.mutate(confirming.id)}

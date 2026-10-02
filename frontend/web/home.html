@@ -1,0 +1,211 @@
+<!doctype html>
+<!--
+  The public home page, served by nginx at / to anyone not signed in (see
+  nginx/default.conf.template). Plain HTML with no JavaScript, so search
+  engines and link previews read it exactly as a visitor sees it.
+
+  What it says is limited by Bar Council of India Rule 36: facts about the
+  office and how to use the service only. No testimonials, claims of being
+  "the best", or anything that asks for work.
+-->
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sri Krishn Legal Office · Case review and drafting for lawyers</title>
+    <meta
+      name="description"
+      content="Send your case papers to Sri Krishn Legal Office for review by the advocate, discuss the case online, and download the draft when it is ready."
+    />
+    <link rel="canonical" href="https://srikrishnlegaloffice.in/" />
+    <meta name="theme-color" content="#0f2747" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Link previews (WhatsApp, LinkedIn, Facebook, X). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sri Krishn Legal Office" />
+    <meta property="og:title" content="Sri Krishn Legal Office" />
+    <meta
+      property="og:description"
+      content="Case review and drafting for lawyers. Send your papers, discuss the case with the advocate, and download the draft when it is ready."
+    />
+    <meta property="og:url" content="https://srikrishnlegaloffice.in/" />
+    <meta property="og:image" content="https://srikrishnlegaloffice.in/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Sri Krishn Legal Office: case review and drafting for lawyers"
+    />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Structured data for Google. A data block, not a script: the CSP's
+         script-src doesn't apply to it. Add "telephone" and "address" once
+         they're final (and the same number in the Contact section below). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Sri Krishn Legal Office",
+            "url": "https://srikrishnlegaloffice.in/"
+          },
+          {
+            "@type": "LegalService",
+            "name": "Sri Krishn Legal Office",
+            "url": "https://srikrishnlegaloffice.in/",
+            "logo": "https://srikrishnlegaloffice.in/icon-512.png",
+            "image": "https://srikrishnlegaloffice.in/og-image.png",
+            "description": "Case review and drafting for lawyers.",
+            "areaServed": { "@type": "Country", "name": "India" }
+          }
+        ]
+      }
+    </script>
+
+    <link rel="stylesheet" href="/src/home/home.css" />
+  </head>
+  <body>
+    <a href="#main" class="skip-link surface rounded-full px-4 py-2 text-sm font-medium"
+      >Skip to content</a
+    >
+
+    <!-- The blue band: the brand bar and the introduction, in the VS Code blues
+         (src/home/home.css). The page's main content starts below it. -->
+    <header class="hero-band">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+        <a
+          href="/"
+          class="flex min-h-11 min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight"
+        >
+          <img src="/favicon.svg" alt="" class="size-8 shrink-0" width="32" height="32" />
+          <span class="leading-tight">Sri Krishn Legal Office</span>
+        </a>
+        <a href="/login" class="hero-button-outline min-h-11 shrink-0 px-5">Sign in</a>
+      </div>
+
+      <div class="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6 lg:pt-16 lg:pb-24">
+        <div class="max-w-2xl">
+          <h1 class="sm:text-title text-2xl font-semibold">Case review and drafting for lawyers</h1>
+          <p class="text-lead mt-5">
+            Sri Krishn Legal Office reviews cases sent in by lawyers and prepares the drafts for
+            filing. Upload your case papers, discuss the case with the advocate online, and download
+            the draft when it is ready.
+          </p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="/register" class="hero-button min-h-12 px-6">Create an account</a>
+            <a href="/login" class="hero-button-outline min-h-12 px-6">Sign in</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="pt-14 lg:pt-20">
+      <section aria-labelledby="how" class="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+        <h2 id="how" class="text-xl font-semibold lg:text-2xl">How it works</h2>
+        <ol class="mt-6 grid gap-4 sm:grid-cols-2">
+          <li
+            class="surface shadow-card rounded-[var(--radius-card)] border border-[var(--border)] p-6"
+          >
+            <p class="step-number" aria-hidden="true">1</p>
+            <h3 class="mt-4 text-base font-semibold">
+              <span class="sr-only">Step 1: </span>Send your case
+            </h3>
+            <p class="text-muted mt-2 text-sm">
+              Fill in the case details and upload the papers: PDF, Word or photos. Pay the review
+              fee online. The amount is shown before you pay.
+            </p>
+          </li>
+          <li
+            class="surface shadow-card rounded-[var(--radius-card)] border border-[var(--border)] p-6"
+          >
+            <p class="step-number" aria-hidden="true">2</p>
+            <h3 class="mt-4 text-base font-semibold">
+              <span class="sr-only">Step 2: </span>The advocate reviews it
+            </h3>
+            <p class="text-muted mt-2 text-sm">
+              The advocate reads the case and tells you whether they can take it on.
+            </p>
+          </li>
+          <li
+            class="surface shadow-card rounded-[var(--radius-card)] border border-[var(--border)] p-6"
+          >
+            <p class="step-number" aria-hidden="true">3</p>
+            <h3 class="mt-4 text-base font-semibold">
+              <span class="sr-only">Step 3: </span>Discuss the case
+            </h3>
+            <p class="text-muted mt-2 text-sm">
+              Write to the advocate and share more documents in the case’s messages, all in one
+              place.
+            </p>
+          </li>
+          <li
+            class="surface shadow-card rounded-[var(--radius-card)] border border-[var(--border)] p-6"
+          >
+            <p class="step-number" aria-hidden="true">4</p>
+            <h3 class="mt-4 text-base font-semibold">
+              <span class="sr-only">Step 4: </span>Get the draft
+            </h3>
+            <p class="text-muted mt-2 text-sm">
+              The advocate sends the draft with its drafting charges. Pay them and download the
+              draft. If something needs changing, say what, and a new draft follows.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="questions" class="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+        <h2 id="questions" class="text-xl font-semibold lg:text-2xl">Common questions</h2>
+        <dl class="mt-6 max-w-2xl space-y-6">
+          <div>
+            <dt class="text-base font-semibold">Who can use this?</dt>
+            <dd class="text-muted mt-1 text-sm">
+              Lawyers enrolled with a State Bar Council. You’ll be asked for your enrolment number
+              when you create an account, and the office approves each new account.
+            </dd>
+          </div>
+          <div>
+            <dt class="text-base font-semibold">How do I pay?</dt>
+            <dd class="text-muted mt-1 text-sm">
+              Online through Razorpay, by UPI, card or net banking. Every amount is shown before you
+              pay.
+            </dd>
+          </div>
+          <div>
+            <dt class="text-base font-semibold">Who can see my case?</dt>
+            <dd class="text-muted mt-1 text-sm">
+              Only you and the office. A case you haven’t sent yet is visible to you alone.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Contact: add the office phone number here when it's final, e.g.
+      <section aria-labelledby="contact" class="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+        <h2 id="contact" class="text-xl font-semibold lg:text-2xl">Contact</h2>
+        <a
+          href="tel:+91XXXXXXXXXX"
+          class="mt-4 inline-flex min-h-12 items-center rounded-full border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-6 text-sm font-medium hover:bg-ink/[0.04]"
+        >
+          Call +91 XXXXX XXXXX
+        </a>
+      </section>
+      -->
+    </main>
+
+    <footer class="border-t border-[var(--border)]">
+      <div class="text-muted text-caption mx-auto max-w-5xl space-y-2 px-4 py-8 sm:px-6">
+        <p>© 2026 Sri Krishn Legal Office</p>
+        <p>
+          In line with the Bar Council of India rules, this website gives information only. It is
+          not an advertisement or a request for work.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

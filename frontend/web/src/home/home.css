@@ -1,0 +1,55 @@
+/* The public home page (home.html): no JavaScript, just the app's tokens and
+   utilities so it looks like the same product. */
+@import '@fontsource-variable/inter';
+@import '../index.css';
+
+/* The blue band at the top: the VS Code logo blues. White text clears 4.5:1
+   on every part of it (7.2 at #005a96, 4.51 at #007acc). The logo's lighter
+   #1f9cf0 is left out, because white text on it fails (2.97). */
+.hero-band {
+  background-color: #0065a9;
+  background-image: linear-gradient(135deg, #005a96 0%, #007acc 100%);
+  color: #fff;
+}
+/* The global ring is accent blue, which would vanish on the band. */
+.hero-band :focus-visible {
+  outline-color: #fff;
+}
+
+.hero-button,
+.hero-button-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+.hero-button {
+  background-color: #fff;
+  color: var(--color-accent-ink);
+}
+.hero-button:hover {
+  background-color: var(--bg);
+}
+/* A full-white edge: 4.5:1 on the band, past the 3:1 a control's edge needs. */
+.hero-button-outline {
+  border: 1px solid #fff;
+  color: #fff;
+}
+.hero-button-outline:hover {
+  background-color: rgb(255 255 255 / 0.12);
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+}

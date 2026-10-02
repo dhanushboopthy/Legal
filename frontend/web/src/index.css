@@ -16,10 +16,13 @@
   /* Fill colours are for backgrounds, borders and icons. Text set on a tint of
      a fill uses its -ink twin, which clears WCAG AA (4.5:1) on white, on the
      page background and on the 10% pill tint. */
-  --color-accent: #1a62d6;
-  --color-accent-hover: #1554b8;
-  --color-accent-active: #134a9f;
-  --color-accent-ink: #134a9f;
+  /* The VS Code logo blues. #007acc clears 4.5:1 under white text (4.51);
+     as text on the page it would not (3.98), so text uses the darker -ink
+     (#0065a9, 5.4:1). The logo's light #1f9cf0 is too pale for either. */
+  --color-accent: #007acc;
+  --color-accent-hover: #0065a9;
+  --color-accent-active: #005a96;
+  --color-accent-ink: #0065a9;
 
   /* Navy for the brand, selected chips and strong surfaces; gold as the warm
      complement (the brand mark, small highlights). Neutral fills are tints of
@@ -27,7 +30,7 @@
   --color-navy: #0f2747;
   --color-gold: #d4a53c;
   --color-gold-ink: #7a5310;
-  --color-ink: #1b3a6b;
+  --color-ink: #0f3d66;
 
   --color-success: #16a34a;
   --color-success-ink: #166534;
@@ -67,19 +70,19 @@
 
 :root {
   /* A soft light-blue page; white cards stand out on it. */
-  --bg: #ebf1fa;
+  --bg: #e8f2fb;
   --bg-elevated: #ffffff;
   --fg: #13213a;
   /* Secondary text still has to be read easily: ~7:1 on the page background. */
   --fg-muted: #45536b;
   /* Hairline card and divider edges, blue-tinted. */
-  --border: rgba(27, 58, 107, 0.13);
+  --border: rgba(15, 61, 102, 0.13);
   /* Form-control edges: 3:1 against white (WCAG 1.4.11), so a field is
      recognisably a field. */
   --border-strong: #7b889e;
   --shadow-color: rgba(15, 39, 71, 0.14);
   /* The sidebar: a deeper wash of the page blue. */
-  --sidebar: #dbe7f7;
+  --sidebar: #d5e9f8;
   --ease-in: cubic-bezier(0, 0, 0.2, 1);
   --ease-out: cubic-bezier(0.4, 0, 1, 1);
 }
@@ -123,7 +126,7 @@ html[data-text-size='xlarge'] {
 body {
   background-color: var(--bg);
   /* A light wash at the top of every page, fading into the page blue. */
-  background-image: linear-gradient(180deg, #d9e5f7 0, var(--bg) 24rem);
+  background-image: linear-gradient(180deg, #d3e8f8 0, var(--bg) 24rem);
   background-repeat: no-repeat;
   color: var(--fg);
   font-family: var(--font-sans);
@@ -201,23 +204,23 @@ h3 {
   }
   /* Translucent bars (sidebar, top bar); solid when transparency is unwanted. */
   .bar-translucent {
-    background-color: rgb(246 249 254 / 0.85);
+    background-color: rgb(244 249 254 / 0.85);
     backdrop-filter: saturate(180%) blur(20px);
   }
   /* Sign-in screens: the page blue with a faint warm glow in one corner. */
   .auth-backdrop {
     background-color: var(--bg);
     background-image:
-      radial-gradient(60rem 40rem at 0% 0%, #d9e6f8 0%, transparent 60%),
+      radial-gradient(60rem 40rem at 0% 0%, #d3e8f8 0%, transparent 60%),
       radial-gradient(40rem 30rem at 100% 100%, rgba(212, 165, 60, 0.12) 0%, transparent 60%);
   }
   .sidebar-surface {
     background-color: var(--sidebar);
-    background-image: linear-gradient(180deg, #e4edfa 0%, var(--sidebar) 100%);
+    background-image: linear-gradient(180deg, #e1effa 0%, var(--sidebar) 100%);
   }
   @media (prefers-reduced-transparency: reduce) {
     .bar-translucent {
-      background-color: #f6f9fe;
+      background-color: #f4f9fe;
       backdrop-filter: none;
     }
   }

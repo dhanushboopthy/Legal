@@ -24,6 +24,8 @@ class UserOut(BaseModel):
     is_verified: bool
     # So the People page can show how long a pending account has been waiting.
     created_at: datetime
+    # Set when an admin removed them from the service; None otherwise.
+    removed_at: datetime | None = None
 
     @classmethod
     def from_user(cls, user) -> "UserOut":
@@ -40,6 +42,7 @@ class UserOut(BaseModel):
             is_active=user.is_active,
             is_verified=user.is_verified,
             created_at=user.created_at,
+            removed_at=user.removed_at,
         )
 
 

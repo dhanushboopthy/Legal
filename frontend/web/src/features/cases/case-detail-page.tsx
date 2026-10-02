@@ -34,6 +34,7 @@ import { DraftReviewPanel } from '@/features/cases/draft-review-panel'
 import { HeldOverPanel, HoldOverControl } from '@/features/cases/hold-over-panel'
 import { InfoPanel } from '@/features/cases/info-panel'
 import { QuotedPaymentPanel } from '@/features/cases/quoted-payment-panel'
+import { RecordPaymentPanel } from '@/features/cases/record-payment-panel'
 import { QuoteSheet } from '@/features/cases/quote-sheet'
 import { PaymentActionCard } from '@/features/cases/review-payment-panel'
 import { UploadRevisionPanel } from '@/features/cases/upload-revision-panel'
@@ -374,20 +375,13 @@ function CaseActionPanel({
       if (isOwner) {
         return <QuotedPaymentPanel caseId={caseId} documents={documents} onChanged={onChanged} />
       }
-      return can(PERMISSIONS.QUOTE_CREATE) ? (
-        <InfoPanel
-          icon={Clock}
-          title={meta.label}
-          description={meta.next}
-          action={
-            <Button
-              variant="secondary"
-              className="mt-4"
-              onClick={() => onOpenQuoteSheet('replace')}
-            >
-              Replace draft or change charges
-            </Button>
-          }
+      return can(PERMISSIONS.QUOTE_CREATE) || can(PERMISSIONS.PAYMENT_RECORD_OFFLINE) ? (
+        <RecordPaymentPanel
+          caseId={caseId}
+          canRecord={can(PERMISSIONS.PAYMENT_RECORD_OFFLINE)}
+          canReplace={can(PERMISSIONS.QUOTE_CREATE)}
+          onReplace={() => onOpenQuoteSheet('replace')}
+          onChanged={onChanged}
         />
       ) : (
         waiting(Clock)

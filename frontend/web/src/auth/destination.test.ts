@@ -13,6 +13,7 @@ const base: UserOut = {
   permissions: [],
   is_active: true,
   is_verified: true,
+  removed_at: null,
   created_at: '2026-09-15T10:00:00Z',
 }
 

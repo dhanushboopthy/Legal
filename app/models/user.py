@@ -37,6 +37,11 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # Set when an admin removes the person from the service (is_active is then
+    # False too, but this is what tells "removed" apart from "waiting for
+    # approval"). Cleared when they are restored. Their cases stay as they are.
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Password sign-in pauses until locked_until after too many wrong tries.
     failed_login_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

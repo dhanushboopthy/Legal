@@ -13,6 +13,7 @@ from app.core.logging import mask_email
 from app.core.rate_limit import client_ip, limiter
 from app.core.security import hash_password, verify_password
 from app.database import get_db
+from app.dependencies import ACCESS_REMOVED
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.auth import (
@@ -57,6 +58,14 @@ def _require_verified(user: User) -> None:
     GET /users/me, which is what the pending-approval screen polls."""
     if not user.is_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email first")
+
+
+def _refuse_removed(user: User) -> None:
+    """A person an admin removed gets no token by any route (password, Google,
+    email code, password reset) until they are restored. Checked only once
+    the credential is proven, so it says nothing to someone guessing."""
+    if user.removed_at is not None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ACCESS_REMOVED)
 
 
 def _token(pair: token_service.TokenPair) -> Token:
@@ -135,6 +144,7 @@ async def verify_email(request: Request, payload: VerifyEmailRequest, db: AsyncS
         await db.commit()
         raise
     await _audit(db, user.id, "user.email_verified")
+    _refuse_removed(user)
     pair = await token_service.issue_tokens(db, user.id)
     await db.commit()
     return _token(pair)
@@ -195,6 +205,7 @@ async def login(
     user.failed_login_count = 0
     user.locked_until = None
     await _audit(db, user.id, "user.login", method="password", ip=client_ip(request))
+    _refuse_removed(user)
     pair = await token_service.issue_tokens(db, user.id)
     await db.commit()
     return _token(pair)
@@ -247,6 +258,7 @@ async def google_login(request: Request, payload: GoogleLoginRequest, db: AsyncS
     _require_verified(user)
 
     await _audit(db, user.id, "user.login", method="google", ip=client_ip(request))
+    _refuse_removed(user)
     pair = await token_service.issue_tokens(db, user.id)
     await db.commit()
     return _token(pair)
@@ -305,6 +317,7 @@ async def reset_password(request: Request, payload: ResetPasswordRequest, db: As
     except (ValidationAppError, ConflictError):
         await db.commit()  # count the wrong attempt
         raise
+    _refuse_removed(user)  # before anything changes: a removed person keeps their old password
 
     user.hashed_password = hash_password(payload.new_password)
     user.failed_login_count = 0

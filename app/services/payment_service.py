@@ -14,7 +14,7 @@ from app.core.exceptions import ConflictError, NotFoundError
 from app.core.money import format_inr, paise_from_rupees
 from app.models.case import Case, CaseStatus
 from app.models.message import MessageKind
-from app.models.payment import Payment, PaymentStatus, PaymentType
+from app.models.payment import OfflineMethod, Payment, PaymentStatus, PaymentType
 from app.models.quote import Quote, QuoteStatus
 from app.models.user import User
 from app.schemas.payment import PaymentOrderResponse
@@ -251,8 +251,18 @@ async def _review_fee_paid(db: AsyncSession, *, case: Case, payment: Payment) ->
     )
 
 
+# How a hand-recorded payment reads in the chat and notifications.
+_RECEIVED_HOW = {
+    OfflineMethod.CASH.value: " in cash",
+    OfflineMethod.UPI.value: " by UPI",
+    OfflineMethod.BANK_TRANSFER.value: " by bank transfer",
+    OfflineMethod.CHEQUE.value: " by cheque",
+}
+
+
 async def _quote_paid(db: AsyncSession, *, case: Case, payment: Payment, quote: Quote) -> None:
     price = format_inr(quote.amount_paise)
+    how = _RECEIVED_HOW.get(payment.method or "", "")
     if quote.status != QuoteStatus.OPEN or case.status != CaseStatus.QUOTED:
         # The advocate replaced the price while this payment was in flight (or
         # the case moved on). Do not unlock: give the money back.
@@ -272,16 +282,19 @@ async def _quote_paid(db: AsyncSession, *, case: Case, payment: Payment, quote: 
     )
     await message_service.post_event(
         db, case=case, kind=MessageKind.SYSTEM,
-        body=f"Payment of {price} received. The draft is unlocked.",
-        meta={"event": "quote_paid", "quote_id": str(quote.id), "amount_paise": quote.amount_paise},
+        body=f"Payment of {price} received{how}. The draft is unlocked.",
+        meta={
+            "event": "quote_paid", "quote_id": str(quote.id), "amount_paise": quote.amount_paise,
+            "gateway": payment.gateway,
+        },
     )
     await notification_service.notify(
         db, user_id=case.junior_lawyer_id, case_id=case.id, kind="quote_paid",
-        message=f"Payment of {price} received. Your draft for '{case.title}' is unlocked.",
+        message=f"Payment of {price} received{how}. Your draft for '{case.title}' is unlocked.",
     )
     await notification_service.notify_reviewers(
         db, case_id=case.id, kind="quote_paid",
-        message=f"Payment of {price} received for '{case.title}'. The draft is now with the lawyer.",
+        message=f"Payment of {price} received{how} for '{case.title}'. The draft is now with the lawyer.",
     )
 
 
@@ -324,6 +337,49 @@ async def _auto_refund(db: AsyncSession, *, case: Case, payment: Payment, reason
     )
 
 
+async def record_offline_payment(
+    db: AsyncSession, *, case_id: uuid.UUID, admin: User, method: OfflineMethod,
+    reference: str | None,
+) -> Payment:
+    """The advocate received the drafting charges outside Razorpay (cash, GPay,
+    a bank transfer, a cheque) and says so. This is the one place a person
+    moves a case along the edge a payment takes (quoted -> delivered), so it
+    checks its own source status, takes the case lock like the webhook does,
+    and then unlocks the draft through exactly the same `_quote_paid`.
+
+    The amount is the open quote's, never the caller's. If the lawyer also
+    pays through Razorpay later (a checkout left open), that capture finds
+    the quote already paid and is refunded automatically."""
+    case = await case_service.lock_case(db, case_id)
+    quote = (
+        await db.execute(
+            select(Quote).where(Quote.case_id == case.id, Quote.status == QuoteStatus.OPEN)
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    if case.status != CaseStatus.QUOTED or quote is None:
+        raise ConflictError("There are no unpaid drafting charges on this case")
+
+    payment = Payment(
+        case_id=case.id, type=PaymentType.QUOTE, quote_id=quote.id,
+        amount=Decimal(quote.amount_paise) / 100, currency=quote.currency,
+        status=PaymentStatus.PAID, gateway="offline", method=method.value,
+        reference=reference, recorded_by=admin.id, paid_at=datetime.now(timezone.utc),
+    )
+    db.add(payment)
+    await db.flush()
+    await audit_service.log_action(
+        db, user_id=admin.id, action="payment.recorded_offline",
+        entity_type="payment", entity_id=str(payment.id),
+        metadata={
+            "case_id": str(case.id), "quote_id": str(quote.id), "method": method.value,
+            "amount_paise": quote.amount_paise, "reference": reference,
+        },
+    )
+    await _quote_paid(db, case=case, payment=payment, quote=quote)
+    return payment
+
+
 async def get_payment_or_404(db: AsyncSession, payment_id: uuid.UUID) -> Payment:
     result = await db.execute(select(Payment).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
@@ -361,6 +417,17 @@ async def refund_payment(db: AsyncSession, *, payment: Payment, admin: User) -> 
             f"Only a 'paid' payment can be refunded (current status: '{payment.status.value}')"
         )
 
+    if payment.gateway == "offline":
+        # No gateway to wait for: the advocate gave the money back in person
+        # (or recorded it by mistake), so the refund takes effect now.
+        await case_service.lock_case(db, payment.case_id)
+        await audit_service.log_action(
+            db, user_id=admin.id, action="payment.refund_recorded_offline",
+            entity_type="payment", entity_id=str(payment.id),
+        )
+        await _apply_refund(db, payment=payment)
+        return payment
+
     _razorpay_client().payment.refund(payment.gateway_payment_id, {})
 
     await audit_service.log_action(
@@ -381,6 +448,13 @@ async def handle_refund_processed(db: AsyncSession, *, gateway_payment_id: str) 
     if payment.status == PaymentStatus.REFUNDED:
         return payment
 
+    await _apply_refund(db, payment=payment)
+    return payment
+
+
+async def _apply_refund(db: AsyncSession, *, payment: Payment) -> None:
+    """The money is back with the lawyer: mark it, and lock the draft again if
+    this payment was what unlocked it."""
     payment.status = PaymentStatus.REFUNDED
     payment.refunded_at = datetime.now(timezone.utc)
 
@@ -409,4 +483,3 @@ async def handle_refund_processed(db: AsyncSession, *, gateway_payment_id: str) 
         db, user_id=case.junior_lawyer_id, case_id=case.id, kind="payment_refunded",
         message=f"Your payment of {format_inr(paise_from_rupees(payment.amount))} has been refunded.",
     )
-    return payment

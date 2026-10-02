@@ -76,6 +76,9 @@ export function QuotedPaymentPanel({
           </p>
         )}
       </div>
+      <p className="text-muted mt-4 text-sm">
+        Paying the office in cash or by GPay instead? Once they record it, the draft unlocks here.
+      </p>
     </PaymentActionCard>
   )
 }

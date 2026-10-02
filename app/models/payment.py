@@ -18,6 +18,15 @@ class PaymentType(str, enum.Enum):
     REVISION = "revision"
 
 
+class OfflineMethod(str, enum.Enum):
+    """How money recorded by hand (gateway="offline") was received."""
+    CASH = "cash"
+    UPI = "upi"                    # GPay, PhonePe, Paytm, BHIM...
+    BANK_TRANSFER = "bank_transfer"
+    CHEQUE = "cheque"
+    OTHER = "other"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
     PAID = "paid"
@@ -48,7 +57,15 @@ class Payment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=PaymentStatus.PENDING,
     )
 
+    # "razorpay", or "offline" for money the advocate recorded as received in
+    # person (cash, UPI, ...): then method, reference and recorded_by are set
+    # and there is no gateway order.
     gateway: Mapped[str] = mapped_column(String(50), default="razorpay")
+    method: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    reference: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    recorded_by: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
     gateway_order_id: Mapped[str | None] = mapped_column(String(150), nullable=True, index=True)
     gateway_payment_id: Mapped[str | None] = mapped_column(String(150), nullable=True)
     gateway_signature: Mapped[str | None] = mapped_column(String(255), nullable=True)

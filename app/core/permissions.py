@@ -24,15 +24,18 @@ PAYMENT_INITIATE = "payment:initiate"
 PAYMENT_VIEW_OWN = "payment:view_own"
 PAYMENT_VIEW_ALL = "payment:view_all"
 PAYMENT_REFUND = "payment:refund"
+# Mark drafting charges as received outside Razorpay (cash, GPay/UPI, bank
+# transfer, cheque), which unlocks the draft just as a Razorpay payment would.
+PAYMENT_RECORD_OFFLINE = "payment:record_offline"
 
-USER_MANAGE = "user:manage"          # approve new junior lawyers, deactivate, etc.
+USER_MANAGE = "user:manage"          # approve new junior lawyers, remove and restore people
 AUDIT_VIEW = "audit:view"
 
 # --- default role -> permission sets (used for seeding) ------------------
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "super_admin": {
         CASE_VIEW_ALL, CASE_REVIEW, CASE_DECIDE, CASE_DRAFT, CASE_MESSAGE, QUOTE_CREATE, CASE_HOLD,
-        PAYMENT_VIEW_ALL, PAYMENT_REFUND, USER_MANAGE, AUDIT_VIEW,
+        PAYMENT_VIEW_ALL, PAYMENT_REFUND, PAYMENT_RECORD_OFFLINE, USER_MANAGE, AUDIT_VIEW,
     },
     "junior_lawyer": {
         CASE_SUBMIT, CASE_VIEW_OWN, CASE_REQUEST_REVISION, CASE_APPROVE_FINAL,

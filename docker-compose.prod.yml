@@ -1,0 +1,59 @@
+# Production on one machine (see docs/production-windows.md). Always used
+# together with the base file, never with docker-compose.override.yml:
+#
+#   docker compose -p legal-filing-prod --env-file .env.production \
+#     -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# deploy/windows/start.ps1 runs exactly this, plus migrations.
+#
+# Nothing is published on the machine's network. The site and the document
+# store reach the internet only through a Cloudflare Tunnel (the cloudflared
+# service), which also provides https:
+#   srikrishnlegaloffice.in        -> http://web:80
+#   files.srikrishnlegaloffice.in  -> http://storage:8333
+name: legal-filing-prod
+
+services:
+  api:
+    env_file: !override
+      - .env.production
+
+  worker:
+    env_file: !override
+      - .env.production
+
+  db:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  storage:
+    ports: !reset []
+
+  web:
+    ports: !reset []
+    environment:
+      # The network range below: only cloudflared, inside it, may tell nginx
+      # the visitor's address.
+      REAL_IP_FROM: 172.30.0.0/24
+
+  cloudflared:
+    # Pin a version (cloudflare/cloudflared:<version>) once you've confirmed
+    # one works; `latest` changes underneath you on every pull.
+    image: cloudflare/cloudflared:latest
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      # Read from the environment rather than the command line, so it never
+      # shows in `docker ps` or process listings.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env.production}
+    depends_on:
+      - web
+      - storage
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

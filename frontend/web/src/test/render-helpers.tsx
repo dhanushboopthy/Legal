@@ -38,6 +38,7 @@ export function makeUser(permissions: string[], overrides: Partial<UserOut> = {}
     is_active: true,
     is_verified: true,
     created_at: '2026-09-15T10:00:00Z',
+    removed_at: null,
     ...overrides,
   }
 }

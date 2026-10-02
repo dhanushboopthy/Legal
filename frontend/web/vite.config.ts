@@ -12,6 +12,16 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      // index.html is the app; home.html is the public page nginx serves at
+      // / to anyone not signed in.
+      input: {
+        app: path.resolve(import.meta.dirname, 'index.html'),
+        home: path.resolve(import.meta.dirname, 'home.html'),
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',

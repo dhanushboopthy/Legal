@@ -31,6 +31,8 @@ export interface UserOut {
   is_active: boolean
   is_verified: boolean
   created_at: string
+  // Set when an admin removed them from the service; null otherwise.
+  removed_at: string | null
 }
 
 export interface Token {
@@ -127,7 +129,14 @@ export interface PaymentOut {
   status: PaymentStatus
   quote_id: string | null
   paid_at: string | null
+  // 'razorpay', or 'offline' for money the advocate recorded by hand.
+  gateway: string
+  method: OfflineMethod | null
+  reference: string | null
 }
+
+// How drafting charges paid outside Razorpay were received.
+export type OfflineMethod = 'cash' | 'upi' | 'bank_transfer' | 'cheque' | 'other'
 
 // A row in the admin payments table: which case and whose it is.
 export interface PaymentListItem extends PaymentOut {

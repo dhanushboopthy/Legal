@@ -11,8 +11,10 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast-context'
 import { getErrorMessage } from '@/lib/errors'
-import { approveUser, listUsers } from '@/lib/api/users'
+import { approveUser, listUsers, removeUser, restoreUser } from '@/lib/api/users'
+import { useAuth } from '@/auth/auth-context'
 import type { UserOut } from '@/types/api'
+import { formatDate } from '@/lib/utils'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { BackLink } from '@/components/layout/back-link'
 
@@ -35,6 +37,9 @@ export function PeoplePage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState<UserOut | null>(null)
+  const [removing, setRemoving] = useState<UserOut | null>(null)
+  const [restoring, setRestoring] = useState<UserOut | null>(null)
+  const { user: me } = useAuth()
 
   const {
     data: users,
@@ -61,7 +66,43 @@ export function PeoplePage() {
       }),
   })
 
-  const pending = users?.filter((u) => !u.is_active) ?? []
+  const remove = useMutation({
+    mutationFn: removeUser,
+    onSuccess: (user) => {
+      setRemoving(null)
+      toast({
+        variant: 'success',
+        title: `${user.full_name} removed`,
+        description: 'They have been signed out. You can restore their access at any time.',
+      })
+      void queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not remove this person',
+        description: getErrorMessage(err),
+      }),
+  })
+
+  const restore = useMutation({
+    mutationFn: restoreUser,
+    onSuccess: (user) => {
+      setRestoring(null)
+      toast({ variant: 'success', title: `${user.full_name} can sign in again` })
+      void queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err) =>
+      toast({
+        variant: 'error',
+        title: 'Could not restore access',
+        description: getErrorMessage(err),
+      }),
+  })
+
+  // A removed person is inactive too, but they are not waiting for approval.
+  const removed = users?.filter((u) => u.removed_at) ?? []
+  const pending = users?.filter((u) => !u.is_active && !u.removed_at) ?? []
   const active = users?.filter((u) => u.is_active) ?? []
 
   return (
@@ -69,7 +110,7 @@ export function PeoplePage() {
       <BackLink to="/">All cases</BackLink>
       <h1 className="lg:text-title text-2xl font-semibold">People</h1>
       <p className="text-muted mt-1 mb-8 text-sm">
-        Everyone at the practice, and new registrations to approve.
+        Everyone at the practice, new registrations to approve, and anyone you have removed.
       </p>
 
       {isLoading ? (
@@ -129,9 +170,43 @@ export function PeoplePage() {
                 leading={<UserAvatar name={u.full_name} src={u.avatar_url} className="size-10" />}
                 title={u.full_name}
                 subtitle={<PersonDetails user={u} />}
+                stack
+                trailing={
+                  u.id === me?.id ? (
+                    <span className="text-muted text-label">You</span>
+                  ) : (
+                    <Button size="sm" variant="secondary" onClick={() => setRemoving(u)}>
+                      Remove
+                    </Button>
+                  )
+                }
               />
             ))}
           </List>
+
+          {removed.length > 0 && (
+            <List heading={`Removed (${removed.length})`}>
+              {removed.map((u) => (
+                <ListRow
+                  key={u.id}
+                  stack
+                  leading={<UserAvatar name={u.full_name} src={u.avatar_url} className="size-10" />}
+                  title={u.full_name}
+                  subtitle={
+                    <>
+                      <PersonDetails user={u} />
+                      <span className="mt-0.5 block">Removed {formatDate(u.removed_at!)}</span>
+                    </>
+                  }
+                  trailing={
+                    <Button size="sm" variant="secondary" onClick={() => setRestoring(u)}>
+                      Restore access
+                    </Button>
+                  }
+                />
+              ))}
+            </List>
+          )}
         </div>
       )}
 
@@ -143,6 +218,27 @@ export function PeoplePage() {
         confirmLabel="Approve"
         loading={approve.isPending}
         onConfirm={() => confirming && approve.mutate(confirming.id)}
+      />
+
+      <ConfirmDialog
+        open={removing !== null}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title={`Remove ${removing?.full_name} from the service?`}
+        description="They'll be signed out straight away and can't sign in until you restore their access. Their cases, messages and payments stay as they are."
+        confirmLabel="Remove"
+        tone="danger"
+        loading={remove.isPending}
+        onConfirm={() => removing && remove.mutate(removing.id)}
+      />
+
+      <ConfirmDialog
+        open={restoring !== null}
+        onOpenChange={(open) => !open && setRestoring(null)}
+        title={`Restore access for ${restoring?.full_name}?`}
+        description="They'll be able to sign in again and will find their cases as they left them."
+        confirmLabel="Restore access"
+        loading={restore.isPending}
+        onConfirm={() => restoring && restore.mutate(restoring.id)}
       />
     </div>
   )

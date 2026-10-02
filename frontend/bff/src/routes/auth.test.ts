@@ -190,6 +190,8 @@ describe('POST /logout', () => {
     expect(res.status).toBe(204)
     const setCookie = res.headers['set-cookie']?.[0] ?? ''
     expect(setCookie).toContain('refresh_token=;')
+    // nginx serves the public home page at / again.
+    expect(res.headers['set-cookie']?.[1] ?? '').toMatch(/^signed_in=;.*Path=\//)
   })
 })
 
@@ -228,6 +230,8 @@ describe('POST /reset-password', () => {
     expect(cookie).toContain('refresh_token=refresh-r')
     expect(cookie).toContain('HttpOnly')
     expect(cookie).toContain('SameSite=Strict')
+    // The hint nginx uses to serve the app at /, not the home page.
+    expect(res.headers['set-cookie']?.[1] ?? '').toMatch(/^signed_in=1;.*Path=\/;.*SameSite=Lax/)
   })
 })
 

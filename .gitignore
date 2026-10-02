@@ -1,6 +1,11 @@
 __pycache__/
 *.pyc
 .env
+# Every real env file holds secrets (.env.production above all); only the
+# templates are committed.
+.env.*
+!.env.example
+!.env.production.example
 .venv/
 venv/
 *.egg-info/
@@ -16,3 +21,9 @@ node_modules/
 
 # machine-local port remaps, not for commit
 docker-compose.override.yml
+
+# Local production backups (deploy/windows/backup.ps1).
+backups/
+
+# Scheduled-task output (deploy/windows/install-tasks.ps1).
+logs/

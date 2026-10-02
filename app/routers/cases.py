@@ -13,6 +13,7 @@ from app.core.permissions import (
     CASE_REQUEST_REVISION,
     CASE_SUBMIT,
     PAYMENT_INITIATE,
+    PAYMENT_RECORD_OFFLINE,
     QUOTE_CREATE,
 )
 from app.core.rate_limit import limiter
@@ -25,7 +26,7 @@ from app.schemas.case import (
     CaseCreate, CaseDecision, CaseListItem, CaseOut, CaseUpdate, HoldCreate, RevisionCreate, RevisionOut,
 )
 from app.schemas.document import DocumentOut
-from app.schemas.payment import PaymentOrderResponse
+from app.schemas.payment import OfflinePaymentCreate, PaymentOrderResponse, PaymentOut
 from app.schemas.quote import DraftUpload, QuoteCreate, QuoteOut
 from app.services import avatar_service, case_service, message_service, payment_service, quote_service
 
@@ -222,6 +223,30 @@ async def pay_quote(
     payment = await payment_service.create_quote_order(db, case=case, quote=quote)
     await db.commit()
     return payment_service.order_response(payment)
+
+
+@router.post(
+    "/{case_id}/quote/record-payment", response_model=PaymentOut, status_code=201,
+    dependencies=[Depends(require_permission(PAYMENT_RECORD_OFFLINE))],
+)
+async def record_offline_payment(
+    case_id: uuid.UUID,
+    payload: OfflinePaymentCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """The drafting charges were paid in cash, by GPay/UPI, bank transfer or
+    cheque: unlock the draft for the lawyer, as a Razorpay payment would. The
+    amount is the open quote's."""
+    case = await case_service.get_case_or_404(db, case_id)
+    case_service.authorize_case_access(case, current_user)
+    payment = await payment_service.record_offline_payment(
+        db, case_id=case.id, admin=current_user, method=payload.method,
+        reference=payload.reference,
+    )
+    await db.commit()
+    await db.refresh(payment)
+    return payment
 
 
 @router.post(

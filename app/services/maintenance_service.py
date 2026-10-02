@@ -186,7 +186,8 @@ async def remind_stale_pending_approvals(db: AsyncSession, *, now: datetime | No
 
     stale = list((await db.execute(
         select(User).where(
-            User.is_active.is_(False), User.is_verified.is_(True), User.created_at < cutoff,
+            User.is_active.is_(False), User.is_verified.is_(True), User.removed_at.is_(None),
+            User.created_at < cutoff,
             (User.pending_reminder_sent_at.is_(None)) | (User.pending_reminder_sent_at < now - gap),
         ).order_by(User.created_at).limit(_BATCH)
     )).scalars().all())

@@ -9,6 +9,23 @@ map $http_x_forwarded_proto $hsts {
     default "";
 }
 
+# `/` is the public home page for visitors and the app for anyone signed
+# in. The refresh cookie is scoped to /bff, so the BFF sets `signed_in` (no
+# secret in it) alongside it for this.
+map $cookie_signed_in $root_page {
+    "1"     /index.html;
+    default /home.html;
+}
+
+# Only the home page and the files search engines and link previews fetch
+# may be indexed. Every app route and sign-in step is noindex. An empty
+# value sends no header.
+map $uri $robots_tag {
+    /home.html                                  "";
+    ~^/(robots\.txt|sitemap\.xml|og-image\.png)$ "";
+    default                                     "noindex, nofollow";
+}
+
 server_tokens off;
 
 server {
@@ -17,10 +34,19 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Behind the Cloudflare Tunnel (docker-compose.prod.yml) every request
+    # arrives from the cloudflared container, so take the visitor's address
+    # from the header Cloudflare sets. Only trusted from REAL_IP_FROM, the
+    # compose network's own range: in dev it's 127.0.0.1/32, i.e. off. This
+    # is the address X-Real-IP passes on, and what rate limits key on.
+    set_real_ip_from ${REAL_IP_FROM};
+    real_ip_header CF-Connecting-IP;
+
     # Scripts: our bundle, Google sign-in, Razorpay checkout. Images and
     # uploads go straight to object storage via presigned URLs.
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: ${CSP_S3_ORIGIN} https://*.razorpay.com; connect-src 'self' ${CSP_S3_ORIGIN} https://accounts.google.com/gsi/ https://lumberjack.razorpay.com https://lumberjack-metrics.razorpay.com https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com; frame-src https://accounts.google.com/gsi/ https://api.razorpay.com https://checkout.razorpay.com; font-src 'self' data: https://cdn.razorpay.com; object-src 'none'; base-uri 'self'; form-action 'self' https://api.razorpay.com; frame-ancestors 'none'" always;
     add_header X-Frame-Options "DENY" always;
+    add_header X-Robots-Tag $robots_tag always;
     include /etc/nginx/snippets/security-headers.conf;
 
     # Same-origin for everything, in production as in dev, so the BFF's
@@ -62,6 +88,20 @@ server {
         expires 1y;
         add_header Cache-Control "public, immutable";
         include /etc/nginx/snippets/security-headers.conf;
+    }
+
+    # No add_header here, so the server-level headers above still apply.
+    # The answer depends on a cookie, so no cache may keep one for everyone.
+    location = / {
+        expires epoch;
+        try_files $root_page =404;
+    }
+
+    # One address for the home page, so search engines don't see two.
+    location = /home.html {
+        # Relative, so it stays https behind the TLS proxy.
+        absolute_redirect off;
+        return 301 /;
     }
 
     location / {
