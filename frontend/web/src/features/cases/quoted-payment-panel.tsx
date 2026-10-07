@@ -50,7 +50,7 @@ export function QuotedPaymentPanel({
       title="Your draft is ready"
       description="Pay the price below to open and download it."
       amountInr={quote.data.amount_inr}
-      buttonLabel={(amount) => `Pay ${amount} to unlock`}
+      buttonLabel={(amount) => `Pay ${amount} to download`}
       findPaymentId={async () =>
         (await listPaymentsForCase(caseId)).findLast(
           (p) => p.type === 'quote' && p.status === 'pending',
@@ -77,7 +77,7 @@ export function QuotedPaymentPanel({
         )}
       </div>
       <p className="text-muted mt-4 text-sm">
-        Paying the office in cash or by GPay instead? Once they record it, the draft unlocks here.
+        Paying the office in cash or by GPay instead? Once they confirm receipt, the draft is available here.
       </p>
     </PaymentActionCard>
   )

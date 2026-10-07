@@ -18,7 +18,7 @@ const METHODS = Object.keys(OFFLINE_METHOD_LABELS) as OfflineMethod[]
 
 /** The advocate's card while the drafting charges are unpaid. The lawyer can
  * pay online, or pay the office directly (cash, GPay, a transfer, a cheque):
- * then the advocate records it here and the draft unlocks for the lawyer. */
+ * then the advocate records it here and the draft becomes available to the lawyer. */
 export function RecordPaymentPanel({
   caseId,
   canRecord,
@@ -48,7 +48,7 @@ export function RecordPaymentPanel({
       toast({
         variant: 'success',
         title: 'Payment recorded',
-        description: 'The draft is unlocked. The lawyer has been told and can download it now.',
+        description: 'The draft is now available. The lawyer has been told and can download it.',
       })
       setOpen(false)
       onChanged()
@@ -84,7 +84,7 @@ export function RecordPaymentPanel({
           <h3 className="font-semibold">Waiting for the lawyer to pay {amount}</h3>
           <p className="text-muted mt-0.5 text-sm">
             They can pay online. If they pay you directly instead, record it here and the draft
-            unlocks for them.
+            becomes available to them.
           </p>
 
           {!open ? (

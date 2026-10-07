@@ -10,3 +10,7 @@ export async function markNotificationRead(notificationId: string): Promise<Noti
   const { data } = await apiClient.patch<NotificationOut>(`/notifications/${notificationId}/read`)
   return data
 }
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await apiClient.post('/notifications/read-all')
+}

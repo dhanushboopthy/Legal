@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import ConflictError, UnauthorizedError, ValidationAppError
-from app.core.google_auth import GoogleTokenError, verify_google_id_token
+from app.core.google_auth import GoogleTokenError, GoogleUnavailableError, verify_google_id_token
 from app.core.logging import mask_email
 from app.core.rate_limit import client_ip, limiter
 from app.core.security import hash_password, verify_password
@@ -218,6 +218,8 @@ async def google_login(request: Request, payload: GoogleLoginRequest, db: AsyncS
         claims = verify_google_id_token(payload.id_token)
     except GoogleTokenError as exc:
         raise UnauthorizedError(str(exc)) from exc
+    except GoogleUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     google_sub = claims["sub"]
     email = claims["email"]

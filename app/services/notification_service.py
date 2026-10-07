@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
@@ -38,11 +38,15 @@ async def notify_reviewers(
         await notify(db, user_id=user_id, message=message, case_id=case_id, kind=kind)
 
 
+LIST_LIMIT = 100  # the panel shows recent activity; older rows stay in the table
+
+
 async def list_for_user(db: AsyncSession, *, user_id: uuid.UUID) -> list[Notification]:
     result = await db.execute(
         select(Notification)
         .where(Notification.user_id == user_id)
         .order_by(Notification.created_at.desc())
+        .limit(LIST_LIMIT)
     )
     return list(result.scalars().all())
 
@@ -58,3 +62,13 @@ async def mark_read(db: AsyncSession, *, user_id: uuid.UUID, notification_id: uu
         raise NotFoundError("Notification not found")
     notification.is_read = True
     return notification
+
+
+async def mark_all_read(db: AsyncSession, *, user_id: uuid.UUID) -> int:
+    """Marks every unread notification of this person as read; returns how many."""
+    result = await db.execute(
+        update(Notification)
+        .where(Notification.user_id == user_id, Notification.is_read.is_(False))
+        .values(is_read=True)
+    )
+    return result.rowcount or 0

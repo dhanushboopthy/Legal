@@ -40,7 +40,7 @@ class Case(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     case_number: Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    case_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    case_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     court: Mapped[str | None] = mapped_column(String(150), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)

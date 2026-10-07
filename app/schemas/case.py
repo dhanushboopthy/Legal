@@ -10,7 +10,7 @@ from app.schemas.message import LastMessageOut, Turn
 
 class CaseCreate(BaseModel):
     title: str = Field(min_length=3, max_length=255)
-    case_type: str = Field(min_length=2, max_length=100)
+    case_type: str | None = Field(default=None, min_length=2, max_length=100)
     court: str | None = None
     description: str | None = None
     note: str | None = Field(default=None, max_length=2000)
@@ -46,7 +46,7 @@ class CaseOut(BaseModel):
     junior_lawyer_id: uuid.UUID
     case_number: str | None
     title: str
-    case_type: str
+    case_type: str | None
     court: str | None
     description: str | None
     note: str | None

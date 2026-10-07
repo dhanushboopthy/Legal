@@ -72,9 +72,9 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
     tone: 'warning',
     group: 'active',
     submitter: {
-      label: 'Draft ready: pay to unlock',
+      label: 'Draft ready: payment due',
       turn: 'you',
-      next: 'Pay the quoted amount to unlock the download.',
+      next: 'Pay the quoted amount to download the draft.',
     },
     reviewer: {
       label: 'Waiting for payment',

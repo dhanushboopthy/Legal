@@ -33,7 +33,7 @@ export function CaseDetailsSheet({
       <div className="space-y-8">
         <List heading="Details">
           {caseData.case_number && <ListRow title="Case number" trailing={caseData.case_number} />}
-          <ListRow title="Case type" trailing={caseData.case_type} />
+          {caseData.case_type && <ListRow title="Case type" trailing={caseData.case_type} />}
           {caseData.court && <ListRow title="Court" trailing={caseData.court} />}
           <ListRow title="Filed" trailing={formatDate(caseData.created_at)} />
           {caseData.description && (

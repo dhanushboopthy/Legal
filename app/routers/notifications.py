@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -18,6 +18,16 @@ async def list_my_notifications(
     db: AsyncSession = Depends(get_db),
 ):
     return await notification_service.list_for_user(db, user_id=current_user.id)
+
+
+@router.post("/read-all", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await notification_service.mark_all_read(db, user_id=current_user.id)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/{notification_id}/read", response_model=NotificationOut)

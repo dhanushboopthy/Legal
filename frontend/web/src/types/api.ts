@@ -46,7 +46,7 @@ export interface CaseOut {
   junior_lawyer_id: string
   case_number: string | null
   title: string
-  case_type: string
+  case_type: string | null
   court: string | null
   description: string | null
   note: string | null

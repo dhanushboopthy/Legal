@@ -3,7 +3,6 @@ import type { CaseListItem, CaseOut, PaymentOrderResponse, QuoteOut } from '@/ty
 
 export interface CreateCasePayload {
   title: string
-  case_type: string
   note?: string
 }
 

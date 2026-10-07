@@ -207,8 +207,8 @@ def _require_draft(case: Case) -> None:
 async def update_draft(db: AsyncSession, *, case: Case, data: CaseUpdate) -> Case:
     _require_draft(case)
     for field, value in data.model_dump(exclude_unset=True).items():
-        # title and case_type are required columns; ignore an explicit null.
-        if value is None and field in {"title", "case_type"}:
+        # title is a required column; ignore an explicit null.
+        if value is None and field == "title":
             continue
         setattr(case, field, value)
     touch(case)

@@ -171,8 +171,7 @@ export function CaseDetailPage() {
         )}
         <h1 className="lg:text-title mt-1 text-2xl font-semibold break-words">{caseData.title}</h1>
         <p className="text-muted mt-2 text-sm">
-          {caseData.case_type}
-          {caseData.court && ` · ${caseData.court}`} ·{' '}
+          {caseData.court && `${caseData.court} · `}
           {caseData.status === 'draft' ? 'Started' : 'Submitted'} {formatDate(caseData.created_at)}
         </p>
       </header>
@@ -319,7 +318,7 @@ function CaseActionPanel({
             isOwner && (
               <Link
                 to="/cases/new"
-                state={{ prefill: { title: caseData.title, case_type: caseData.case_type } }}
+                state={{ prefill: { title: caseData.title } }}
                 className={buttonVariants({ className: 'mt-4' })}
               >
                 Start a new case
@@ -359,7 +358,7 @@ function CaseActionPanel({
               <h3 className="font-semibold">Send draft and quote</h3>
               <p className="text-muted mt-0.5 text-sm">
                 Prepare the draft, then send it with your drafting charges. The lawyer pays them to
-                unlock it.
+                receive it.
               </p>
               <Button className="mt-4" onClick={() => onOpenQuoteSheet('send')}>
                 Send draft and quote

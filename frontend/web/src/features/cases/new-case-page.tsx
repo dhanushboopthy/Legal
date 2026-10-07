@@ -11,10 +11,9 @@ import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Dropzone, FileRow } from '@/components/ui/dropzone'
 import { ErrorState } from '@/components/ui/error-state'
-import { Field, FieldError, Input, Select, Textarea } from '@/components/ui/input'
+import { Field, FieldError, Input, Textarea } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast-context'
-import { CASE_TYPES } from '@/features/cases/case-types'
 import { useCaseSubmission } from '@/features/cases/use-case-submission'
 import { useRazorpayCheckout } from '@/hooks/use-razorpay'
 import { createReviewPayment, discardCase, listCases } from '@/lib/api/cases'
@@ -29,7 +28,6 @@ import { BackLink } from '@/components/layout/back-link'
 
 const schema = z.object({
   title: z.string().trim().min(3, 'At least 3 characters').max(255, 'At most 255 characters'),
-  case_type: z.string().min(1, 'Choose a case type'),
   note: z.string().max(2000, 'At most 2,000 characters').optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -46,7 +44,6 @@ const loadOnce = {
 
 export interface CasePrefill {
   title?: string
-  case_type?: string
 }
 
 export function NewCasePage() {
@@ -182,7 +179,6 @@ function NewCaseForm({
     resolver: zodResolver(schema),
     defaultValues: {
       title: draft?.title ?? prefill?.title ?? '',
-      case_type: draft?.case_type ?? prefill?.case_type ?? '',
       note: draft?.note ?? '',
     },
   })
@@ -213,7 +209,6 @@ function NewCaseForm({
     if (rows.length === 0) return
     void submission.submit({
       title: values.title,
-      case_type: values.case_type,
       note: values.note?.trim() || undefined,
     })
   }
@@ -247,8 +242,6 @@ function NewCaseForm({
     submitting: 'Submitting…',
     paying: 'Opening payment…',
   }[phase]
-
-  const knownType = !draft || (CASE_TYPES as readonly string[]).includes(draft.case_type)
 
   return (
     <div className="mx-auto max-w-xl">
@@ -323,20 +316,6 @@ function NewCaseForm({
                 disabled={busy}
                 {...register('title')}
               />
-            )}
-          </Field>
-
-          <Field id="case_type" label="Case type" error={errors.case_type?.message}>
-            {(control) => (
-              <Select {...control} disabled={busy} {...register('case_type')}>
-                <option value="">Choose a type</option>
-                {!knownType && draft && <option value={draft.case_type}>{draft.case_type}</option>}
-                {CASE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </Select>
             )}
           </Field>
 

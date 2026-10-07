@@ -85,7 +85,7 @@ export function QuoteSheet({
         title: replacing ? 'Quote updated' : 'Draft and quote sent',
         description: replacing
           ? 'The lawyer sees the new draft and drafting charges.'
-          : "The lawyer can pay to unlock the draft you've sent.",
+          : "The lawyer can pay to download the draft you've sent.",
       })
       reset()
       onOpenChange(false)
@@ -106,7 +106,7 @@ export function QuoteSheet({
         onOpenChange(next)
       }}
       title={replacing ? 'Replace draft or drafting charges' : 'Send draft and quote'}
-      description="The lawyer pays this amount to unlock the download."
+      description="The lawyer pays this amount to download the draft."
     >
       <div className="space-y-4">
         <div>

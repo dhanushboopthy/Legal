@@ -174,7 +174,6 @@ describe('NewCasePage', () => {
     // The title starts as the first file's name.
     expect(screen.getByLabelText('Case title')).toHaveValue('petition')
 
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
     await user.click(screen.getByRole('button', { name: 'Submit and pay ₹150' }))
 
     await waitFor(() => expect(openCheckout).toHaveBeenCalledTimes(1))
@@ -200,7 +199,6 @@ describe('NewCasePage', () => {
     renderPage()
     await waitForForm()
     await chooseFiles([file('petition.pdf')], user)
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
     await user.click(screen.getByRole('button', { name: /submit and pay/i }))
 
     expect(await screen.findByText('the case page')).toBeInTheDocument()
@@ -222,7 +220,7 @@ describe('NewCasePage', () => {
     expect(api.history.post).toHaveLength(0)
   })
 
-  it('will not submit without a file or a case type, and says what is missing', async () => {
+  it('will not submit without a file or a title, and says what is missing', async () => {
     const user = userEvent.setup()
     renderPage()
     await waitForForm()
@@ -230,7 +228,6 @@ describe('NewCasePage', () => {
     await user.click(screen.getByRole('button', { name: /submit and pay/i }))
 
     expect(await screen.findByText('Add at least one file.')).toBeInTheDocument()
-    expect(screen.getByText('Choose a case type')).toBeInTheDocument()
     expect(screen.getByText('At least 3 characters')).toBeInTheDocument()
     expect(api.history.post).toHaveLength(0)
   })
@@ -243,7 +240,6 @@ describe('NewCasePage', () => {
     renderPage()
     await waitForForm()
     await chooseFiles([file('petition.pdf'), file('scan.png')], user)
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
 
     await user.click(screen.getByRole('button', { name: 'Submit and pay ₹150' }))
 
@@ -271,7 +267,6 @@ describe('NewCasePage', () => {
     renderPage()
     await waitForForm()
     await chooseFiles([file('petition.pdf')], user)
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
     await user.click(screen.getByRole('button', { name: /submit and pay/i }))
 
     // The store recovers before the person presses the retry button.
@@ -297,7 +292,6 @@ describe('NewCasePage', () => {
     renderPage()
     await waitForForm()
     await chooseFiles([file('fake.png')], user)
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
     await user.click(screen.getByRole('button', { name: /submit and pay/i }))
 
     expect(await screen.findByText("That doesn't look like a real .png file")).toBeInTheDocument()
@@ -327,7 +321,6 @@ describe('NewCasePage', () => {
 
     expect(await screen.findByText('Continuing your unfinished draft.')).toBeInTheDocument()
     expect(screen.getByLabelText('Case title')).toHaveValue('Bail petition')
-    expect(screen.getByLabelText('Case type')).toHaveValue('Criminal')
     expect(screen.getByLabelText('Note for the advocate (optional)')).toHaveValue('Urgent')
     expect(screen.getByText('fir.pdf')).toBeInTheDocument()
 
@@ -384,7 +377,6 @@ describe('NewCasePage', () => {
     const { toast } = renderPage()
     await waitForForm()
     await chooseFiles([file('petition.pdf')], user)
-    await user.selectOptions(screen.getByLabelText('Case type'), 'Civil')
     await user.click(screen.getByRole('button', { name: /submit and pay/i }))
 
     expect(await screen.findByText('the case page')).toBeInTheDocument()

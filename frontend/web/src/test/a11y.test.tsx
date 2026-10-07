@@ -24,6 +24,7 @@ vi.mock('@/lib/api/config', () => ({
 vi.mock('@/lib/api/notifications', () => ({
   listMyNotifications: vi.fn().mockResolvedValue([]),
   markNotificationRead: vi.fn(),
+  markAllNotificationsRead: vi.fn(),
 }))
 
 afterEach(cleanup)
