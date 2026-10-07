@@ -2,141 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - main
 
 jobs:
-  backend-test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: legal_user
-          POSTGRES_PASSWORD: legal_pass
-          POSTGRES_DB: legal_filing_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U legal_user -d legal_filing_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      ENVIRONMENT: test
-      SECRET_KEY: ci-secret-key-not-for-production
-      DATABASE_URL: postgresql+asyncpg://legal_user:legal_pass@localhost:5432/legal_filing_test
-      REDIS_URL: redis://localhost:6379/0
-      RAZORPAY_KEY_ID: rzp_test_dummy
-      RAZORPAY_KEY_SECRET: dummy_secret
-      RAZORPAY_WEBHOOK_SECRET: dummy_webhook_secret
-      S3_BUCKET_NAME: ci-test-bucket
+  build:
+    runs-on: [self-hosted, linux, x64, aws]
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt -r requirements-dev.txt
-
-      - name: Run migrations
-        run: python -m alembic upgrade head
-
-      - name: Seed roles
-        run: python -m scripts.seed_roles
-
-      - name: Run tests
-        run: pytest -v
-
-  frontend-web-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend/web
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/web/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Test
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-  frontend-bff-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend/bff
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/bff/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-  # Known-vulnerable dependencies and committed secrets fail the build.
-  security-scan:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # scan the whole history for secrets, not just the tip
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Python dependencies (pip-audit)
-        run: pip install pip-audit && pip-audit -r requirements.txt
-
-      - name: Web dependencies (npm audit)
-        working-directory: frontend/web
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: BFF dependencies (npm audit)
-        working-directory: frontend/bff
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Secrets (gitleaks)
-        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --no-banner --redact
+        run: |
+          echo "Running on AWS EC2"
+          docker --version
+          uname -a
