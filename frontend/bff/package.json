@@ -23,9 +23,9 @@
     "@types/cookie-parser": "^1.4.8",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.3",
-    "@types/supertest": "^6.0.2",
+    "@types/supertest": "^7.2.1",
     "prettier": "^3.9.6",
-    "supertest": "^7.1.0",
+    "supertest": "^7.3.1",
     "tsx": "^4.19.2",
     "typescript": "~5.9.0",
     "vitest": "^5.0.0"
