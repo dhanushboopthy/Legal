@@ -11,7 +11,7 @@ PyJWT==2.15.0
 bcrypt==5.0.0
 python-multipart==0.0.32
 boto3==1.35.24
-razorpay==1.4.2
+razorpay==2.0.1
 setuptools==80.9.0  # razorpay imports pkg_resources at runtime; not implicit on Python 3.12+, and setuptools>=81 dropped it
 slowapi==0.1.9
 redis==5.0.8
